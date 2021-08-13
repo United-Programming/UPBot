@@ -1,4 +1,6 @@
 ﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace UPBot {
@@ -9,17 +11,17 @@ namespace UPBot {
 
     static async Task MainAsync(string token) {
       var discord = new DiscordClient(new DiscordConfiguration() {
-        Token = token,
-        TokenType = TokenType.Bot,
-        Intents = DiscordIntents.AllUnprivileged
+        Token = token, // token has to be passed as parameter
+        TokenType = TokenType.Bot, // We are a bot
+        Intents = DiscordIntents.AllUnprivileged // But very limited right now
       });
 
-      discord.MessageCreated += async (s, e) => {
-        if (e.Message.Content.ToLower().StartsWith("/upbot"))
-          await e.Message.RespondAsync("I am alive!");
-      };
+      var commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
+        StringPrefixes = new[] { "/" } // The slash will be the command prefix
+      });
+      commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
 
-      await discord.ConnectAsync();
+      await discord.ConnectAsync(); // Connects and wait forever
       await Task.Delay(-1);
     }
   }
