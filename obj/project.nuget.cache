@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "BXMWAQLVJOduAetvyS/bNctpp9CEmblfFEeyjQSWwIfzydwnvP9DQ2iUhSUKa6uHhzwS2t/T6PpuHVzkWuSsfA==",
+  "dgSpecHash": "eN4u02DScBDdGryh+0g+2tspsxt7wc+P5mpA+0t03yJkSu9sxCNCDSI5aF9vJ7ARY4rhPqEt1sSfNWBnCVjq4A==",
   "success": true,
   "projectFilePath": "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\claud\\.nuget\\packages\\dsharpplus\\4.1.0\\dsharpplus.4.1.0.nupkg.sha512",
+    "C:\\Users\\claud\\.nuget\\packages\\dsharpplus.commandsnext\\4.1.0\\dsharpplus.commandsnext.4.1.0.nupkg.sha512",
     "C:\\Users\\claud\\.nuget\\packages\\emzi0767.common\\2.6.2\\emzi0767.common.2.6.2.nupkg.sha512",
+    "C:\\Users\\claud\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\5.0.1\\microsoft.extensions.dependencyinjection.5.0.1.nupkg.sha512",
+    "C:\\Users\\claud\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\5.0.0\\microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512",
     "C:\\Users\\claud\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\5.0.0\\microsoft.extensions.logging.abstractions.5.0.0.nupkg.sha512",
     "C:\\Users\\claud\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.1\\microsoft.netcore.platforms.1.1.1.nupkg.sha512",
     "C:\\Users\\claud\\.nuget\\packages\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",

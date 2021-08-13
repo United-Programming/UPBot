@@ -21,6 +21,19 @@
           "lib/netstandard2.0/DSharpPlus.dll": {}
         }
       },
+      "DSharpPlus.CommandsNext/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "DSharpPlus": "4.1.0",
+          "Microsoft.Extensions.DependencyInjection": "5.0.1"
+        },
+        "compile": {
+          "lib/netstandard2.0/DSharpPlus.CommandsNext.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/DSharpPlus.CommandsNext.dll": {}
+        }
+      },
       "Emzi0767.Common/2.6.2": {
         "type": "package",
         "dependencies": {
@@ -34,6 +47,27 @@
         },
         "runtime": {
           "lib/netcoreapp2.1/Emzi0767.Common.dll": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection/5.0.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.dll": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/5.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {}
         }
       },
       "Microsoft.Extensions.Logging.Abstractions/5.0.0": {
@@ -1191,6 +1225,20 @@
         "lib/netstandard2.0/DSharpPlus.xml"
       ]
     },
+    "DSharpPlus.CommandsNext/4.1.0": {
+      "sha512": "4rxtz2pWEsJpPBjtnWEB6q5TmFlKLc7w934CQHS26Ylj85/9k+aYLW7e61TEcsd/+zLjUs7BF82YvlhGKImrZQ==",
+      "type": "package",
+      "path": "dsharpplus.commandsnext/4.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "dsharpplus.commandsnext.4.1.0.nupkg.sha512",
+        "dsharpplus.commandsnext.nuspec",
+        "dsharpplus.png",
+        "lib/netstandard2.0/DSharpPlus.CommandsNext.dll",
+        "lib/netstandard2.0/DSharpPlus.CommandsNext.xml"
+      ]
+    },
     "Emzi0767.Common/2.6.2": {
       "sha512": "/4dew6o2Y8xN0Eu025mDBE/abp/nOVtX59EnZn67ILMqRTk2Mqlnr6oEScSnuLrld8VsIgy+8vURirL6WBpUBA==",
       "type": "package",
@@ -1206,6 +1254,50 @@
         "lib/netcoreapp2.1/Emzi0767.Common.xml",
         "lib/netstandard2.0/Emzi0767.Common.dll",
         "lib/netstandard2.0/Emzi0767.Common.xml"
+      ]
+    },
+    "Microsoft.Extensions.DependencyInjection/5.0.1": {
+      "sha512": "//mDNrYeiJ0eh/awFhDFJQzkRVra/njU5Y4fyK7X29g5HScrzbUkKOKlyTtygthcGFt4zNC8G5CFCjb/oizomA==",
+      "type": "package",
+      "path": "microsoft.extensions.dependencyinjection/5.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net461/Microsoft.Extensions.DependencyInjection.dll",
+        "lib/net461/Microsoft.Extensions.DependencyInjection.xml",
+        "lib/net5.0/Microsoft.Extensions.DependencyInjection.dll",
+        "lib/net5.0/Microsoft.Extensions.DependencyInjection.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.xml",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.dll",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.xml",
+        "microsoft.extensions.dependencyinjection.5.0.1.nupkg.sha512",
+        "microsoft.extensions.dependencyinjection.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
+      ]
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/5.0.0": {
+      "sha512": "ORj7Zh81gC69TyvmcUm9tSzytcy8AVousi+IVRAI8nLieQjOFryRusSFh7+aLk16FN9pQNqJAiMd7BTKINK0kA==",
+      "type": "package",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net461/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net461/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512",
+        "microsoft.extensions.dependencyinjection.abstractions.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
       ]
     },
     "Microsoft.Extensions.Logging.Abstractions/5.0.0": {
@@ -4108,7 +4200,8 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.1": [
-      "DSharpPlus >= 4.1.0"
+      "DSharpPlus >= 4.1.0",
+      "DSharpPlus.CommandsNext >= 4.1.0"
     ]
   },
   "packageFolders": {
@@ -4151,6 +4244,10 @@
         "targetAlias": "netcoreapp3.1",
         "dependencies": {
           "DSharpPlus": {
+            "target": "Package",
+            "version": "[4.1.0, )"
+          },
+          "DSharpPlus.CommandsNext": {
             "target": "Package",
             "version": "[4.1.0, )"
           }
