@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Images"
+    "\\Images",
+    "\\UPBot Src"
   ],
-  "SelectedNode": "\\README.md",
+  "SelectedNode": "\\UPBot Src\\Program.cs",
   "PreviewInSolutionExplorer": false
 }
