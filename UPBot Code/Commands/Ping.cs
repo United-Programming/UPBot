@@ -34,6 +34,7 @@ public class PingModule : BaseCommandModule {
   };
 
   readonly Random random = new Random();
+  int lastGlobal = -1;
 
   Task GeneratePong(CommandContext ctx) {
 
@@ -62,7 +63,11 @@ public class PingModule : BaseCommandModule {
     if (annoyedLevel == -1) return ctx.RespondAsync(""); // No answer
 
     // Was the request already done recently?
-    string msg = answers[annoyedLevel, random.Next(0, 7)];
+    int rnd = random.Next(0, 7);
+    while (rnd == lastRequest.lastRandom || rnd == lastGlobal) rnd = random.Next(0, 7); // Find one that is not the same of last one
+    lastRequest.lastRandom = rnd; // Record for the next time
+    lastGlobal = rnd; // Record for the next time
+    string msg = answers[annoyedLevel, rnd];
     msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
     return ctx.RespondAsync(msg);
   }
@@ -73,12 +78,14 @@ public class PingModule : BaseCommandModule {
   public class LastRequestByMember {
     public ulong memberId;            // the ID of the Discord user
     public DateTime[] requestTimes;   // An array (10 elements) of when the last pings were done by the user
+    public int lastRandom;
     readonly TimeSpan tenMins = TimeSpan.FromSeconds(600);
 
     public LastRequestByMember(ulong memberId) {
       this.memberId = memberId;
       requestTimes = new DateTime[MaxTrackedRequests];
       requestTimes[0] = DateTime.Now;
+      lastRandom = -1;
       for (int i = 1; i < MaxTrackedRequests; i++)
         requestTimes[i] = DateTime.MinValue;
     }
@@ -189,7 +196,7 @@ public class PingModule : BaseCommandModule {
           break;
       }
 
-      Console.WriteLine(memberId + ": idx=" + index + " num=" + num + " avg=" + averageBetweenRequests + " amt=" + amount.TotalSeconds);
+      Console.WriteLine(memberId + ": idx=" + index + " num=" + num + " avg=" + averageBetweenRequests + " amt=" + amount.TotalSeconds); // FIXME remove the debug line
 
       return index;
     }
