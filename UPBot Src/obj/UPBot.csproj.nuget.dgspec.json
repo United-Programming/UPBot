@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\claud\\source\\repos\\UPBot Src\\UPBot.csproj": {}
+    "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot Src\\UPBot.csproj": {}
   },
   "projects": {
-    "C:\\Users\\claud\\source\\repos\\UPBot Src\\UPBot.csproj": {
+    "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot Src\\UPBot.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\claud\\source\\repos\\UPBot Src\\UPBot.csproj",
+        "projectUniqueName": "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot Src\\UPBot.csproj",
         "projectName": "UPBot",
-        "projectPath": "C:\\Users\\claud\\source\\repos\\UPBot Src\\UPBot.csproj",
+        "projectPath": "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot Src\\UPBot.csproj",
         "packagesPath": "C:\\Users\\claud\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\claud\\source\\repos\\UPBot Src\\obj\\",
+        "outputPath": "C:\\Users\\claud\\source\\repos\\UPBot\\UPBot Src\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\claud\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -40,6 +40,10 @@
         "netcoreapp2.1": {
           "targetAlias": "netcoreapp2.1",
           "dependencies": {
+            "DSharpPlus": {
+              "target": "Package",
+              "version": "[4.1.0, )"
+            },
             "Microsoft.NETCore.App": {
               "suppressParent": "All",
               "target": "Package",
