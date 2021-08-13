@@ -21,7 +21,16 @@ public class PingModule : BaseCommandModule {
   public async Task GreetCommand2(CommandContext ctx) {
     await GeneratePong(ctx);
   }
-
+  [Command("helplanguages")] // By Jonathan
+  public async Task GreetCommand3(CommandContext ctx){
+  await GeneratePong(ctx);
+  }
+  /*
+  [Command("helpengines")]
+  public async Task GreetCommand4(CommandContext ctx){
+  await GeneratePong(ctx);
+  }
+  */
   string[] basicAnswers = {
     "I am alive!", "Pong", "Ack", "I am here", "I am here $$$", "I am here @@@", "Pong, $$$"
   };
@@ -31,6 +40,10 @@ public class PingModule : BaseCommandModule {
   string[] stillDoingTests = {
     "Still testing?", "Are you still debugging?", "Still testing, $$$?", "Yeah, I am still here"
   };
+  string[] helpInfoLanguages = {
+  "Hello! @@@, You looking for coding tutorials? here some good links where you can learn your specific language. Links: C#: https://youtu.be/GhQdlIFylQ8 Phyton: https://www.youtube.com/watch?v=rfscVS0vtbw&ab_channel=freeCodeCamp.org Java: https://youtu.be/grEKMHGYyns"
+  };
+  
   Random random = new Random();
   TimeSpan tenMins = TimeSpan.FromSeconds(600);
   TimeSpan oneMin = TimeSpan.FromSeconds(60);
