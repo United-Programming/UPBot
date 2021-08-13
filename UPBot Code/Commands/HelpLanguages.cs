@@ -42,23 +42,23 @@ public class HelpLanguagesModel : BaseCommandModule
 
     string[] helpfulAnswersCsharp =
     {
-        "Hello! @@@, here some good tutorial about :CSharp:! \n Link: \n C# :CSharp: :https://youtu.be/GhQdlIFylQ8, 
-        "Hey! hey! @@@, here some sick tutorial about :CSharp:! \n Link: C# :CSharp: :https://youtu.be/GhQdlIFylQ8
+        "Hello! @@@, here some good tutorial about :CSharp:! \n Link: \n C# :CSharp: :https://youtu.be/GhQdlIFylQ8", 
+        "Hey! hey! @@@, here some sick tutorial about :CSharp:! \n Link: C# :CSharp: :https://youtu.be/GhQdlIFylQ8"
     };
     string[] helpfulAnswersCplusplus =
 {
-        "Hello! @@@, here some good tutorial about :CPP:! \n Link: \n C++ :CPP: :https://youtu.be/vLnPwxZdW4Y, 
-        "Hey! hey! @@@, here some basic tutorial about :CPP:! \n Link: C++ :CPP: :https://youtu.be/vLnPwxZdW4Y
+        "Hello! @@@, here some good tutorial about :CPP:! \n Link: \n C++ :CPP: :https://youtu.be/vLnPwxZdW4Y", 
+        "Hey! hey! @@@, here some basic tutorial about :CPP:! \n Link: C++ :CPP: :https://youtu.be/vLnPwxZdW4Y"
     };
     string[] helpfulAnswersPhyton =
 {
-        "Hello! @@@, have a good one tutorial about how to code on :Phyton:! \n Link:\n Phyton :Phyton: :https://youtu.be/rfscVS0vtbw, 
-        "Hey! hey! @@@, here some good simple course about :Phyton: language! \n Link: Phyton :Phyton: :https://youtu.be/rfscVS0vtbw
+        "Hello! @@@, have a good one tutorial about how to code on :Phyton:! \n Link:\n Phyton :Phyton: :https://youtu.be/rfscVS0vtbw", 
+        "Hey! hey! @@@, here some good simple course about :Phyton: language! \n Link: Phyton :Phyton: :https://youtu.be/rfscVS0vtbw"
     };
     string[] helpfulAnswersJava =
 {
-        "Hello! @@@, here some good tutorial about how to code on :Java:! \n Link: \n Java :Java: :https://youtu.be/grEKMHGYyns, 
-        "Hey! hey! @@@, here some sick tutorial about how to code on :Java:! \n Link: Java :Java: :https://youtu.be/grEKMHGYyns
+        "Hello! @@@, here some good tutorial about how to code on :Java:! \n Link: \n Java :Java: :https://youtu.be/grEKMHGYyns", 
+        "Hey! hey! @@@, here some sick tutorial about how to code on :Java:! \n Link: Java :Java: :https://youtu.be/grEKMHGYyns"
     };
 
     Task GenerateHelpfulAnswer(CommandContext ctx)
