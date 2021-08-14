@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -212,5 +212,4 @@ public class Refactor : BaseCommandModule {
     public int wJs; // Weight for Javascript
     public int wPy; // Weight for Python
   }
-
 }
