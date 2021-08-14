@@ -4,29 +4,29 @@ using DSharpPlus.Entities;
 using System;
 using System.Threading.Tasks;
 /// <summary>
-/// This command implements a basic ping command.
-/// It is mostly for debug reasons.
+/// This command implements a WhoIs command.
+/// It gives info about a Discord User or yourself
 /// author: CPU
 /// </summary>
 public class WhoIs : BaseCommandModule {
 
   [Command("whois")]
-  public async Task WhoIsCommand(CommandContext ctx) {
+  public async Task WhoIsCommand(CommandContext ctx) { // Basic version without parameters
     await GenerateWhoIs(ctx, null);
   }
 
   [Command("whoami")]
-  public async Task WhoAmICommand(CommandContext ctx) {
+  public async Task WhoAmICommand(CommandContext ctx) { // Alternate version without parameters
     await GenerateWhoIs(ctx, null);
   }
 
   [Command("whois")]
-  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) {
+  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) { // Standard version with a user
     await GenerateWhoIs(ctx, member);
   }
 
   private Task GenerateWhoIs(CommandContext ctx, DiscordMember m) {
-    if (m == null) {
+    if (m == null) { // If we do not have a user we use the member that invoked the command
       m = ctx.Member;
     }
     bool you = m == ctx.Member;
@@ -61,7 +61,7 @@ public class WhoIs : BaseCommandModule {
       string booster = bdate.Year + "/" + bdate.Month + "/" + bdate.Day;
       b.AddField("Booster", "Form " + booster, true);
     }
-    if (m.Flags != null) b.AddField("Flags", m.Flags.ToString(), true);
+    if (m.Flags != null) b.AddField("Flags", m.Flags.ToString(), true); // Only the default flags will be shown. This bot will not be very diffused so probably we do not need specific checks for flags
 
     string roles = "";
     int num = 0;
@@ -74,7 +74,7 @@ public class WhoIs : BaseCommandModule {
     else
       b.AddField(num + " Roles", roles, false);
 
-    string perms = "";
+    string perms = ""; // Not all permissions are shown
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreateInstantInvite)) perms += ", Invite";
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.KickMembers)) perms += ", Kick";
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.BanMembers)) perms += ", Ban";
