@@ -12,22 +12,22 @@ using System.Threading.Tasks;
 public class Refactor : BaseCommandModule {
 
   [Command("refactor")]
-  public async Task WhoIsCommand(CommandContext ctx) { // Refactors the previous post, if it is code
+  public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
     await RefactorCode(ctx, null, null);
   }
 
   [Command("refactor")]
-  public async Task WhoIsCommand(CommandContext ctx, string language) { // Refactors the previous post, if it is code
+  public async Task RefactorCommand(CommandContext ctx, string language) { // Refactors the previous post, if it is code
     await RefactorCode(ctx, null, language);
   }
 
   [Command("refactor")]
-  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) { // Refactor the last post of the specified user in the channel
+  public async Task RefactorCommand(CommandContext ctx, DiscordMember member) { // Refactor the last post of the specified user in the channel
     await RefactorCode(ctx, member, null);
   }
 
   [Command("refactor")]
-  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member, string language) { // Refactor the last post of the specified user in the channel
+  public async Task RefactorCommand(CommandContext ctx, DiscordMember member, string language) { // Refactor the last post of the specified user in the channel
     await RefactorCode(ctx, member, language);
   }
 
@@ -189,6 +189,7 @@ public class Refactor : BaseCommandModule {
     new LangKWord{regexp = new Regex("private\\s+[a-z0-9<>]+\\s[a-z0-9]+\\s*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),  wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0 },
     new LangKWord{regexp = new Regex("public\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                 wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0 },
     new LangKWord{regexp = new Regex("public:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                   wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0 },
+    new LangKWord{regexp = new Regex("private:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                   wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0 },
     new LangKWord{regexp = new Regex("private\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0 },
     new LangKWord{regexp = new Regex("\\};", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                      wCs = 0, wCp = 2, wJv = 2, wJs = 1, wPy = 0 },
     new LangKWord{regexp = new Regex("let\\s+[a-z0-9_]+\\s*=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),    wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0 },
