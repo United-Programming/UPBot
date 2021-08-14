@@ -66,11 +66,31 @@ public class WhoIs : BaseCommandModule {
     else
       b.AddField(num + " Roles", roles, false);
 
+    string perms = "";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreateInstantInvite)) perms += ", Invite";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.KickMembers)) perms += ", Kick";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.BanMembers)) perms += ", Ban";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)) perms += ", Admin";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageChannels)) perms += ", Manage Channels";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageGuild)) perms += ", Manage Server";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.AddReactions)) perms += ", Reactions";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ViewAuditLog)) perms += ", Audit";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageMessages)) perms += ", Manage Messages";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.EmbedLinks)) perms += ", Links";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.AttachFiles)) perms += ", Files";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseExternalEmojis)) perms += ", Ext Emojis";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.Speak)) perms += ", Speak";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageRoles)) perms += ", Manage Roles";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageEmojis)) perms += ", Manage Emojis";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseSlashCommands)) perms += ", Use Bot";
+    if (m.Permissions.HasFlag(DSharpPlus.Permissions.UsePublicThreads)) perms += ", Use Threads";
+    if (perms.Length > 0) b.AddField("Permissions", perms.Substring(2), false);
 
-    //    m.Permissions;
+
+
     //    m.Presence;
     //    m.VoiceState;
-    
+
 
     return ctx.RespondAsync(b.Build());
   }
