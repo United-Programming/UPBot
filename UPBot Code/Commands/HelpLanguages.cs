@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -27,33 +24,48 @@ public class HelpLanguagesModel : BaseCommandModule
             return;
         }
         lang = lang.Trim().ToLowerInvariant();
-        if (lang == "c#") await GenerateHelpfulAnswer(ctx);
-        else if (lang == "c++") await GenerateHelpfulAnswer1(ctx);
-        else if (lang == "cpp") await GenerateHelpfulAnswer1(ctx);
-        else if (lang == "python") await GenerateHelpfulAnswer2(ctx);
-        else if (lang == "java") await GenerateHelpfulAnswer3(ctx);
+        if (lang == "c#") {
+            await GenerateHelpfulAnswer(ctx);
+            await ctx.RespondAsync("https://youtu.be/GhQdlIFylQ8");
+        }
+        else if (lang == "c++") {
+            await GenerateHelpfulAnswer1(ctx);
+            await ctx.RespondAsync("https://youtu.be/vLnPwxZdW4Y");
+        }
+        else if (lang == "cpp") {
+            await GenerateHelpfulAnswer1(ctx);
+            await ctx.RespondAsync("https://youtu.be/vLnPwxZdW4Y");
+        }
+        else if (lang == "python") {
+            await GenerateHelpfulAnswer2(ctx);
+            await ctx.RespondAsync("https://youtu.be/rfscVS0vtbw");
+        }
+        else if (lang == "java") {
+            await GenerateHelpfulAnswer3(ctx);
+            await ctx.RespondAsync("https://youtu.be/grEKMHGYyns");
+        }
         else await ctx.RespondAsync(ctx.Member.Mention + "Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
     }
 
     string[] helpfulAnswersCsharp =
     {
-        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>! \n Link: \n<:csharp:831465428214743060>:https://youtu.be/GhQdlIFylQ8",
-        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>! \n Link:<:csharp:831465428214743060>:https://youtu.be/GhQdlIFylQ8"
+        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>!\nLink:\n<:csharp:831465428214743060>:",
+        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>!\nLink:<:csharp:831465428214743060>:"
     };
     string[] helpfulAnswersCplusplus =
   {
-        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>! \n Link: \n<:cpp:831465408874676273>:https://youtu.be/vLnPwxZdW4Y",
-        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>! \n Link:<:cpp:831465408874676273>:https://youtu.be/vLnPwxZdW4Y"
+        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>!\nLink:\n<:cpp:831465408874676273>:",
+        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>!\nLink:<:cpp:831465408874676273>:"
     };
     string[] helpfulAnswersPhyton =
   {
-        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>! \n <:python:831465381016895500>:https://youtu.be/rfscVS0vtbw",
-        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500> language! \n<:python:831465381016895500>:https://youtu.be/rfscVS0vtbw"
+        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>!\nLink:\n<:python:831465381016895500>:",
+        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500> language!\nLink:\n<:python:831465381016895500>:"
     };
     string[] helpfulAnswersJava =
-  {
-        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\n Link: \n<:java:875852276017815634>:https://youtu.be/grEKMHGYyns",
-        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>! \n Link:<:java:875852276017815634>:https://youtu.be/grEKMHGYyns"
+    {
+        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\nLink:\n<:java:875852276017815634>:",
+        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>!\nLink:<:java:875852276017815634>:"
     };
 
     Task GenerateHelpfulAnswer(CommandContext ctx)
@@ -90,10 +102,10 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersCsharp.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersCsharp[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
     Task GenerateHelpfulAnswer1(CommandContext ctx)
     {
@@ -128,10 +140,10 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersCplusplus.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersCplusplus[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
     Task GenerateHelpfulAnswer2(CommandContext ctx)
     {
@@ -167,10 +179,10 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersPhyton.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersPhyton[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
     Task GenerateHelpfulAnswer3(CommandContext ctx)
     {
@@ -206,10 +218,10 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersJava.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersJava[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
 
     public class LastRequestByMember
