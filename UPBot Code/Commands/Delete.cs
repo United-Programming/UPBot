@@ -54,9 +54,10 @@ public class Delete : BaseCommandModule
         string mentionUserStr = targetUser == null ? string.Empty : $"by {targetUser.DisplayName}";
         string overLimitStr = limitExceeded ? callbackLimitExceeded : string.Empty;
         string messagesLiteral = UtilityFunctions.PluralFormatter(count, "message", "messages");
+        string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
         
         await ctx.Message.DeleteAsync();
-        await ctx.RespondAsync($"The last {count} {messagesLiteral} {mentionUserStr} have been successfully deleted{overLimitStr}.");
+        await ctx.RespondAsync($"The last {count} {messagesLiteral} '{mentionUserStr}' {hasLiteral} been successfully deleted{overLimitStr}.");
     }
 
     private bool CheckLimit(int count)
