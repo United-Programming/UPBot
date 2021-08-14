@@ -5,29 +5,52 @@ using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus;
 /// <summary>
 /// Command used to refactor as codeblock some code pasted by a user
 /// author: CPU
 /// </summary>
 public class Refactor : BaseCommandModule {
 
+  [Command("checklanguage")]
+  [Description("Check what language is in the last post or in the post you replied to")]
+  public async Task CheckLanguage(CommandContext ctx) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, null, "best");
+  }
+
+  [Command("checklanguage")]
+  [Description("Check what language is in the last post of the user")]
+  public async Task CheckLanguage(CommandContext ctx, [Description("The user the posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, member, "best");
+  }
+
   [Command("refactor")]
+  [Description("Replace the last post of the specified user or the post you replied to with a formatted code block using the specified language")]
+  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
     await RefactorCode(ctx, null, null);
   }
 
   [Command("refactor")]
-  public async Task RefactorCommand(CommandContext ctx, string language) { // Refactors the previous post, if it is code
+  [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
+  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
+  public async Task RefactorCommand(CommandContext ctx, [Description("Force the Language to use. Use 'best' or 'Analyze' to find the best language.")] string language) { // Refactors the previous post, if it is code
     await RefactorCode(ctx, null, language);
   }
 
   [Command("refactor")]
-  public async Task RefactorCommand(CommandContext ctx, DiscordMember member) { // Refactor the last post of the specified user in the channel
+  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
+  public async Task RefactorCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
     await RefactorCode(ctx, member, null);
   }
 
   [Command("refactor")]
-  public async Task RefactorCommand(CommandContext ctx, DiscordMember member, string language) { // Refactor the last post of the specified user in the channel
+  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
+  public async Task RefactorCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member, [Description("Force the Language to use. Use 'best' or 'Analyze' to find the best language.")]  string language) { // Refactor the last post of the specified user in the channel
     await RefactorCode(ctx, member, language);
   }
 
@@ -65,13 +88,17 @@ public class Refactor : BaseCommandModule {
     string guessed = "no one";
     string best = "";
     string langEmoji = "";
-    int w = weightCs;
+    int w = 0;
     if (weightCs > w) { guessed = "<:csharp:831465428214743060> C#"; w = weightCp; best = "cs"; langEmoji = ":CSharp:"; }
     if (weightCp > w) { guessed = "<:cpp:831465408874676273> C++"; w = weightCp; best = "cpp"; langEmoji = ":CPP:"; }
     if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = ":Javascript:"; }
     if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = ":Java:"; }
     if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = ":Python:"; }
     if (w == 0 && language == null) return ctx.RespondAsync("Nothing to refactor");
+
+    language = NormalizeLanguage(language, best);
+    if (language == null)
+      return ctx.RespondAsync("Best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
 
     // Remove the ``` at begin and end, if any. And the code name after initial ```
     if (code.Length > 3 && code.Substring(0, 3) == "```") {
@@ -82,9 +109,6 @@ public class Refactor : BaseCommandModule {
       code = code.Substring(0, code.Length - 3);
     }
     code = code.Trim(' ', '\t', '\r', '\n');
-    language = NormalizeLanguage(language, best);
-    if (language == null)
-      return ctx.RespondAsync("Best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
     code = toRefactor.Author.Mention + " Replaced with refactored code\n" + "```" + language + "\n" + code + "\n```";
 
     if (guessed == "no one" && language != null) {
@@ -200,9 +224,11 @@ public class Refactor : BaseCommandModule {
     new LangKWord{regexp = new Regex("else:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 8 },
     new LangKWord{regexp = new Regex("\\[(\\s*[0-9]+\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5 },
     new LangKWord{regexp = new Regex("\\[(\\s*\"[^\"]*\"\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5 },
-    new LangKWord{regexp = new Regex("while[\\sa-z0-9\\(\\)]+:\\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 5 },
-    new LangKWord{regexp = new Regex("\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6 },
+    new LangKWord{regexp = new Regex("while[\\sa-z0-9\\(\\)]+:\\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),  wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 5 },
+    new LangKWord{regexp = new Regex("\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),            wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6 },
     new LangKWord{regexp = new Regex("\\{.+\"{0,1}[a-z0-9_]+\"{0,1}\\s*:\\s*((\".*\")|[0-9\\.]+)\\s*,", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0 },
+    new LangKWord{regexp = new Regex("System\\.out\\.println", RegexOptions.None, TimeSpan.FromSeconds(1)),             wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0 },
+    new LangKWord{regexp = new Regex("String\\[\\]", RegexOptions.None, TimeSpan.FromSeconds(1)),                       wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0 },
   };
 
   public class LangKWord {
