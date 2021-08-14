@@ -16,14 +16,18 @@ public class HelpLanguagesModel : BaseCommandModule
     public async Task ErrorMessage(CommandContext ctx)
     {
         DiscordMember member = ctx.Member;
+        DiscordEmbedBuilder deb = new DiscordEmbedBuilder();
+        deb.Title = "Help Language - How To Use";
+        deb.WithColor(new DiscordColor("ff0025"));
         await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
+        return ctx.RespondAsync(deb.Build());
     }
     [Command("helplanguage")]
     public async Task HelpCommand(CommandContext ctx, string lang) // c#
     {
         if (lang == null)
         {
-            await ctx.RespondAsync(ctx.Member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
+            ErrorMessage();
             return;
         }
         lang = lang.Trim().ToLowerInvariant();
@@ -37,23 +41,23 @@ public class HelpLanguagesModel : BaseCommandModule
 
     string[] helpfulAnswersCsharp =
     {
-        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>!\nLink::csharp:831465428214743060>:\n https://youtu.be/GhQdlIFylQ8",
-        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>!\nLink::csharp:831465428214743060>:\n https://youtu.be/GhQdlIFylQ8"
+        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>!\nLink:https://youtu.be/GhQdlIFylQ8",
+        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>!\nLink:https://youtu.be/GhQdlIFylQ8"
     };
     string[] helpfulAnswersCplusplus =
     {
-        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>!\nLink:<:cpp:831465408874676273>:\n https://youtu.be/vLnPwxZdW4Y",
-        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>!\nLink:<:cpp:831465408874676273>:\n https://youtu.be/vLnPwxZdW4Y"
+        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>!\nLink:https://youtu.be/vLnPwxZdW4Y",
+        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>!\nLink:https://youtu.be/vLnPwxZdW4Y"
     };
     string[] helpfulAnswersPython =
     {
-        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>!\nLink:<:python:831465381016895500>:\n https://youtu.be/rfscVS0vtbw",
-        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500>!\nLink:<:python:831465381016895500>:\n https://youtu.be/rfscVS0vtbw"
+        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>!\nLink:https://youtu.be/rfscVS0vtbw",
+        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500>!\nLink:https://youtu.be/rfscVS0vtbw"
     };
     string[] helpfulAnswersJava =
     {
-        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\nLink:<:java:875852276017815634>:\n https://youtu.be/grEKMHGYyns",
-        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>!\nLink:<:java:875852276017815634>:\n https://youtu.be/grEKMHGYyns"
+        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\nLink:https://youtu.be/grEKMHGYyns",
+        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>!\nLink:https://youtu.be/grEKMHGYyns"
     };
 
     Task GenerateHelpfulAnswerCsharp(CommandContext ctx)
