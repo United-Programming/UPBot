@@ -56,6 +56,9 @@ public class Delete : BaseCommandModule
         await Success(ctx, limitExceeded, count, targetUser);
     }
 
+    /// <summary>
+    /// The core-process of deleting the messages
+    /// </summary>
     public async Task DeleteMessages(CommandContext ctx, IEnumerable<DiscordMessage> messages)
     {
         foreach (DiscordMessage m in messages)
