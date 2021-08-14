@@ -57,7 +57,6 @@ public class HelpLanguagesModel : BaseCommandModule
         if (!languageLinks.ContainsKey(lang))
         {
             await ErrorMessage(ctx);
-            return;
         }
         
         await GenerateHelpfulAnswer(ctx, lang);
