@@ -1,8 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using UPBot;
 
 /// <summary>
 /// This command will delete the last x messages
@@ -20,13 +21,16 @@ public class Delete : BaseCommandModule
     [Command("delete")]
     public async Task DeleteCommand(CommandContext ctx, int count)
     {
-        bool limitExceeded = CheckLimit(count);
-        var messages = ctx.Channel.GetMessagesAsync(count + 1).Result;
-        foreach (DiscordMessage m in messages)
+        if (count <= 0)
         {
-            if(m != ctx.Message)
-                await m.DeleteAsync();
+            await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
+            return;
         }
+        
+        bool limitExceeded = CheckLimit(count);
+        
+        var messages = ctx.Channel.GetMessagesAsync(count + 1).Result;
+        await DeleteMessages(ctx, messages);
 
         await Success(ctx, limitExceeded, count);
     }
@@ -37,12 +41,28 @@ public class Delete : BaseCommandModule
     [Command("delete")]
     public async Task DeleteCommand(CommandContext ctx, DiscordMember targetUser, int count)
     {
+        if (count <= 0)
+        {
+            await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
+            return;
+        }
+        
         bool limitExceeded = CheckLimit(count);
         
-        // TODO: Get messages by user
-        // TODO: Delete messages
+        var allMessages = ctx.Channel.GetMessagesAsync().Result; // Get last 100 messages
+        var userMessages = allMessages.Where(x => x.Author == targetUser).Take(count);
+        await DeleteMessages(ctx, userMessages);
 
         await Success(ctx, limitExceeded, count, targetUser);
+    }
+
+    public async Task DeleteMessages(CommandContext ctx, IEnumerable<DiscordMessage> messages)
+    {
+        foreach (DiscordMessage m in messages)
+        {
+            if(m != ctx.Message)
+                await m.DeleteAsync();
+        }
     }
 
     /// <summary>
@@ -51,13 +71,13 @@ public class Delete : BaseCommandModule
     /// </summary>
     public async Task Success(CommandContext ctx, bool limitExceeded, int count, DiscordMember targetUser = null)
     {
-        string mentionUserStr = targetUser == null ? string.Empty : $"by {targetUser.DisplayName}";
+        string mentionUserStr = targetUser == null ? string.Empty : $"by '{targetUser.DisplayName}'";
         string overLimitStr = limitExceeded ? callbackLimitExceeded : string.Empty;
         string messagesLiteral = UtilityFunctions.PluralFormatter(count, "message", "messages");
         string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
         
         await ctx.Message.DeleteAsync();
-        await ctx.RespondAsync($"The last {count} {messagesLiteral} '{mentionUserStr}' {hasLiteral} been successfully deleted{overLimitStr}.");
+        await ctx.RespondAsync($"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.");
     }
 
     private bool CheckLimit(int count)
