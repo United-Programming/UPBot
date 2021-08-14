@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -15,7 +16,12 @@ public class GameModule : BaseCommandModule
     [Command("game")]
     public async Task GameCommand(CommandContext ctx)
     {
-        await ctx.RespondAsync("Available commands: bool");
+        StringBuilder sb = new StringBuilder("Available game commmands\n");
+        sb.AppendLine("========================");
+        sb.AppendLine(String.Format("{0, -10}: {1}", "bool", "True or False"));
+        sb.AppendLine(String.Format("{0, -10}: {1}", "rps", "Rock, Paper, Scissors"));
+
+        await ctx.RespondAsync(String.Format("```{0}```", sb.ToString()));
     }
 
     [Command("bool")]
@@ -28,6 +34,12 @@ public class GameModule : BaseCommandModule
     public async Task RPSCommand(CommandContext ctx, string kind)
     {
         await PlayRockPaperScissors(ctx, kind);
+    }
+
+    [Command("rps")]
+    public async Task RPSCommand(CommandContext ctx)
+    {
+        await PlayRockPaperScissors(ctx, null);
     }
 
 
@@ -56,6 +68,9 @@ public class GameModule : BaseCommandModule
 
     Task PlayRockPaperScissors(CommandContext ctx, string kind)
     {
+        if (kind == null)
+            return ctx.RespondAsync("```\nRock Paper Scissors\nUsage pattern: rps [rock|paper|scissors]\n```");
+
         RPSTypes playerChoice;
 
         switch(kind)
