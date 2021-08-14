@@ -16,23 +16,23 @@ public class HelpLanguagesModel : BaseCommandModule
     public async Task ErrorMessage(CommandContext ctx)
     {
         DiscordMember member = ctx.Member;
-        await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+        await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
     }
     [Command("helplanguage")]
     public async Task HelpCommand(CommandContext ctx, string lang) // c#
     {
         if (lang == null)
         {
-            await ctx.RespondAsync(ctx.Member.Mention + " , Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+            await ctx.RespondAsync(ctx.Member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
             return;
         }
         lang = lang.Trim().ToLowerInvariant();
         if (lang == "c#") await GenerateHelpfulAnswer(ctx);
         else if (lang == "c++") await GenerateHelpfulAnswer1(ctx);
         else if (lang == "cpp") await GenerateHelpfulAnswer1(ctx);
-        else if (lang == "phyton") await GenerateHelpfulAnswer2(ctx);
+        else if (lang == "python") await GenerateHelpfulAnswer2(ctx);
         else if (lang == "java") await GenerateHelpfulAnswer3(ctx);
-        else await ctx.RespondAsync(ctx.Member.Mention + "Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+        else await ctx.RespondAsync(ctx.Member.Mention + "Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
     }
 
     string[] helpfulAnswersCsharp =
@@ -68,7 +68,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - C#";
-        deb.WithColor("#812f84");
+        deb.WithColor(new DiscordColor("812f84"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -106,7 +106,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - C++";
-        deb.WithColor("#3f72db");
+        deb.WithColor(new DiscordColor("3f72db"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -144,8 +144,8 @@ public class HelpLanguagesModel : BaseCommandModule
         DiscordEmbedBuilder deb = new DiscordEmbedBuilder();
         ulong memberId = member.Id;
 
-        deb.Title = "Help Language - Phyton";
-        deb.WithColor("#d1e13b");
+        deb.Title = "Help Language - Python";
+        deb.WithColor(new DiscordColor("d1e13b"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -184,7 +184,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - Java";
-        deb.WithColor("#e92c2c");
+        deb.WithColor(new DiscordColor("e92c2c"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
