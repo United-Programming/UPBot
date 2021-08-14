@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -6,12 +6,24 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 /// <summary>
-/// Command used to refactor some code pasted by a user as a codeblock
+/// Command used to refactor as codeblock some code pasted by a user
 /// author: CPU
 /// </summary>
 public class Refactor : BaseCommandModule {
 
   [Command("refactor")]
+  public async Task WhoIsCommand(CommandContext ctx) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, null, null);
+  }
+
+  [Command("refactor")]
+  public async Task WhoIsCommand(CommandContext ctx, string language) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, null, language);
+  }
+
+  [Command("refactor")]
+  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) { // Refactor the last post of the specified user in the channel
+    await RefactorCode(ctx, member, null);
   }
 
   [Command("refactor")]
@@ -50,14 +62,16 @@ public class Refactor : BaseCommandModule {
       }
     }
 
-    string guessed = "C# <:csharp:831465428214743060>";
-    string best = "cs";
+    string guessed = "no one";
+    string best = "";
+    string langEmoji = "";
     int w = weightCs;
-    if (weightCp > w) { guessed = "C++ <:cpp:831465408874676273>"; w = weightCp; best = "cpp"; }
-    if (weightJs > w) { guessed = "Javascript <:Javascript:876103767068647435>"; w = weightJs; best = "js"; }
-    if (weightJv > w) { guessed = "Java <:java:875852276017815634>"; w = weightJv; best = "java"; }
-    if (weightPy > w) { guessed = "Python <:python:831465381016895500>"; w = weightPy; best = "python"; }
-    if (w == 0) return ctx.RespondAsync("Nothing to refactor");
+    if (weightCs > w) { guessed = "<:csharp:831465428214743060> C#"; w = weightCp; best = "cs"; langEmoji = ":CSharp:"; }
+    if (weightCp > w) { guessed = "<:cpp:831465408874676273> C++"; w = weightCp; best = "cpp"; langEmoji = ":CPP:"; }
+    if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = ":Javascript:"; }
+    if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = ":Java:"; }
+    if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = ":Python:"; }
+    if (w == 0 && language == null) return ctx.RespondAsync("Nothing to refactor");
 
     // Remove the ``` at begin and end, if any. And the code name after initial ```
     if (code.Length > 3 && code.Substring(0, 3) == "```") {
@@ -70,17 +84,22 @@ public class Refactor : BaseCommandModule {
     code = code.Trim(' ', '\t', '\r', '\n');
     language = NormalizeLanguage(language, best);
     if (language == null)
-      return ctx.RespondAsync("best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
+      return ctx.RespondAsync("Best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
     code = toRefactor.Author.Mention + " Replaced with refactored code\n" + "```" + language + "\n" + code + "\n```";
 
-    DiscordEmoji emoji = DiscordEmoji.FromUnicode("😀");
-    DiscordMessage replacement = await ctx.RespondAsync(code);
-    //DiscordEmoji emoji = DiscordEmoji.FromGuildEmote(ctx.Client, 876182602011271258ul);
+    if (guessed == "no one" && language != null) {
+      langEmoji = GetLanguageEmoji(language);
+    }
+
+    DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
+    DiscordEmoji.TryFromName(ctx.Client, ":AutoRefactored:", out DiscordEmoji autoRefactored);
+    DiscordEmoji.TryFromName(ctx.Client, langEmoji, out DiscordEmoji emoji);
     try {
-      await replacement.CreateReactionAsync(emoji);
+      if (autoRefactored != null) await replacement.CreateReactionAsync(autoRefactored);
+      if (emoji != null) await replacement.CreateReactionAsync(emoji);
       await toRefactor.DeleteAsync();
       await ctx.Message.DeleteAsync();
-    } catch(Exception e) {
+    } catch (Exception e) {
       return ctx.RespondAsync("Exception: " + e.Message);
     }
     return ctx.RespondAsync("");
@@ -103,10 +122,29 @@ public class Refactor : BaseCommandModule {
     if (language == "javascript") return "js";
     if (language == "jscript") return "js";
     if (language == "js") return "js";
+    if (language == "json") return "js";
     if (language == "typescript") return "js";
     if (language == "phyton") return "python";
     if (language == "python") return "python";
     if (language == "py") return "python";
+    return "";
+  }
+  private string GetLanguageEmoji(string language) {
+    language = language.ToLowerInvariant();
+    if (language == "c#") return ":CSharp:";
+    if (language == "cs") return ":CSharp:";
+    if (language == "csharp") return ":CSharp:";
+    if (language == "cpp") return ":CPP:";
+    if (language == "c++") return ":CPP:";
+    if (language == "java") return ":Java:";
+    if (language == "javascript") return ":Javascript:";
+    if (language == "jscript") return ":Javascript:";
+    if (language == "js") return ":Javascript:";
+    if (language == "typescript") return ":Javascript:";
+    if (language == "json") return ":Javascript:";
+    if (language == "phyton") return ":Python:";
+    if (language == "python") return ":Python:";
+    if (language == "py") return ":Python:";
     return "";
   }
 
@@ -162,7 +200,8 @@ public class Refactor : BaseCommandModule {
     new LangKWord{regexp = new Regex("\\[(\\s*[0-9]+\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5 },
     new LangKWord{regexp = new Regex("\\[(\\s*\"[^\"]*\"\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5 },
     new LangKWord{regexp = new Regex("while[\\sa-z0-9\\(\\)]+:\\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 5 },
-    new LangKWord{regexp = new Regex("\n\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6 },
+    new LangKWord{regexp = new Regex("\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6 },
+    new LangKWord{regexp = new Regex("\\{.+\"{0,1}[a-z0-9_]+\"{0,1}\\s*:\\s*((\".*\")|[0-9\\.]+)\\s*,", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(1)),   wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0 },
   };
 
   public class LangKWord {
@@ -173,5 +212,4 @@ public class Refactor : BaseCommandModule {
     public int wJs; // Weight for Javascript
     public int wPy; // Weight for Python
   }
-
 }
