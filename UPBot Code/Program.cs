@@ -17,7 +17,7 @@ namespace UPBot {
       });
 
       var commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-        StringPrefixes = new[] { "/" } // The slash will be the command prefix
+        StringPrefixes = new[] { "\\" } // The backslash will be the command prefix
       });
       commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
 

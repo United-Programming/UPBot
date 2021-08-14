@@ -10,12 +10,17 @@ using System.Threading.Tasks;
 /// </summary>
 public class WhoIs : BaseCommandModule {
 
-  [Command("wz")]
+  [Command("whois")]
   public async Task WhoIsCommand(CommandContext ctx) {
     await GenerateWhoIs(ctx, null);
   }
 
-  [Command("wz")]
+  [Command("whoami")]
+  public async Task WhoAmICommand(CommandContext ctx) {
+    await GenerateWhoIs(ctx, null);
+  }
+
+  [Command("whois")]
   public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) {
     await GenerateWhoIs(ctx, member);
   }
@@ -36,7 +41,10 @@ public class WhoIs : BaseCommandModule {
     DateTimeOffset cdate = m.CreationTimestamp.UtcDateTime;
     string creation = cdate.Year + "/" + cdate.Month + "/" + cdate.Day;
 
-    b.WithDescription(m.Username + " joined on " + joined + " (has an account from " + creation + ")");
+    int daysJ = (int)(DateTime.Now - m.JoinedAt.DateTime).TotalDays;
+    int daysA = (int)(DateTime.Now - m.CreationTimestamp.DateTime).TotalDays;
+    double years = daysA / 365.25;
+    b.WithDescription(m.Username + " joined on " + joined + " (" + daysJ + " days)\n Account created on " + creation + " (" + daysA + " days, " + years.ToString("N1") + " years)");
 
     b.AddField("Is you",      you        ? "✓" : "❌", true);
     b.AddField("Is a bot",    m.IsBot    ? "🤖" : "❌", true);
@@ -85,12 +93,6 @@ public class WhoIs : BaseCommandModule {
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseSlashCommands)) perms += ", Use Bot";
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.UsePublicThreads)) perms += ", Use Threads";
     if (perms.Length > 0) b.AddField("Permissions", perms.Substring(2), false);
-
-
-
-    //    m.Presence;
-    //    m.VoiceState;
-
 
     return ctx.RespondAsync(b.Build());
   }
