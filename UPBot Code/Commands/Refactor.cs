@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 public class Refactor : BaseCommandModule {
 
   [Command("refactor")]
-  public async Task WhoIsCommand(CommandContext ctx) { // Refactors the previous post, if it is code
+  public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
     await RefactorCode(ctx, null, null);
   }
 
