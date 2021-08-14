@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -19,6 +20,9 @@ public class Delete : BaseCommandModule
     /// Delete the last x messages of any user
     /// </summary>
     [Command("delete")]
+    [Aliases("clear", "purge")]
+    [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+    [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, int count)
     {
         if (count <= 0)
@@ -39,6 +43,8 @@ public class Delete : BaseCommandModule
     /// Delete the last x messages of the specified user
     /// </summary>
     [Command("delete")]
+    [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
+    [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, DiscordMember targetUser, int count)
     {
         if (count <= 0)
