@@ -14,7 +14,7 @@ using DSharpPlus.Entities;
 public class Delete : BaseCommandModule
 {
     private const int MessageLimit = 50;
-    private readonly string callbackLimitExceeded = ", since you can't delete more than 50 messages at a time.";
+    private const string CallbackLimitExceeded = ", since you can't delete more than 50 messages at a time.";
     
     /// <summary>
     /// Delete the last x messages of any user
@@ -81,7 +81,7 @@ public class Delete : BaseCommandModule
     public async Task Success(CommandContext ctx, bool limitExceeded, int count, DiscordMember targetUser = null)
     {
         string mentionUserStr = targetUser == null ? string.Empty : $"by '{targetUser.DisplayName}'";
-        string overLimitStr = limitExceeded ? callbackLimitExceeded : string.Empty;
+        string overLimitStr = limitExceeded ? CallbackLimitExceeded : string.Empty;
         string messagesLiteral = UtilityFunctions.PluralFormatter(count, "message", "messages");
         string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
         
