@@ -19,16 +19,15 @@ public class HelpLanguagesModel : BaseCommandModule
         DiscordEmbedBuilder deb = new DiscordEmbedBuilder();
         deb.Title = "Help Language - How To Use";
         deb.WithColor(new DiscordColor("ff0025"));
-        await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
-        return ctx.RespondAsync(deb.Build());
+        deb.Description = member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`";
+        await ctx.RespondAsync(deb.Build());
     }
     [Command("helplanguage")]
     public async Task HelpCommand(CommandContext ctx, string lang) // c#
     {
         if (lang == null)
         {
-            ErrorMessage();
-            return;
+            await ErrorMessage(ctx);
         }
         lang = lang.Trim().ToLowerInvariant();
         if (lang == "c#")await GenerateHelpfulAnswerCsharp(ctx);

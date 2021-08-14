@@ -13,15 +13,25 @@ public class Refactor : BaseCommandModule {
 
   [Command("refactor")]
   public async Task WhoIsCommand(CommandContext ctx) { // Refactors the previous post, if it is code
-    await RefactorCode(ctx, null);
+    await RefactorCode(ctx, null, null);
+  }
+
+  [Command("refactor")]
+  public async Task WhoIsCommand(CommandContext ctx, string language) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, null, language);
   }
 
   [Command("refactor")]
   public async Task WhoIsCommand(CommandContext ctx, DiscordMember member) { // Refactor the last post of the specified user in the channel
-    await RefactorCode(ctx, member);
+    await RefactorCode(ctx, member, null);
   }
 
-  private async Task<Task<DiscordMessage>> RefactorCode(CommandContext ctx, DiscordMember m) {
+  [Command("refactor")]
+  public async Task WhoIsCommand(CommandContext ctx, DiscordMember member, string language) { // Refactor the last post of the specified user in the channel
+    await RefactorCode(ctx, member, language);
+  }
+
+  private async Task<Task<DiscordMessage>> RefactorCode(CommandContext ctx, DiscordMember m, string language) {
     DiscordChannel c = ctx.Channel;
     DiscordMessage toRefactor = null;
     if (ctx.Message.Reference != null) toRefactor = ctx.Message.Reference.Message;
@@ -52,18 +62,64 @@ public class Refactor : BaseCommandModule {
       }
     }
 
-    // FIXME remove the ``` at begin and end, if any. And the code name after initial ```
-
     string guessed = "C# <:csharp:831465428214743060>";
+    string best = "cs";
     int w = weightCs;
-    if (weightCp > w) { guessed = "C++ <:cpp:831465408874676273>"; w = weightCp; }
-    if (weightJs > w) { guessed = "Javascript <:Javascript:876103767068647435>"; w = weightJs; }
-    if (weightJv > w) { guessed = "Java <:java:875852276017815634>"; w = weightJv; }
-    if (weightPy > w) { guessed = "Python <:python:831465381016895500>"; w = weightPy; }
-
+    if (weightCp > w) { guessed = "C++ <:cpp:831465408874676273>"; w = weightCp; best = "cpp"; }
+    if (weightJs > w) { guessed = "Javascript <:Javascript:876103767068647435>"; w = weightJs; best = "js"; }
+    if (weightJv > w) { guessed = "Java <:java:875852276017815634>"; w = weightJv; best = "java"; }
+    if (weightPy > w) { guessed = "Python <:python:831465381016895500>"; w = weightPy; best = "python"; }
     if (w == 0) return ctx.RespondAsync("Nothing to refactor");
 
-    return ctx.RespondAsync("Refactoring: " + toRefactor.Content.Substring(0, 20) + "...\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy + " guessed language → " + guessed);
+    // Remove the ``` at begin and end, if any. And the code name after initial ```
+    if (code.Length > 3 && code.Substring(0, 3) == "```") {
+      int pos = code.IndexOf('\n');
+      if (pos != -1) code = code.Substring(pos + 1);
+    }
+    if (code.Length > 3 && code.Substring(code.Length - 3, 3) == "```") {
+      code = code.Substring(0, code.Length - 3);
+    }
+    code = code.Trim(' ', '\t', '\r', '\n');
+    language = NormalizeLanguage(language, best);
+    if (language == null)
+      return ctx.RespondAsync("best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
+    code = toRefactor.Author.Mention + " Replaced with refactored code\n" + "```" + language + "\n" + code + "\n```";
+
+    DiscordEmoji emoji = DiscordEmoji.FromUnicode("😀");
+    DiscordMessage replacement = await ctx.RespondAsync(code);
+    //DiscordEmoji emoji = DiscordEmoji.FromGuildEmote(ctx.Client, 876182602011271258ul);
+    try {
+      await replacement.CreateReactionAsync(emoji);
+      await toRefactor.DeleteAsync();
+      await ctx.Message.DeleteAsync();
+    } catch(Exception e) {
+      return ctx.RespondAsync("Exception: " + e.Message);
+    }
+    return ctx.RespondAsync("");
+  }
+
+  private string NormalizeLanguage(string language, string best) {
+    if (language == null) return best;
+    language = language.ToLowerInvariant();
+    if (language == "best") return null;
+    if (language == "what") return null;
+    if (language == "whatis") return null;
+    if (language == "analyze") return null;
+    if (language == "analysis") return null;
+    if (language == "c#") return "cs";
+    if (language == "cs") return "cs";
+    if (language == "csharp") return "cs";
+    if (language == "cpp") return "cpp";
+    if (language == "c++") return "cpp";
+    if (language == "java") return "java";
+    if (language == "javascript") return "js";
+    if (language == "jscript") return "js";
+    if (language == "js") return "js";
+    if (language == "typescript") return "js";
+    if (language == "phyton") return "python";
+    if (language == "python") return "python";
+    if (language == "py") return "python";
+    return "";
   }
 
   readonly LangKWord[] keywords = {
