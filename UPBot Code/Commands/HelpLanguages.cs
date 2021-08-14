@@ -16,47 +16,62 @@ public class HelpLanguagesModel : BaseCommandModule
     public async Task ErrorMessage(CommandContext ctx)
     {
         DiscordMember member = ctx.Member;
-        await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+        await ctx.RespondAsync(member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
     }
     [Command("helplanguage")]
     public async Task HelpCommand(CommandContext ctx, string lang) // c#
     {
         if (lang == null)
         {
-            await ctx.RespondAsync(ctx.Member.Mention + " , Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+            await ctx.RespondAsync(ctx.Member.Mention + " , Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
             return;
         }
         lang = lang.Trim().ToLowerInvariant();
-        if (lang == "c#") await GenerateHelpfulAnswer(ctx);
-        else if (lang == "c++") await GenerateHelpfulAnswer1(ctx);
-        else if (lang == "cpp") await GenerateHelpfulAnswer1(ctx);
-        else if (lang == "phyton") await GenerateHelpfulAnswer2(ctx);
-        else if (lang == "java") await GenerateHelpfulAnswer3(ctx);
-        else await ctx.RespondAsync(ctx.Member.Mention + "Available commands: c#, c++, phyton, java. \n Write command like this: `/helplanguage c#`");
+        if (lang == "c#") {
+            await GenerateHelpfulAnswerCsharp(ctx);
+            await ctx.RespondAsync("https://youtu.be/GhQdlIFylQ8");
+        }
+        else if (lang == "c++") {
+            await GenerateHelpfulAnswerCpp(ctx);
+            await ctx.RespondAsync("https://youtu.be/vLnPwxZdW4Y");
+        }
+        else if (lang == "cpp") {
+            await GenerateHelpfulAnswerCpp(ctx);
+            await ctx.RespondAsync("https://youtu.be/vLnPwxZdW4Y");
+        }
+        else if (lang == "python") {
+            await GenerateHelpfulAnswerPython(ctx);
+            await ctx.RespondAsync("https://youtu.be/rfscVS0vtbw");
+        }
+        else if (lang == "java") {
+            await GenerateHelpfulAnswer3(ctx);
+            await ctx.RespondAsync("https://youtu.be/grEKMHGYyns");
+        }
+        else await ctx.RespondAsync(ctx.Member.Mention + "Available commands: c#, c++, python, java. \n Write command like this: `/helplanguage c#`");
     }
 
     string[] helpfulAnswersCsharp =
     {
-        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>! \n Link: \n<:csharp:831465428214743060>:https://youtu.be/GhQdlIFylQ8",
-        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>! \n Link:<:csharp:831465428214743060>:https://youtu.be/GhQdlIFylQ8"
+        "Hello! @@@, here some good tutorial about <:csharp:831465428214743060>!\nLink:\n<:csharp:831465428214743060>:",
+        "Hey! hey! @@@, here some sick tutorial about <:csharp:831465428214743060>!\nLink:<:csharp:831465428214743060>:"
     };
     string[] helpfulAnswersCplusplus =
-  {
-        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>! \n Link: \n<:cpp:831465408874676273>:https://youtu.be/vLnPwxZdW4Y",
-        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>! \n Link:<:cpp:831465408874676273>:https://youtu.be/vLnPwxZdW4Y"
+    {
+        "Hello! @@@, here some good tutorial about <:cpp:831465408874676273>!\nLink:\n<:cpp:831465408874676273>:",
+        "Hey! hey! @@@, here some basic tutorial about <:cpp:831465408874676273>!\nLink:<:cpp:831465408874676273>:"
     };
-    string[] helpfulAnswersPhyton =
-  {
-        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>! \n <:python:831465381016895500>:https://youtu.be/rfscVS0vtbw",
-        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500> language! \n<:python:831465381016895500>:https://youtu.be/rfscVS0vtbw"
+    string[] helpfulAnswersPython =
+    {
+        "Hello! @@@, have a good one tutorial about how to code on <:python:831465381016895500>!\nLink:\n<:python:831465381016895500>:",
+        "Hey! hey! @@@, here some good simple course about <:python:831465381016895500> language!\nLink:\n<:python:831465381016895500>:"
     };
     string[] helpfulAnswersJava =
-  {
-        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\n Link: \n<:java:875852276017815634>:https://youtu.be/grEKMHGYyns",
-        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>! \n Link:<:java:875852276017815634>:https://youtu.be/grEKMHGYyns"
+    {
+        "Hello! @@@, here some good tutorial about how to code on <:java:875852276017815634>!\nLink:\n<:java:875852276017815634>:",
+        "Hey! hey! @@@, here some sick tutorial about how to code on <:java:875852276017815634>!\nLink:<:java:875852276017815634>:"
     };
 
-    Task GenerateHelpfulAnswer(CommandContext ctx)
+    Task GenerateHelpfulAnswerCsharp(CommandContext ctx)
     {
 
         // Check if we have to initiialize our history of pings
@@ -68,7 +83,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - C#";
-        deb.WithColor("#812f84");
+        deb.WithColor(new DiscordColor("812f84"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -90,12 +105,12 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersCsharp.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersCsharp[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
-    Task GenerateHelpfulAnswer1(CommandContext ctx)
+    Task GenerateHelpfulAnswerCpp(CommandContext ctx)
     {
         // Check if we have to initiialize our history of pings
         if (lastRequests == null) lastRequests = new List<LastRequestByMember>();
@@ -106,7 +121,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - C++";
-        deb.WithColor("#3f72db");
+        deb.WithColor(new DiscordColor("3f72db"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -128,12 +143,12 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersCplusplus.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersCplusplus[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
-    Task GenerateHelpfulAnswer2(CommandContext ctx)
+    Task GenerateHelpfulAnswerPython(CommandContext ctx)
     {
 
         // Check if we have to initiialize our history of pings
@@ -144,8 +159,8 @@ public class HelpLanguagesModel : BaseCommandModule
         DiscordEmbedBuilder deb = new DiscordEmbedBuilder();
         ulong memberId = member.Id;
 
-        deb.Title = "Help Language - Phyton";
-        deb.WithColor("#d1e13b");
+        deb.Title = "Help Language - Python";
+        deb.WithColor(new DiscordColor("d1e13b"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -165,14 +180,14 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.dateTime = DateTime.Now;
             // Increase the number
             lastRequest.num++;
-            if (lastRequest.num >= helpfulAnswersPhyton.Length) lastRequest.num = 0;
+            if (lastRequest.num >= helpfulAnswersPython.Length) lastRequest.num = 0;
         }
-
-        string msg = helpfulAnswersPhyton[lastRequest.num];
+        string msg = helpfulAnswersPython[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
-    Task GenerateHelpfulAnswer3(CommandContext ctx)
+    Task GenerateHelpfulAnswerJava(CommandContext ctx)
     {
 
         // Check if we have to initiialize our history of pings
@@ -184,7 +199,7 @@ public class HelpLanguagesModel : BaseCommandModule
         ulong memberId = member.Id;
 
         deb.Title = "Help Language - Java";
-        deb.WithColor("#e92c2c");
+        deb.WithColor(new DiscordColor("e92c2c"));
 
         // Find the last request
         LastRequestByMember lastRequest = null;
@@ -206,10 +221,10 @@ public class HelpLanguagesModel : BaseCommandModule
             lastRequest.num++;
             if (lastRequest.num >= helpfulAnswersJava.Length) lastRequest.num = 0;
         }
-
         string msg = helpfulAnswersJava[lastRequest.num];
         msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-        return ctx.RespondAsync(msg);
+        deb.Description = msg;
+        return ctx.RespondAsync(deb.Build());
     }
 
     public class LastRequestByMember
