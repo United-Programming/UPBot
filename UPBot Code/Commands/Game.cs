@@ -15,7 +15,7 @@ public class GameModule : BaseCommandModule
     [Command("game")]
     public async Task GameCommand(CommandContext ctx)
     {
-        await ctx.RespondAsync("Available commands: bool, rps");
+        await ctx.RespondAsync("Available commands: bool, rps, dice");
     }
 
 
