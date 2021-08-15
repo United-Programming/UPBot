@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 
 namespace UPBot
