@@ -26,6 +26,7 @@ namespace UPBot {
       });
       CustomCommandsService.DiscordClient = discord;
 
+      UtilityFunctions.InitClient(discord);
       var commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { "\\" } // The backslash will be the command prefix
       });

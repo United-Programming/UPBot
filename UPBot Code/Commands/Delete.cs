@@ -25,7 +25,8 @@ public class Delete : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, int count)
     {
-        if (count <= 0)
+    UtilityFunctions.LogUserCommand(ctx);
+    if (count <= 0)
         {
             await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
             return;
@@ -47,7 +48,8 @@ public class Delete : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, DiscordMember targetUser, int count)
     {
-        if (count <= 0)
+    UtilityFunctions.LogUserCommand(ctx);
+    if (count <= 0)
         {
             await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
             return;
