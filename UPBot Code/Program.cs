@@ -26,8 +26,7 @@ namespace UPBot
             });
             discord.UseInteractivity(new InteractivityConfiguration()
             {
-                PollBehaviour = PollBehaviour.KeepEmojis,
-                Timeout = TimeSpan.FromSeconds(30)
+                Timeout = TimeSpan.FromHours(2)
             });
             CustomCommandsService.DiscordClient = discord;
 
