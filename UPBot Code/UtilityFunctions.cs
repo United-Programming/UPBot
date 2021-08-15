@@ -3,8 +3,12 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
 using System.Globalization;
-using System.Threading.Tasks;
+using System.IO;
 
+/// <summary>
+/// Utility functions that don't belong to a specific class or a specific command
+/// "General-purpose" function, which can be needed anywhere.
+/// </summary>
 public static class UtilityFunctions
 {
   static DiscordClient client;
@@ -32,10 +36,20 @@ public static class UtilityFunctions
   }
 
   public static string PluralFormatter(int count, string singular, string plural)
-    {
-        return count > 1 ? plural : singular;
-    }
+  {
+    return count > 1 ? plural : singular;
+  }
 
+  /// <summary>
+  /// This functions constructs a path in the base directory of the current executable
+  /// with a given raw file name and the fileSuffix (file type)
+  /// NOTE: The file suffix must contain a period (e.g. ".txt" or ".png")
+  /// </summary>
+  public static string ConstructPath(string fileNameRaw, string fileSuffix)
+  {
+    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
+  }
+  
   static DiscordEmoji[] emojis;
   static ulong[] emojiIDs;
   static DiscordEmoji thinkingAsError;
@@ -81,9 +95,6 @@ public static class UtilityFunctions
   internal static void LogUserCommand(CommandContext ctx) {
     Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
   }
-
-
-
 }
 
 public enum EmojiEnum {
