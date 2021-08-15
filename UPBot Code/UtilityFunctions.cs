@@ -87,6 +87,7 @@ public static class UtilityFunctions
 }
 
 public enum EmojiEnum {
+  None = -1,
   OK = 0,
   KO = 1,
   WhatThisGuySaid = 2,

@@ -55,6 +55,7 @@ public class Refactor : BaseCommandModule {
   }
 
   private async Task<Task<DiscordMessage>> RefactorCode(CommandContext ctx, DiscordMember m, string language) {
+    UtilityFunctions.LogUserCommand(ctx);
     DiscordChannel c = ctx.Channel;
     DiscordMessage toRefactor = null;
     if (ctx.Message.Reference != null) toRefactor = ctx.Message.Reference.Message;
@@ -87,13 +88,13 @@ public class Refactor : BaseCommandModule {
 
     string guessed = "no one";
     string best = "";
-    string langEmoji = "";
+    EmojiEnum langEmoji = EmojiEnum.None;
     int w = 0;
-    if (weightCs > w) { guessed = "<:csharp:831465428214743060> C#"; w = weightCp; best = "cs"; langEmoji = ":CSharp:"; }
-    if (weightCp > w) { guessed = "<:cpp:831465408874676273> C++"; w = weightCp; best = "cpp"; langEmoji = ":CPP:"; }
-    if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = ":Javascript:"; }
-    if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = ":Java:"; }
-    if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = ":Python:"; }
+    if (weightCs > w) { guessed = "<:csharp:831465428214743060> C#"; w = weightCp; best = "cs"; langEmoji = EmojiEnum.CSharp; }
+    if (weightCp > w) { guessed = "<:cpp:831465408874676273> C++"; w = weightCp; best = "cpp"; langEmoji = EmojiEnum.Cpp; }
+    if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = EmojiEnum.Javascript; }
+    if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = EmojiEnum.Java; }
+    if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = EmojiEnum.Python; }
     if (w == 0 && language == null) return ctx.RespondAsync("Nothing to reformat");
 
     language = NormalizeLanguage(language, best);
@@ -101,15 +102,14 @@ public class Refactor : BaseCommandModule {
       return ctx.RespondAsync("Best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
 
     // Remove the ``` at begin and end, if any. And the code name after initial ```
-    if (code.Length > 3 && code.Substring(0, 3) == "```") {
-      int pos = code.IndexOf('\n');
-      if (pos != -1) code = code.Substring(pos + 1);
+    bool deleteOrig = true;
+    Match codeMatch = codeBlock.Match(code);
+    if (codeMatch.Success) {
+      code = codeMatch.Groups[5].Value;
+      deleteOrig = string.IsNullOrWhiteSpace(codeMatch.Groups[1].Value);
     }
-    if (code.Length > 3 && code.Substring(code.Length - 3, 3) == "```") {
-      code = code.Substring(0, code.Length - 3);
-    }
-    while (code.IndexOf("\n\n") != -1) code = code.Replace("\n\n", "\n");
     code = code.Trim(' ', '\t', '\r', '\n');
+    code = emptyLines.Replace(code, "\n");
     code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + language + "\n" + code + "\n```";
 
     if (guessed == "no one" && language != null) {
@@ -117,16 +117,27 @@ public class Refactor : BaseCommandModule {
     }
 
     DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
-    DiscordEmoji.TryFromName(ctx.Client, ":AutoRefactored:", out DiscordEmoji autoRefactored);
-    DiscordEmoji.TryFromName(ctx.Client, langEmoji, out DiscordEmoji emoji);
+    DiscordEmoji autoRefactored = UtilityFunctions.GetEmoji(EmojiEnum.AutoRrefactored);
+    DiscordEmoji emoji = UtilityFunctions.GetEmoji(langEmoji);
     try {
-      if (autoRefactored != null) await replacement.CreateReactionAsync(autoRefactored);
-      if (emoji != null) await replacement.CreateReactionAsync(emoji);
-      await toRefactor.DeleteAsync();
+      if (autoRefactored != null) {
+        await Task.Delay(100);
+        await replacement.CreateReactionAsync(autoRefactored);
+      }
+      if (emoji != null) {
+        await Task.Delay(100);
+        await replacement.CreateReactionAsync(emoji);
+      }
+      if (deleteOrig) {
+        await Task.Delay(100);
+        await toRefactor.DeleteAsync();
+      }
+      await Task.Delay(100);
       await ctx.Message.DeleteAsync();
     } catch (Exception e) {
       return ctx.RespondAsync("Exception: " + e.Message);
     }
+    await Task.Delay(100);
     return ctx.RespondAsync("");
   }
 
@@ -154,24 +165,27 @@ public class Refactor : BaseCommandModule {
     if (language == "py") return "python";
     return "";
   }
-  private string GetLanguageEmoji(string language) {
+  private EmojiEnum GetLanguageEmoji(string language) {
     language = language.ToLowerInvariant();
-    if (language == "c#") return ":CSharp:";
-    if (language == "cs") return ":CSharp:";
-    if (language == "csharp") return ":CSharp:";
-    if (language == "cpp") return ":CPP:";
-    if (language == "c++") return ":CPP:";
-    if (language == "java") return ":Java:";
-    if (language == "javascript") return ":Javascript:";
-    if (language == "jscript") return ":Javascript:";
-    if (language == "js") return ":Javascript:";
-    if (language == "typescript") return ":Javascript:";
-    if (language == "json") return ":Javascript:";
-    if (language == "phyton") return ":Python:";
-    if (language == "python") return ":Python:";
-    if (language == "py") return ":Python:";
-    return "";
+    if (language == "c#") return EmojiEnum.CSharp;
+    if (language == "cs") return EmojiEnum.CSharp;
+    if (language == "csharp") return EmojiEnum.CSharp;
+    if (language == "cpp") return EmojiEnum.Cpp;
+    if (language == "c++") return EmojiEnum.Cpp;
+    if (language == "java") return EmojiEnum.Java;
+    if (language == "javascript") return EmojiEnum.Javascript;
+    if (language == "jscript") return EmojiEnum.Javascript;
+    if (language == "js") return EmojiEnum.Javascript;
+    if (language == "typescript") return EmojiEnum.Javascript;
+    if (language == "json") return EmojiEnum.Javascript;
+    if (language == "phyton") return EmojiEnum.Python;
+    if (language == "python") return EmojiEnum.Python;
+    if (language == "py") return EmojiEnum.Python;
+    return EmojiEnum.None;
   }
+
+  readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
+  readonly Regex emptyLines = new Regex("(\\r?\\n\\s*){2,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
 
   readonly LangKWord[] keywords = {
     new LangKWord{regexp = new Regex("if\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),                 wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0 },
