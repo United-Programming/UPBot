@@ -24,7 +24,7 @@ public class Refactor : BaseCommandModule {
     await RefactorCode(ctx, member, "best");
   }
 
-  [Command("refactor")]
+  [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block using the specified language")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
@@ -32,7 +32,7 @@ public class Refactor : BaseCommandModule {
     await RefactorCode(ctx, null, null);
   }
 
-  [Command("refactor")]
+  [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
@@ -40,14 +40,14 @@ public class Refactor : BaseCommandModule {
     await RefactorCode(ctx, null, language);
   }
 
-  [Command("refactor")]
+  [Command("reformat")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefactorCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
     await RefactorCode(ctx, member, null);
   }
 
-  [Command("refactor")]
+  [Command("reformat")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefactorCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member, [Description("Force the Language to use. Use 'best' or 'Analyze' to find the best language.")]  string language) { // Refactor the last post of the specified user in the channel
@@ -94,7 +94,7 @@ public class Refactor : BaseCommandModule {
     if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = ":Javascript:"; }
     if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = ":Java:"; }
     if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = ":Python:"; }
-    if (w == 0 && language == null) return ctx.RespondAsync("Nothing to refactor");
+    if (w == 0 && language == null) return ctx.RespondAsync("Nothing to reformat");
 
     language = NormalizeLanguage(language, best);
     if (language == null)
@@ -108,8 +108,9 @@ public class Refactor : BaseCommandModule {
     if (code.Length > 3 && code.Substring(code.Length - 3, 3) == "```") {
       code = code.Substring(0, code.Length - 3);
     }
+    while (code.IndexOf("\n\n") != -1) code = code.Replace("\n\n", "\n");
     code = code.Trim(' ', '\t', '\r', '\n');
-    code = toRefactor.Author.Mention + " Replaced with refactored code\n" + "```" + language + "\n" + code + "\n```";
+    code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + language + "\n" + code + "\n```";
 
     if (guessed == "no one" && language != null) {
       langEmoji = GetLanguageEmoji(language);
