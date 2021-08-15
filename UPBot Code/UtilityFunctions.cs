@@ -3,8 +3,11 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
 using System.Globalization;
-using System.Threading.Tasks;
 
+/// <summary>
+/// Utility functions that don't belong to a specific class or a specific command
+/// "General-purpose" function, which can be needed anywhere.
+/// </summary>
 public static class UtilityFunctions
 {
   static DiscordClient client;
@@ -81,9 +84,6 @@ public static class UtilityFunctions
   internal static void LogUserCommand(CommandContext ctx) {
     Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
   }
-
-
-
 }
 
 public enum EmojiEnum {
