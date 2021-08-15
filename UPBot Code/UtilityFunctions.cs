@@ -47,7 +47,7 @@ public static class UtilityFunctions
   /// </summary>
   public static string ConstructPath(string fileNameRaw, string fileSuffix)
   {
-    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
+    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CustomCommands", fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
   }
   
   static DiscordEmoji[] emojis;

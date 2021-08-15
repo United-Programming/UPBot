@@ -43,7 +43,9 @@ public class CustomCommandsService : BaseCommandModule
 
         string content = await WaitForContent(ctx, names[0]);
         CustomCommand command = new CustomCommand(names, content);
+        Commands.Add(command);
         await WriteToFile(command);
+        await ctx.Channel.SendMessageAsync($"CC {names[0]} successfully created and saved!");
     }
 
     [Command("delcc")]
@@ -51,9 +53,12 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task DeleteCommand(CommandContext ctx, string name)
     {
-        if (File.Exists(name))
+        string filePath = UtilityFunctions.ConstructPath(name, ".txt");
+        if (File.Exists(filePath))
         {
-            File.Delete(name);
+            File.Delete(filePath);
+            if (TryGetCommand(name, out CustomCommand cmd))
+                Commands.Remove(cmd);
             await ctx.RespondAsync($"CC {name} successfully deleted!");
         }
     }
@@ -63,38 +68,25 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task EditCommand(CommandContext ctx, string name)
     {
-        if (File.Exists(name))
+        string filePath = UtilityFunctions.ConstructPath(name, ".txt");
+        if (File.Exists(filePath))
         {
-            string filePath = UtilityFunctions.ConstructPath(name, ".txt");
-            string content = await WaitForContent(ctx, filePath);
-            List<string> oldLines = new List<string>();
+            string content = await WaitForContent(ctx, name);
+            string firstLine;
             using (StreamReader sr = File.OpenText(filePath))
-            {
-                string l;
-                string line = string.Empty;
-                while ((l = await sr.ReadLineAsync()) != null)
-                {
-                    line += l;
-                }
-                oldLines.Add(line);
-            }
-
-            if (oldLines.Count >= 2)
-                oldLines[1] = content;
-            else
-            {
-                await ctx.RespondAsync("An error has occured!");
-                return;
-            }
+                firstLine = await sr.ReadLineAsync();
             
-            await using (StreamWriter sw = File.AppendText(filePath))
+            
+            await using (StreamWriter sw = File.CreateText(filePath))
             {
-                foreach(string s in oldLines)
-                    await sw.WriteLineAsync(s);
+                await sw.WriteLineAsync(firstLine);
+                await sw.WriteLineAsync(content);
             }
 
             if (TryGetCommand(name, out CustomCommand command))
-                command.EditCommand(name);
+                command.EditCommand(content);
+
+            await ctx.Channel.SendMessageAsync($"CC **{name}** successfully edited!");
         }
         else
         {
@@ -104,6 +96,10 @@ public class CustomCommandsService : BaseCommandModule
 
     internal static async Task LoadCustomCommands()
     {
+        string path = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "CustomCommands");
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
+
         foreach (string fileName in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory))
         {
             using (StreamReader sr = File.OpenText(fileName))
@@ -115,9 +111,7 @@ public class CustomCommandsService : BaseCommandModule
                 string content = string.Empty;
                 string c;
                 while ((c = await sr.ReadLineAsync()) != null)
-                {
-                    content += c;
-                }
+                    content += c + System.Environment.NewLine;
 
                 CustomCommand cmd = new CustomCommand(names.Split(','), content);
                 Commands.Add(cmd);
@@ -129,10 +123,9 @@ public class CustomCommandsService : BaseCommandModule
     {
         if (args.Exception is DSharpPlus.CommandsNext.Exceptions.CommandNotFoundException)
         {
-            if (TryGetCommand(args.Context.Command.Name, out CustomCommand command))
-            {
+            string commandName = args.Context.Message.Content.Split(' ')[0].Substring(1);
+            if (TryGetCommand(commandName, out CustomCommand command))
                 await command.ExecuteCommand(args.Context);
-            }
         }
     }
 
@@ -155,7 +148,7 @@ public class CustomCommandsService : BaseCommandModule
 
     private async Task<string> WaitForContent(CommandContext ctx, string name)
     {
-        await ctx.RespondAsync($"Please input the content of the CC {name} in one single message. Your next message will count as the content.");
+        await ctx.RespondAsync($"Please input the content of the CC **{name}** in one single message. Your next message will count as the content.");
         string content = string.Empty;
         await ctx.Message.GetNextMessageAsync(m =>
         {
