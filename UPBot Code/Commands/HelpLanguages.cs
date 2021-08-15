@@ -49,7 +49,8 @@ public class HelpLanguagesModel : BaseCommandModule
     [Command("helplanguage")]
     public async Task HelpCommand(CommandContext ctx, string lang) // C#
     {
-        if (lang == null)
+    UtilityFunctions.LogUserCommand(ctx);
+    if (lang == null)
             await ErrorMessage(ctx);
 
         lang = lang.Trim().ToLowerInvariant();

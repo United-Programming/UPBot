@@ -16,7 +16,8 @@ public class GameModule : BaseCommandModule
     [Command("game")]
     public async Task GameCommand(CommandContext ctx)
     {
-        StringBuilder sb = new StringBuilder("Available game commmands\n");
+    UtilityFunctions.LogUserCommand(ctx);
+    StringBuilder sb = new StringBuilder("Available game commmands\n");
         sb.AppendLine("========================");
         sb.AppendLine(String.Format("{0, -10}: {1}", "bool", "True or False"));
         sb.AppendLine(String.Format("{0, -10}: {1}", "rps", "Rock, Paper, Scissors"));
@@ -27,19 +28,22 @@ public class GameModule : BaseCommandModule
     [Command("bool")]
     public async Task BoolCommand(CommandContext ctx)
     {
-        await PlayBool(ctx);
+    UtilityFunctions.LogUserCommand(ctx);
+    await PlayBool(ctx);
     }
 
     [Command("rps")]
     public async Task RPSCommand(CommandContext ctx, string kind)
     {
-        await PlayRockPaperScissors(ctx, kind);
+    UtilityFunctions.LogUserCommand(ctx);
+    await PlayRockPaperScissors(ctx, kind);
     }
 
     [Command("rps")]
     public async Task RPSCommand(CommandContext ctx)
     {
-        await PlayRockPaperScissors(ctx, null);
+    UtilityFunctions.LogUserCommand(ctx);
+    await PlayRockPaperScissors(ctx, null);
     }
 
 

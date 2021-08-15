@@ -26,6 +26,7 @@ public class WhoIs : BaseCommandModule {
   }
 
   private Task GenerateWhoIs(CommandContext ctx, DiscordMember m) {
+    UtilityFunctions.LogUserCommand(ctx);
     if (m == null) { // If we do not have a user we use the member that invoked the command
       m = ctx.Member;
     }
