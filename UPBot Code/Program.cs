@@ -24,7 +24,7 @@ namespace UPBot {
         PollBehaviour = PollBehaviour.KeepEmojis,
         Timeout = TimeSpan.FromSeconds(30)
       });
-
+      CustomCommandsService.DiscordClient = discord;
 
       var commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { "\\" } // The backslash will be the command prefix

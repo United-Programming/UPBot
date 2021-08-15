@@ -7,13 +7,13 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Interactivity.Extensions;
 
-public class CustomCommandsService
+public class CustomCommandsService : BaseCommandModule
 {
-    private static List<CustomCommand> commands = new List<CustomCommand>();
+    private static readonly List<CustomCommand> Commands = new List<CustomCommand>();
     internal static DiscordClient DiscordClient { get; set; }
 
     [Command("newcc")]
-    [Aliases("newCC", "createcc", "createCC", "addcc", "addCC", "ccadd", "ccAdd", "cccreate", "ccCreate")]
+    [Aliases("createcc", "addcc", "ccadd", "cccreate")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task CreateCommand(CommandContext ctx, params string[] names)
     {
@@ -25,7 +25,7 @@ public class CustomCommandsService
                 return;
             }
             
-            foreach (var cmd in commands)
+            foreach (var cmd in Commands)
             {
                 if (cmd.Names.Contains(name))
                 {
@@ -47,7 +47,7 @@ public class CustomCommandsService
     }
 
     [Command("delcc")]
-    [Aliases("delCC", "deletecc", "deleteCC", "removecc", "removeCC")]
+    [Aliases("deletecc", "removecc")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task DeleteCommand(CommandContext ctx, string name)
     {
@@ -71,7 +71,7 @@ public class CustomCommandsService
                 string content = await sr.ReadLineAsync();
 
                 CustomCommand cmd = new CustomCommand(names.Split(','), content);
-                commands.Add(cmd);
+                Commands.Add(cmd);
             }
         }
     }
