@@ -200,7 +200,12 @@ public class BannedWords : BaseCommandModule {
     if (args.Author.Equals(client.CurrentUser)) return;
     DiscordUser user = args.Author;
     DiscordGuild guild = await client.GetGuildAsync((ulong)args.Message.Channel.GuildId);
-    DiscordMember member = await guild.GetMemberAsync(user.Id);
+    DiscordMember member;
+    try {
+      member = await guild.GetMemberAsync(user.Id);
+    } catch (Exception) {
+      return;
+    }
     foreach (DiscordRole role in member.Roles) {
     //  if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
     }
