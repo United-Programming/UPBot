@@ -25,7 +25,7 @@ public class CustomCommandsService : BaseCommandModule
                  "(no duplicate alias allowed).\nAfter doing this, the bot will ask you to input the content, which will " +
                  "be displayed once someone invokes this CC. Your entire next message will be used for the content, so " +
                  "be careful what you type!\n\n**Usage:**\n\n- `newcc name` (without alias)\n-`newcc name alias1 alias2`" +
-                 " (with 2 aliases)")]
+                 " (with 2 aliases)\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task CreateCommand(CommandContext ctx, params string[] names)
     {
@@ -59,7 +59,8 @@ public class CustomCommandsService : BaseCommandModule
     [Command("delcc")]
     [Aliases("deletecc", "removecc")]
     [Description("**Delete** a Custom Command (so-called 'CC').\n**Attention!** Use the main name of the CC " +
-                 "you entered first when you created it, **not an alias!**\nThe CC will be irrevocably deleted.")]
+                 "you entered first when you created it, **not an alias!**\nThe CC will be irrevocably deleted." +
+                 "\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task DeleteCommand(CommandContext ctx, string name)
     {
@@ -78,7 +79,8 @@ public class CustomCommandsService : BaseCommandModule
     [Command("editcc")]
     [Aliases("ccedit")]
     [Description("**Edit** the **content** of a Custom Command (so-called 'CC')." +
-                 "\n**Attention!** Use the main name of the CC you entered first when you created it, **not an alias!**")]
+                 "\n**Attention!** Use the main name of the CC you entered first when you created it, **not an alias!**" +
+                 "\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task EditCommand(CommandContext ctx, string name)
     {
