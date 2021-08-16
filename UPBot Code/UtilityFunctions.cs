@@ -43,7 +43,7 @@ public static class UtilityFunctions
       876180793213464606ul  // AutoRefactored = 12,
     };
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
-    string logPath = ConstructPath("BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
+    string logPath = ConstructPath("Logs", "BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
     if (File.Exists(logPath)) logs = new StreamWriter(logPath, append: true);
     else logs = File.CreateText(logPath);
   }
@@ -64,9 +64,12 @@ public static class UtilityFunctions
   /// with a given raw file name and the fileSuffix (file type)
   /// NOTE: The file suffix must contain a period (e.g. ".txt" or ".png")
   /// </summary>
-  public static string ConstructPath(string fileNameRaw, string fileSuffix)
+  /// <param name="directoryName">The name of the final folder, in which the file will be saved</param>
+  /// <param name="fileNameRaw">The name of the file (without file type)</param>
+  /// <param name="fileSuffix">The file-suffix (file-type, e.g. ".txt" or ".png")</param>
+  public static string ConstructPath(string directoryName, string fileNameRaw, string fileSuffix)
   {
-    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CustomCommands", fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
+    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
   }
 
   /// <summary>
