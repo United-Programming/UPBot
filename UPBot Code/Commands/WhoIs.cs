@@ -63,7 +63,7 @@ public class WhoIs : BaseCommandModule {
     if (m.PremiumSince != null) {
       DateTimeOffset bdate = ((DateTimeOffset)m.PremiumSince).UtcDateTime;
       string booster = bdate.Year + "/" + bdate.Month + "/" + bdate.Day;
-      embed.AddField("Booster", "From " + booster, true);
+      embed.AddField("Booster", "Form " + booster, true);
     }
     if (m.Flags != null) embed.AddField("Flags", m.Flags.ToString(), true); // Only the default flags will be shown. This bot will not be very diffused so probably we do not need specific checks for flags
 
