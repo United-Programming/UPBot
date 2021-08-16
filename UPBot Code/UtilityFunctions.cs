@@ -41,9 +41,9 @@ public static class UtilityFunctions
       876180793213464606ul  // AutoRefactored = 12,
     };
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
-    string logName = "BotLogs " + DateTime.Now.ToString("yyyyMMdd") + ".logs";
-    if (File.Exists(logName)) logs = new StreamWriter(logName, append: true);
-    else logs = File.CreateText(logName);
+    string logPath = ConstructPath("BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
+    if (File.Exists(logPath)) logs = new StreamWriter(logPath, append: true);
+    else logs = File.CreateText(logPath);
   }
 
   public static string PluralFormatter(int count, string singular, string plural)
