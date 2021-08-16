@@ -18,6 +18,7 @@ public static class UtilityFunctions
   public static readonly DiscordColor Red = new DiscordColor("#f50f48");
   public static readonly DiscordColor Green = new DiscordColor("#32a852");
   public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
+  public static readonly DiscordColor Yellow = new DiscordColor("#f5bc42");
   
   // Fields relevant for InitClient()
   private static DiscordClient client;
@@ -216,4 +217,5 @@ public enum CommandErrors
     InvalidParams,
     InvalidParamsDelete,
     CommandExists,
+    UnknownError
 }
