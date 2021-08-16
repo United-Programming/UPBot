@@ -61,7 +61,7 @@ public class Delete : BaseCommandModule
         bool limitExceeded = CheckLimit(count);
 
         var allMessages = ctx.Channel.GetMessagesAsync().Result; // Get last 100 messages
-        var userMessages = allMessages.Where(x => x.Author == targetUser).Take(count);
+        var userMessages = allMessages.Where(x => x.Author == targetUser).Take(count + 1);
         await DeleteMessages(ctx, userMessages);
 
         await Success(ctx, limitExceeded, count, targetUser);
