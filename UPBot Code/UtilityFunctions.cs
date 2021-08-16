@@ -19,15 +19,15 @@ public static class UtilityFunctions
   public static readonly DiscordColor Green = new DiscordColor("#32a852");
   public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
   
-  // ---------------------------
-  static DiscordClient client;
-  static DateTimeFormatInfo sortableDateTimeFormat;
-  static StreamWriter logs;
+  // Fields relevant for InitClient()
+  private static DiscordClient client;
+  private static DateTimeFormatInfo sortableDateTimeFormat;
+  private static StreamWriter logs;
 
   public static void InitClient(DiscordClient c) {
     client = c;
     thinkingAsError = DiscordEmoji.FromUnicode("🤔");
-    emojiIDs = new ulong[] {
+    emojiIDs = new [] {
       830907665869570088ul, // OK = 0,
       830907684085039124ul, // KO = 1,
       840702597216337990ul, // whatthisguysaid = 2,
@@ -94,13 +94,11 @@ public static class UtilityFunctions
   /// <param name="color">Embed color</param>
   /// <param name="ctx">CommandContext, required to send a message</param>
   /// <param name="respond">Respond to original message or send an independent message?</param>
-  public static async Task<DiscordEmbedBuilder> BuildEmbedAndExecute(string title, string description, DiscordColor color, 
+  public static async Task<DiscordMessage> BuildEmbedAndExecute(string title, string description, DiscordColor color, 
     CommandContext ctx, bool respond)
   {
     var embedBuilder = BuildEmbed(title, description, color);
-    await LogEmbed(embedBuilder, ctx, respond);
-    
-    return embedBuilder;
+    return await LogEmbed(embedBuilder, ctx, respond);
   }
 
   /// <summary>
@@ -109,20 +107,17 @@ public static class UtilityFunctions
   /// <param name="builder">Embed builder with the embed template</param>
   /// <param name="ctx">CommandContext, required to send a message</param>
   /// <param name="respond">Respond to original message or send an independent message?</param>
-  public static async Task LogEmbed(DiscordEmbedBuilder builder, CommandContext ctx, bool respond)
+  public static async Task<DiscordMessage> LogEmbed(DiscordEmbedBuilder builder, CommandContext ctx, bool respond)
   {
     if (respond)
-    {
-      await ctx.RespondAsync(builder.Build());
-      return;
-    }
+      return await ctx.RespondAsync(builder.Build());
 
-    await ctx.Channel.SendMessageAsync(builder.Build());
+    return await ctx.Channel.SendMessageAsync(builder.Build());
   } 
 
-  static DiscordEmoji[] emojis;
-  static ulong[] emojiIDs;
-  static DiscordEmoji thinkingAsError;
+  private static DiscordEmoji[] emojis;
+  private static ulong[] emojiIDs;
+  private static DiscordEmoji thinkingAsError;
 
   /// <summary>
   /// This function gets the Emoji object corresponding to the emojis of the server.

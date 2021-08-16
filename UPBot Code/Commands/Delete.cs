@@ -88,9 +88,11 @@ public class Delete : BaseCommandModule
         string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
 
         await ctx.Message.DeleteAsync();
-        string message = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
+        string embedMessage = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
 
-        await UtilityFunctions.BuildEmbedAndExecute("Success", message, UtilityFunctions.Green, ctx, true);
+        var message = await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, true);
+        await Task.Delay(10_000);
+        await message.DeleteAsync();
     }
 
     private async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
@@ -99,7 +101,7 @@ public class Delete : BaseCommandModule
         switch (error)
         {
             case CommandErrors.InvalidParams:
-                message = $"Invalid params for the command {ctx.Command.Name}.";
+                message = $"Invalid params for the command {ctx?.Command.Name}.";
                 break;
             case CommandErrors.InvalidParamsDelete:
                 if (additionalParams[0] is int count)
