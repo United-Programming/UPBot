@@ -155,7 +155,7 @@ public class BannedWords : BaseCommandModule {
   }
 
   class BannedWord {
-    public string word = null;
+    public string word;
     public ulong creator = 0;
     public DateTime date = DateTime.MinValue;
 
@@ -174,7 +174,7 @@ public class BannedWords : BaseCommandModule {
     }
 
     public override string ToString() {
-      return word + "\t" + creator + "\t" + date.ToString() + "\n";
+      return word + "\t" + creator + "\t" + date + "\n";
     }
   }
 
