@@ -31,7 +31,7 @@ namespace UPBot {
       commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
 
       BannedWords.Init();
-      discord.MessageCreated += async (s, e) => { BannedWords.CheckMessage(s, e); };
+      discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
 
       discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;

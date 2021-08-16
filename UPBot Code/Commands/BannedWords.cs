@@ -196,7 +196,7 @@ public class BannedWords : BaseCommandModule {
     return await ctx.Client.GetUserAsync(userId);
   }
 
-  internal static async void CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
+  internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
     // Who is the author? If the bot or a mod then ignore
     if (args.Author.Equals(client.CurrentUser)) return;
     DiscordUser user = args.Author;
