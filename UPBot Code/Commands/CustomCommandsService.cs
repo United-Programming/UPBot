@@ -27,13 +27,13 @@ public class CustomCommandsService : BaseCommandModule
                  "be careful what you type!\n\n**Usage:**\n\n- `newcc name` (without alias)\n- `newcc name alias1 alias2`" +
                  " (with 2 aliases)\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
-    public async Task CreateCommand(CommandContext ctx, params string[] names)
+    public async Task CreateCommand(CommandContext ctx, [Description("A 'list' of all aliases. The first term is the **main name**, the other ones, separated by a space, are aliases")] params string[] names)
     {
         foreach (var name in names)
         {
             if (DiscordClient.GetCommandsNext().RegisteredCommands.ContainsKey(name)) // Check if there is a command with one of the names already
             {
-                await ErrorCallback(CommandErrors.CommandExists, ctx, name);
+                await UtilityFunctions.ErrorCallback(CommandErrors.CommandExists, ctx, name);
                 return;
             }
             
@@ -41,7 +41,7 @@ public class CustomCommandsService : BaseCommandModule
             {
                 if (cmd.Names.Contains(name)) // Check if there is already a CC with one of the names
                 {
-                    await ErrorCallback(CommandErrors.CommandExists, ctx, name);
+                    await UtilityFunctions.ErrorCallback(CommandErrors.CommandExists, ctx, name);
                     return;
                 }
             }
@@ -56,13 +56,13 @@ public class CustomCommandsService : BaseCommandModule
         await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
     }
 
-    [Command("delcc")]
-    [Aliases("deletecc", "removecc")]
+    [Command("ccdel")]
+    [Aliases("ccdelete", "ccremove", "delcc", "deletecc", "removecc")]
     [Description("**Delete** a Custom Command (so-called 'CC').\n**Attention!** Use the main name of the CC " +
                  "you entered first when you created it, **not an alias!**\nThe CC will be irrevocably deleted." +
                  "\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
-    public async Task DeleteCommand(CommandContext ctx, string name)
+    public async Task DeleteCommand(CommandContext ctx, [Description("Main name of the CC you want to delete")] string name)
     {
         string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
@@ -76,13 +76,13 @@ public class CustomCommandsService : BaseCommandModule
         }
     }
 
-    [Command("editcc")]
-    [Aliases("ccedit")]
+    [Command("ccedit")]
+    [Aliases("editcc")]
     [Description("**Edit** the **content** of a Custom Command (so-called 'CC')." +
                  "\n**Attention!** Use the main name of the CC you entered first when you created it, **not an alias!**" +
                  "\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
-    public async Task EditCommand(CommandContext ctx, string name)
+    public async Task EditCommand(CommandContext ctx, [Description("Main name of the CC you want to edit")] string name)
     {
         string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
@@ -106,10 +106,54 @@ public class CustomCommandsService : BaseCommandModule
             await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
         }
         else
+            await UtilityFunctions.ErrorCallback(CommandErrors.MissingCommand, ctx);
+    }
+
+    [Command("cceditname")]
+    [Aliases("ccnameedit", "editnamecc")]
+    [Description("**Edit** the **names** (including aliases) of an existing CC." +
+                 "\n**Attention!** Use the main name of the CC you entered first when you created it, **not an alias!**" +
+                 "\n\nThis command can only be invoked by a Mod.")]
+    [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
+    public async Task EditCommandName(CommandContext ctx, [Description("A list of new names and aliases, " +
+                                                                       "__**BUT**__ the **FIRST** term is the current **main name** " +
+                                                                       "of the CC whose name you want to edit, the **SECOND** term " +
+                                                                       "is the new **main name** and all the other terms are new aliases")] params string[] names)
+    {
+        if (names.Length < 2)
         {
-            string embedMessage = "There is no Custom Command with this name! Please don't use an alias, use the original name!";
-            await UtilityFunctions.BuildEmbedAndExecute("Error", embedMessage, UtilityFunctions.Red, ctx, true);
+            await UtilityFunctions.ErrorCallback(CommandErrors.InvalidParams, ctx);
+            return;
         }
+        
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, names[0], ".txt");
+        if (File.Exists(filePath))
+        {
+            if (TryGetCommand(names[0], out CustomCommand command))
+                command.EditCommand(names.Skip(1).ToArray());
+            
+            string content = string.Empty;
+            using (StreamReader sr = File.OpenText(filePath))
+            {
+                string c;
+                await sr.ReadLineAsync();
+                while ((c = await sr.ReadLineAsync()) != null)
+                    content += c + System.Environment.NewLine;
+            }
+
+            string newPath = UtilityFunctions.ConstructPath(DirectoryNameCC, names[1], ".txt");
+            File.Move(filePath, newPath);
+            using (StreamWriter sw = File.CreateText(newPath))
+            {
+                await sw.WriteLineAsync(string.Join(',', names.Skip(1)));
+                await sw.WriteLineAsync(content);
+            }
+
+            string embedDescription = "The CC names have been successfully edited.";
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedDescription, UtilityFunctions.Green, ctx, false);
+        }
+        else
+            await UtilityFunctions.ErrorCallback(CommandErrors.MissingCommand, ctx);
     }
 
     [Command("cclist")]
@@ -119,7 +163,7 @@ public class CustomCommandsService : BaseCommandModule
     {
         if (Commands.Count <= 0)
         {
-            await ErrorCallback(CommandErrors.UnknownError, ctx);
+            await UtilityFunctions.ErrorCallback(CommandErrors.NoCustomCommands, ctx);
             return;
         }
 
@@ -177,25 +221,6 @@ public class CustomCommandsService : BaseCommandModule
                 await sw.WriteLineAsync(string.Join(',', command.Names));
                 await sw.WriteLineAsync(command.Content);
             }
-        }
-    }
-
-    private async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
-    {
-        switch (error)
-        {
-            case CommandErrors.CommandExists:
-                if (additionalParams[0] is string name)
-                {
-                    string message = $"There is already a command containing the alias {additionalParams[0]}";
-                    await UtilityFunctions.BuildEmbedAndExecute("Error", message, UtilityFunctions.Red, ctx, true);
-                }
-                else
-                    throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
-                break;
-            case CommandErrors.UnknownError:
-                await UtilityFunctions.BuildEmbedAndExecute("Error", "Unknown error!", UtilityFunctions.Red, ctx, false);
-                break;
         }
     }
 
