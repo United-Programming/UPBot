@@ -95,6 +95,15 @@ public static class UtilityFunctions
   internal static void LogUserCommand(CommandContext ctx) {
     Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
   }
+
+  /// <summary>
+  /// Logs a text in the console
+  /// </summary>
+  /// <param name="msg"></param>
+  /// <returns></returns>
+  internal static void Log(string msg) {
+    Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + msg);
+  }
 }
 
 public enum EmojiEnum {
