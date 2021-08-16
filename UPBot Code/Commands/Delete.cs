@@ -28,7 +28,7 @@ public class Delete : BaseCommandModule
         UtilityFunctions.LogUserCommand(ctx);
         if (count <= 0)
         {
-            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
+            await ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
 
@@ -51,7 +51,7 @@ public class Delete : BaseCommandModule
         UtilityFunctions.LogUserCommand(ctx);
         if (count <= 0)
         {
-            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
+            await ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
 
@@ -89,11 +89,11 @@ public class Delete : BaseCommandModule
 
         await ctx.Message.DeleteAsync();
         string message = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
-        
-        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Green));
+
+        await UtilityFunctions.BuildEmbedAndExecute("Success", message, UtilityFunctions.Green, ctx, true);
     }
 
-    private async Task ErrorRaised(CommandErrors error, CommandContext ctx, params object[] additionalParams)
+    private async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
     {
         string message = string.Empty;
         switch (error)
@@ -108,7 +108,7 @@ public class Delete : BaseCommandModule
                     goto case CommandErrors.InvalidParams;
                 break;
         }
-        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Red).Build());
+        await UtilityFunctions.BuildEmbedAndExecute("Error", message, UtilityFunctions.Red, ctx, true);
     }
 
     private bool CheckLimit(int count)
