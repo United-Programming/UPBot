@@ -18,7 +18,6 @@ public static class UtilityFunctions
   public static readonly DiscordColor Red = new DiscordColor("#f50f48");
   public static readonly DiscordColor Green = new DiscordColor("#32a852");
   public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
-  public static readonly DiscordColor Yellow = new DiscordColor("#f5bc42");
   
   // Fields relevant for InitClient()
   private static DiscordClient client;
@@ -70,11 +69,7 @@ public static class UtilityFunctions
   /// <param name="fileSuffix">The file-suffix (file-type, e.g. ".txt" or ".png")</param>
   public static string ConstructPath(string directoryName, string fileNameRaw, string fileSuffix)
   {
-    string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName);
-    if (!Directory.Exists(Path.Combine(directoryPath)))
-      Directory.CreateDirectory(directoryPath);
-    
-    return Path.Combine(directoryPath, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
+    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
   }
 
   /// <summary>
@@ -193,47 +188,6 @@ public static class UtilityFunctions
       string m = e.Message;
     }
   }
-  
-  internal static async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
-  {
-    DiscordColor red = UtilityFunctions.Red;
-    string message = string.Empty;
-    bool respond = false;
-    switch (error)
-    {
-      case CommandErrors.CommandExists:
-        respond = true;
-        if (additionalParams[0] is string name)
-          message = $"There is already a command containing the alias {additionalParams[0]}";
-        else
-          throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
-        break;
-      case CommandErrors.UnknownError:
-        message = "Unknown error!";
-        respond = false;
-        break;
-      case CommandErrors.InvalidParams:
-        message = "The given parameters are invalid. Enter \\help [commandName] to get help with the usage of the command.";
-        respond = true;
-        break;
-      case CommandErrors.InvalidParamsDelete:
-        if (additionalParams[0] is int count)
-          message = $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?";
-        else
-          goto case CommandErrors.InvalidParams;
-        break;
-      case CommandErrors.MissingCommand:
-        message = "There is no command with this name! If it's a CC, please don't use an alias, use the original name!";
-        respond = true;
-        break;
-      case CommandErrors.NoCustomCommands:
-        message = "There are no CC's currently.";
-        respond = false;
-        break;
-    }
-        
-    await UtilityFunctions.BuildEmbedAndExecute("Error", message, red, ctx, respond);
-  }
 }
 
 public enum EmojiEnum {
@@ -258,7 +212,4 @@ public enum CommandErrors
     InvalidParams,
     InvalidParamsDelete,
     CommandExists,
-    UnknownError,
-    MissingCommand,
-    NoCustomCommands
 }

@@ -16,15 +16,15 @@ using DSharpPlus.EventArgs;
 public class BannedWords : BaseCommandModule {
 
   private static List<BannedWord> bannedWords = null;
-  readonly static Regex valid = new Regex(@"^[a-zA-Z0-9]+$");
-  readonly static Regex letters = new Regex(@"[a-zA-Z0-9]");
+  private static Regex valid = new Regex(@"^[a-zA-Z0-9]+$");
+  private static Regex letters = new Regex(@"[a-zA-Z0-9]");
   private const string directoryName = "Restrictions";
 
   public static void Init() {
-    bannedWords = new List<BannedWord>();
     string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
     if (!File.Exists(path)) return;
     string[] all = File.ReadAllLines(path);
+    bannedWords = new List<BannedWord>();
     foreach (string line in all) {
       BannedWord word = new BannedWord(line);
       if (word.word == null) continue;
@@ -127,7 +127,6 @@ public class BannedWords : BaseCommandModule {
     try {
       using (StreamWriter sw = File.AppendText(path)) {
         sw.Write(w.ToString());
-        sw.FlushAsync();
       }
     } catch (Exception e) {
       UtilityFunctions.Log(e.Message);
@@ -148,7 +147,6 @@ public class BannedWords : BaseCommandModule {
       using (StreamWriter sw = File.CreateText(path)) {
         foreach (BannedWord w in bannedWords) {
           sw.Write(w.ToString());
-          sw.FlushAsync();
         }
       }
     } catch (Exception e) {
@@ -157,7 +155,7 @@ public class BannedWords : BaseCommandModule {
   }
 
   class BannedWord {
-    public string word;
+    public string word = null;
     public ulong creator = 0;
     public DateTime date = DateTime.MinValue;
 
@@ -176,7 +174,7 @@ public class BannedWords : BaseCommandModule {
     }
 
     public override string ToString() {
-      return word + "\t" + creator + "\t" + date + "\n";
+      return word + "\t" + creator + "\t" + date.ToString() + "\n";
     }
   }
 
@@ -198,7 +196,7 @@ public class BannedWords : BaseCommandModule {
     return await ctx.Client.GetUserAsync(userId);
   }
 
-  internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
+  internal static async void CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
     // Who is the author? If the bot or a mod then ignore
     if (args.Author.Equals(client.CurrentUser)) return;
     DiscordUser user = args.Author;
@@ -210,7 +208,7 @@ public class BannedWords : BaseCommandModule {
       return;
     }
     foreach (DiscordRole role in member.Roles) {
-      if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
+    //  if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
     }
 
     string msg = args.Message.Content.ToLowerInvariant();
