@@ -21,6 +21,9 @@ public class Delete : BaseCommandModule
     /// </summary>
     [Command("delete")]
     [Aliases("clear", "purge")]
+    [Description("Deletes the last x messages in the channel, the command was invoked in (e.g. `\\delete 10`)." +
+                 "\nIt contains an overload to delete the last x messages of a specified user (e.g. `\\delete @User 10`)." +
+                 "\nThis command can only be invoked by a Helper or Mod.")]
     [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
     [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, int count)
