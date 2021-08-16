@@ -153,6 +153,16 @@ public static class UtilityFunctions
   }
 
   /// <summary>
+  /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji object
+  /// </summary>
+  /// <param name="emoji">The emoji enum for the emoji to convert</param>
+  /// <returns>A string representation of the emoji that can be used in a message</returns>
+  public static string GetEmojiSnowflakeID(EmojiEnum emoji) {
+    DiscordEmoji em = GetEmoji(emoji);
+    return "<" + em.GetDiscordName() + em.Id.ToString() + ">";
+  }
+
+  /// <summary>
   /// Adds a line in the logs telling which user used what command
   /// </summary>
   /// <param name="ctx"></param>
@@ -170,7 +180,10 @@ public static class UtilityFunctions
     Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + msg);
     try {
       logs.WriteLine(msg);
-    } catch (Exception) {}
+      logs.FlushAsync();
+    } catch (Exception e) {
+      string m = e.Message;
+    }
   }
 }
 
