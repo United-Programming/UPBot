@@ -28,7 +28,7 @@ public class Delete : BaseCommandModule
         UtilityFunctions.LogUserCommand(ctx);
         if (count <= 0)
         {
-            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
+            await ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
 
@@ -51,7 +51,7 @@ public class Delete : BaseCommandModule
         UtilityFunctions.LogUserCommand(ctx);
         if (count <= 0)
         {
-            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
+            await ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
 
@@ -88,18 +88,20 @@ public class Delete : BaseCommandModule
         string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
 
         await ctx.Message.DeleteAsync();
-        string message = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
-        
-        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Green));
+        string embedMessage = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
+
+        var message = await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, true);
+        await Task.Delay(10_000);
+        await message.DeleteAsync();
     }
 
-    private async Task ErrorRaised(CommandErrors error, CommandContext ctx, params object[] additionalParams)
+    private async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
     {
         string message = string.Empty;
         switch (error)
         {
             case CommandErrors.InvalidParams:
-                message = $"Invalid params for the command {ctx.Command.Name}.";
+                message = $"Invalid params for the command {ctx?.Command.Name}.";
                 break;
             case CommandErrors.InvalidParamsDelete:
                 if (additionalParams[0] is int count)
@@ -108,7 +110,7 @@ public class Delete : BaseCommandModule
                     goto case CommandErrors.InvalidParams;
                 break;
         }
-        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Red).Build());
+        await UtilityFunctions.BuildEmbedAndExecute("Error", message, UtilityFunctions.Red, ctx, true);
     }
 
     private bool CheckLimit(int count)

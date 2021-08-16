@@ -43,6 +43,5 @@ namespace UPBot {
 
       await Task.Delay(-1);
     }
-
   }
 }
