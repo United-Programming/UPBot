@@ -70,7 +70,7 @@ public class HelpLanguagesModel : BaseCommandModule {
   public async Task HelpCommand(CommandContext ctx, [Description("Choose what you want video or course on specific language.")] string TypeOfHelp, [Description("As string `<lang>` put the name of language that you want to learn")] string lang) // C#
   {
     UtilityFunctions.LogUserCommand(ctx);
-    lang = NormalizeLanguage(lang);
+    lang = NormalizeLanguage(lang);s
 
     if (lang == null)
       await ErrorMessage(ctx);
