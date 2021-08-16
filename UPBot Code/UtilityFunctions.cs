@@ -11,6 +11,13 @@ using System.IO;
 /// </summary>
 public static class UtilityFunctions
 {
+  /// <summary>
+  /// Common colors
+  /// </summary>
+  public static readonly DiscordColor Red = new DiscordColor("#f50f48");
+  public static readonly DiscordColor Green = new DiscordColor("#32a852");
+  
+  // ---------------------------
   static DiscordClient client;
   static DateTimeFormatInfo sortableDateTimeFormat;
   static StreamWriter logs;
@@ -53,7 +60,19 @@ public static class UtilityFunctions
   {
     return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CustomCommands", fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
   }
-  
+
+  /// <summary>
+  /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
+  /// </summary>
+  public static DiscordEmbedBuilder BuildEmbed(string title, string description, DiscordColor color)
+  {
+    DiscordEmbedBuilder b = new DiscordEmbedBuilder();
+    b.Title = title;
+    b.Color = color;
+    b.Description = description;
+    return b;
+  }
+
   static DiscordEmoji[] emojis;
   static ulong[] emojiIDs;
   static DiscordEmoji thinkingAsError;
@@ -128,4 +147,10 @@ public enum EmojiEnum {
   Unity = 10,
   Godot = 11,
   AutoRefactored = 12,
+}
+
+public enum CommandErrors
+{
+    InvalidParams,
+    InvalidParamsDelete
 }
