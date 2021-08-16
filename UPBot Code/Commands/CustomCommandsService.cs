@@ -17,6 +17,7 @@ public class CustomCommandsService : BaseCommandModule
 {
     private static readonly List<CustomCommand> Commands = new List<CustomCommand>();
     internal static DiscordClient DiscordClient { get; set; }
+    internal const string DirectoryNameCC = "CustomCommands";
 
     [Command("newcc")]
     [Aliases("createcc", "addcc", "ccadd", "cccreate")]
@@ -55,7 +56,7 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task DeleteCommand(CommandContext ctx, string name)
     {
-        string filePath = UtilityFunctions.ConstructPath(name, ".txt");
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -72,7 +73,7 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task EditCommand(CommandContext ctx, string name)
     {
-        string filePath = UtilityFunctions.ConstructPath(name, ".txt");
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
         {
             string content = await WaitForContent(ctx, name);
