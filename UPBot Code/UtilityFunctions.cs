@@ -69,7 +69,11 @@ public static class UtilityFunctions
   /// <param name="fileSuffix">The file-suffix (file-type, e.g. ".txt" or ".png")</param>
   public static string ConstructPath(string directoryName, string fileNameRaw, string fileSuffix)
   {
-    return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
+    string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName);
+    if (!Directory.Exists(Path.Combine(directoryPath)))
+      Directory.CreateDirectory(directoryPath);
+    
+    return Path.Combine(directoryPath, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
   }
 
   /// <summary>

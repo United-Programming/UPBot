@@ -103,7 +103,7 @@ public class CustomCommandsService : BaseCommandModule
                 command.EditCommand(content);
 
             string embedMessage = $"CC **{name}** successfully edited!";
-            await  UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
         }
         else
         {
