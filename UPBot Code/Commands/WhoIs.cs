@@ -11,11 +11,14 @@ using System.Threading.Tasks;
 public class WhoIs : BaseCommandModule {
 
   [Command("whois")]
+  [Aliases("userinfo")]
+  [Description("Get information about a specific user.")]
   public async Task WhoIsCommand(CommandContext ctx) { // Basic version without parameters
     await GenerateWhoIs(ctx, null);
   }
 
   [Command("whoami")]
+  [Description("Get information about your own Discord account.")]
   public async Task WhoAmICommand(CommandContext ctx) { // Alternate version without parameters
     await GenerateWhoIs(ctx, null);
   }
@@ -31,12 +34,7 @@ public class WhoIs : BaseCommandModule {
       m = ctx.Member;
     }
     bool you = m == ctx.Member;
-
-    DiscordEmbedBuilder b = new DiscordEmbedBuilder();
-    b.Title = "Who Is user " + m.DisplayName + "#" + m.Discriminator;
-    b.WithThumbnail(m.AvatarUrl, 64, 64);
-
-    b.WithColor(m.Color);
+    
     DateTimeOffset jdate = m.JoinedAt.UtcDateTime;
     string joined = jdate.Year + "/" + jdate.Month + "/" + jdate.Day;
     DateTimeOffset cdate = m.CreationTimestamp.UtcDateTime;
@@ -45,24 +43,29 @@ public class WhoIs : BaseCommandModule {
     int daysJ = (int)(DateTime.Now - m.JoinedAt.DateTime).TotalDays;
     int daysA = (int)(DateTime.Now - m.CreationTimestamp.DateTime).TotalDays;
     double years = daysA / 365.25;
-    b.WithDescription(m.Username + " joined on " + joined + " (" + daysJ + " days)\n Account created on " + creation + " (" + daysA + " days, " + years.ToString("N1") + " years)");
 
-    b.AddField("Is you",      you        ? "✓" : "❌", true);
-    b.AddField("Is a bot",    m.IsBot    ? "🤖" : "❌", true);
-    b.AddField("Is the boss", m.IsOwner  ? "👑" : "❌", true);
-    b.AddField("Is Muted", m.IsMuted            ? "✓" : "❌", true);
-    b.AddField("Is Deafened", m.IsDeafened      ? "✓" : "❌", true);
+    string title = "Who is the user " + m.DisplayName + "#" + m.Discriminator;
+    string description = m.Username + " joined on " + joined + " (" + daysJ + " days)\n Account created on " +
+                         creation + " (" + daysA + " days, " + years.ToString("N1") + " years)";
+    var embed = UtilityFunctions.BuildEmbed(title, description, m.Color);
+    embed.WithThumbnail(m.AvatarUrl, 64, 64);
 
-    if (m.Locale != null) b.AddField("Speaks", m.Locale, true);
-    if (m.Nickname != null) b.AddField("Is called", m.Nickname, true);
-    b.AddField("Avatar Hex Color", m.Color.ToString(), true);
+    embed.AddField("Is you",      you        ? "✓" : "❌", true);
+    embed.AddField("Is a bot",    m.IsBot    ? "🤖" : "❌", true);
+    embed.AddField("Is the boss", m.IsOwner  ? "👑" : "❌", true);
+    embed.AddField("Is Muted", m.IsMuted            ? "✓" : "❌", true);
+    embed.AddField("Is Deafened", m.IsDeafened      ? "✓" : "❌", true);
+
+    if (m.Locale != null) embed.AddField("Speaks", m.Locale, true);
+    if (m.Nickname != null) embed.AddField("Is called", m.Nickname, true);
+    embed.AddField("Avatar Hex Color", m.Color.ToString(), true);
 
     if (m.PremiumSince != null) {
       DateTimeOffset bdate = ((DateTimeOffset)m.PremiumSince).UtcDateTime;
       string booster = bdate.Year + "/" + bdate.Month + "/" + bdate.Day;
-      b.AddField("Booster", "Form " + booster, true);
+      embed.AddField("Booster", "Form " + booster, true);
     }
-    if (m.Flags != null) b.AddField("Flags", m.Flags.ToString(), true); // Only the default flags will be shown. This bot will not be very diffused so probably we do not need specific checks for flags
+    if (m.Flags != null) embed.AddField("Flags", m.Flags.ToString(), true); // Only the default flags will be shown. This bot will not be very diffused so probably we do not need specific checks for flags
 
     string roles = "";
     int num = 0;
@@ -71,9 +74,9 @@ public class WhoIs : BaseCommandModule {
       num++;
     }
     if (num == 1)
-      b.AddField("Role", roles, false);
+      embed.AddField("Role", roles, false);
     else
-      b.AddField(num + " Roles", roles, false);
+      embed.AddField(num + " Roles", roles, false);
 
     string perms = ""; // Not all permissions are shown
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreateInstantInvite)) perms += ", Invite";
@@ -93,8 +96,8 @@ public class WhoIs : BaseCommandModule {
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageEmojis)) perms += ", Manage Emojis";
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseSlashCommands)) perms += ", Use Bot";
     if (m.Permissions.HasFlag(DSharpPlus.Permissions.UsePublicThreads)) perms += ", Use Threads";
-    if (perms.Length > 0) b.AddField("Permissions", perms.Substring(2), false);
+    if (perms.Length > 0) embed.AddField("Permissions", perms.Substring(2), false);
 
-    return ctx.RespondAsync(b.Build());
+    return ctx.RespondAsync(embed.Build());
   }
 }
