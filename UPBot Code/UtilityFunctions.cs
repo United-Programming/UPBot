@@ -49,12 +49,11 @@ public static class UtilityFunctions
   }
 
   /// <summary>
-  /// Change a string based on the count it's referring to (ex. "one apple", "two apples")
+  /// Change a string based on the count it's referring to (e.g. "one apple", "two apples")
   /// </summary>
   /// <param name="count">The count, the string is referring to</param>
   /// <param name="singular">The singular version (referring to only one)</param>
   /// <param name="plural">The singular version (referring to more than one)</param>
-  /// <returns></returns>
   public static string PluralFormatter(int count, string singular, string plural)
   {
     return count > 1 ? plural : singular;
