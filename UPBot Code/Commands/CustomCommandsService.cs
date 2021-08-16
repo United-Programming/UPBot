@@ -112,6 +112,27 @@ public class CustomCommandsService : BaseCommandModule
         }
     }
 
+    [Command("cclist")]
+    [Aliases("listcc")]
+    [Description("Get a list of all Custom Commands (CC's).")]
+    public async Task ListCC(CommandContext ctx)
+    {
+        if (Commands.Count <= 0)
+        {
+            await ErrorCallback(CommandErrors.UnknownError, ctx);
+            return;
+        }
+
+        string allCommands = string.Empty;
+        foreach (var cmd in Commands)
+        {
+            if(cmd.Names.Length > 0)
+                allCommands += $"- {cmd.Names[0]} ({(cmd.Names.Length > 1 ? string.Join(", ", cmd.Names.Skip(1)) : string.Empty)}){System.Environment.NewLine}";
+        }
+
+        await UtilityFunctions.BuildEmbedAndExecute("CC List", allCommands, UtilityFunctions.Yellow, ctx, true);
+    }
+
     internal static async Task LoadCustomCommands()
     {
         string path = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "CustomCommands");
@@ -171,6 +192,9 @@ public class CustomCommandsService : BaseCommandModule
                 }
                 else
                     throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
+                break;
+            case CommandErrors.UnknownError:
+                await UtilityFunctions.BuildEmbedAndExecute("Error", "Unknown error!", UtilityFunctions.Red, ctx, false);
                 break;
         }
     }
