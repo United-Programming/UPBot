@@ -31,17 +31,19 @@ public class MembersTracking {
   public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
     if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
-
     tracking[args.Member.Id] = DateTime.Now;
-    await Task.Delay(15000);
-    if (tracking.ContainsKey(args.Member.Id)) {
-      string msgC = UtilityFunctions.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + args.Member.Mention + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
-      string msgL = "+ User " + args.Member.DisplayName + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
-      await trackChannel.SendMessageAsync(msgC);
-      UtilityFunctions.Log(msgL);
-      tracking.Remove(args.Member.Id);
-    }
+    _ = SomethingAsync(args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     await Task.Delay(10);
   }
 
+  static async Task SomethingAsync(ulong id, string name, string mention, int numMembers) {
+    await Task.Delay(25000);
+    if (tracking.ContainsKey(id)) {
+      string msgC = UtilityFunctions.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " memebrs total)";
+      string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " memebrs total)";
+      await trackChannel.SendMessageAsync(msgC);
+      UtilityFunctions.Log(msgL);
+      tracking.Remove(id);
+    }
+  }
 }
