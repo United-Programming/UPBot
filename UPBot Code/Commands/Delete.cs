@@ -15,7 +15,7 @@ public class Delete : BaseCommandModule
 {
     private const int MessageLimit = 50;
     private const string CallbackLimitExceeded = ", since you can't delete more than 50 messages at a time.";
-    
+
     /// <summary>
     /// Delete the last x messages of any user
     /// </summary>
@@ -25,21 +25,21 @@ public class Delete : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, int count)
     {
-    UtilityFunctions.LogUserCommand(ctx);
-    if (count <= 0)
+        UtilityFunctions.LogUserCommand(ctx);
+        if (count <= 0)
         {
-            await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
+            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
-        
+
         bool limitExceeded = CheckLimit(count);
-        
+
         var messages = ctx.Channel.GetMessagesAsync(count + 1).Result;
         await DeleteMessages(ctx, messages);
 
         await Success(ctx, limitExceeded, count);
     }
-    
+
     /// <summary>
     /// Delete the last x messages of the specified user
     /// </summary>
@@ -48,15 +48,15 @@ public class Delete : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
     public async Task DeleteCommand(CommandContext ctx, DiscordMember targetUser, int count)
     {
-    UtilityFunctions.LogUserCommand(ctx);
-    if (count <= 0)
+        UtilityFunctions.LogUserCommand(ctx);
+        if (count <= 0)
         {
-            await ctx.RespondAsync($"You can't delete {count} messages. Try to eat {count} apples, does that make sense?");
+            await ErrorRaised(CommandErrors.InvalidParamsDelete, ctx, count);
             return;
         }
-        
+
         bool limitExceeded = CheckLimit(count);
-        
+
         var allMessages = ctx.Channel.GetMessagesAsync().Result; // Get last 100 messages
         var userMessages = allMessages.Where(x => x.Author == targetUser).Take(count);
         await DeleteMessages(ctx, userMessages);
@@ -71,7 +71,7 @@ public class Delete : BaseCommandModule
     {
         foreach (DiscordMessage m in messages)
         {
-            if(m != ctx.Message)
+            if (m != ctx.Message)
                 await m.DeleteAsync();
         }
     }
@@ -80,15 +80,35 @@ public class Delete : BaseCommandModule
     /// Will be called at the end of every execution of this command and tells the user that the execution succeeded
     /// including a short summary of the command (how many messages, by which user etc.)
     /// </summary>
-    public async Task Success(CommandContext ctx, bool limitExceeded, int count, DiscordMember targetUser = null)
+    private async Task Success(CommandContext ctx, bool limitExceeded, int count, DiscordMember targetUser = null)
     {
         string mentionUserStr = targetUser == null ? string.Empty : $"by '{targetUser.DisplayName}'";
         string overLimitStr = limitExceeded ? CallbackLimitExceeded : string.Empty;
         string messagesLiteral = UtilityFunctions.PluralFormatter(count, "message", "messages");
         string hasLiteral = UtilityFunctions.PluralFormatter(count, "has", "have");
-        
+
         await ctx.Message.DeleteAsync();
-        await ctx.RespondAsync($"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.");
+        string message = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
+        
+        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Green));
+    }
+
+    private async Task ErrorRaised(CommandErrors error, CommandContext ctx, params object[] additionalParams)
+    {
+        string message = string.Empty;
+        switch (error)
+        {
+            case CommandErrors.InvalidParams:
+                message = $"Invalid params for the command {ctx.Command.Name}.";
+                break;
+            case CommandErrors.InvalidParamsDelete:
+                if (additionalParams[0] is int count)
+                    message = $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?";
+                else
+                    goto case CommandErrors.InvalidParams;
+                break;
+        }
+        await ctx.RespondAsync(UtilityFunctions.BuildEmbed("Error", message, UtilityFunctions.Red).Build());
     }
 
     private bool CheckLimit(int count)
