@@ -118,7 +118,7 @@ public class CustomCommandsService : BaseCommandModule
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
 
-        foreach (string fileName in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory))
+        foreach (string fileName in Directory.GetFiles(path))
         {
             using (StreamReader sr = File.OpenText(fileName))
             {
