@@ -120,7 +120,7 @@ public class Refactor : BaseCommandModule {
     }
 
     DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
-    DiscordEmoji autoRefactored = UtilityFunctions.GetEmoji(EmojiEnum.AutoRrefactored);
+    DiscordEmoji autoRefactored = UtilityFunctions.GetEmoji(EmojiEnum.AutoRefactored);
     DiscordEmoji emoji = UtilityFunctions.GetEmoji(langEmoji);
     try {
       if (autoRefactored != null) {

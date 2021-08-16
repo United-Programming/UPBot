@@ -13,6 +13,7 @@ public static class UtilityFunctions
 {
   static DiscordClient client;
   static DateTimeFormatInfo sortableDateTimeFormat;
+  static StreamWriter logs;
 
   public static void InitClient(DiscordClient c) {
     client = c;
@@ -30,9 +31,12 @@ public static class UtilityFunctions
       831407996453126236ul, // UnitedProgramming = 9,
       830908553908060200ul, // Unity = 10,
       830908576951304212ul, // Godot = 11,
-      876180793213464606ul // AutoRrefactored = 12,
+      876180793213464606ul  // AutoRefactored = 12,
     };
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
+    string logName = "BotLogs " + DateTime.Now.ToString("yyyyMMdd") + ".logs";
+    if (File.Exists(logName)) logs = new StreamWriter(logName, append: true);
+    else logs = File.CreateText(logName);
   }
 
   public static string PluralFormatter(int count, string singular, string plural)
@@ -93,7 +97,7 @@ public static class UtilityFunctions
   /// <param name="ctx"></param>
   /// <returns></returns>
   internal static void LogUserCommand(CommandContext ctx) {
-    Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
+    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
   }
 
   /// <summary>
@@ -103,6 +107,9 @@ public static class UtilityFunctions
   /// <returns></returns>
   internal static void Log(string msg) {
     Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + msg);
+    try {
+      logs.WriteLine(msg);
+    } catch (Exception) {}
   }
 }
 
@@ -120,5 +127,5 @@ public enum EmojiEnum {
   UnitedProgramming = 9,
   Unity = 10,
   Godot = 11,
-  AutoRrefactored = 12,
+  AutoRefactored = 12,
 }
