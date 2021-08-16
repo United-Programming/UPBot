@@ -18,9 +18,10 @@ public class BannedWords : BaseCommandModule {
   private static List<BannedWord> bannedWords = null;
   private static Regex valid = new Regex(@"^[a-zA-Z0-9]+$");
   private static Regex letters = new Regex(@"[a-zA-Z0-9]");
+  private const string directoryName = "Restrictions";
 
   public static void Init() {
-    string path = UtilityFunctions.ConstructPath("BannedWords", ".txt");
+    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
     if (!File.Exists(path)) return;
     string[] all = File.ReadAllLines(path);
     bannedWords = new List<BannedWord>();
@@ -121,7 +122,7 @@ public class BannedWords : BaseCommandModule {
   }
 
   void SaveWord(BannedWord w) {
-    string path = UtilityFunctions.ConstructPath("BannedWords", ".txt");
+    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
     if (!File.Exists(path)) File.CreateText(path);
     try {
       using (StreamWriter sw = File.AppendText(path)) {
@@ -133,7 +134,7 @@ public class BannedWords : BaseCommandModule {
   }
 
   void SaveList() {
-    string path = UtilityFunctions.ConstructPath("BannedWords", ".txt");
+    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
     if (File.Exists(path)) {
       try {
         File.Delete(path);
