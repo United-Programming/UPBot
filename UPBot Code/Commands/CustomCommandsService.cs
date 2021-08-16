@@ -27,7 +27,7 @@ public class CustomCommandsService : BaseCommandModule
         {
             if (DiscordClient.GetCommandsNext().RegisteredCommands.ContainsKey(name)) // Check if there is a command with one of the names already
             {
-                await ErrorCallback(ctx, name);
+                await ErrorCallback(CommandErrors.CommandExists, ctx, name);
                 return;
             }
             
@@ -35,7 +35,7 @@ public class CustomCommandsService : BaseCommandModule
             {
                 if (cmd.Names.Contains(name)) // Check if there is already a CC with one of the names
                 {
-                    await ErrorCallback(ctx, name);
+                    await ErrorCallback(CommandErrors.CommandExists, ctx, name);
                     return;
                 }
             }
@@ -45,7 +45,9 @@ public class CustomCommandsService : BaseCommandModule
         CustomCommand command = new CustomCommand(names, content);
         Commands.Add(command);
         await WriteToFile(command);
-        await ctx.Channel.SendMessageAsync($"CC {names[0]} successfully created and saved!");
+        
+        string embedMessage = $"CC {names[0]} successfully created and saved!";
+        await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
     }
 
     [Command("delcc")]
@@ -59,7 +61,9 @@ public class CustomCommandsService : BaseCommandModule
             File.Delete(filePath);
             if (TryGetCommand(name, out CustomCommand cmd))
                 Commands.Remove(cmd);
-            await ctx.RespondAsync($"CC {name} successfully deleted!");
+            
+            string embedMessage = $"CC {name} successfully deleted!";
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, true);
         }
     }
 
@@ -86,11 +90,13 @@ public class CustomCommandsService : BaseCommandModule
             if (TryGetCommand(name, out CustomCommand command))
                 command.EditCommand(content);
 
-            await ctx.Channel.SendMessageAsync($"CC **{name}** successfully edited!");
+            string embedMessage = $"CC **{name}** successfully edited!";
+            await  UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
         }
         else
         {
-            await ctx.RespondAsync("There is no Custom Command with this name! Please don't use an alias, use the original name!");
+            string embedMessage = "There is no Custom Command with this name! Please don't use an alias, use the original name!";
+            await UtilityFunctions.BuildEmbedAndExecute("Error", embedMessage, UtilityFunctions.Red, ctx, true);
         }
     }
 
@@ -141,14 +147,27 @@ public class CustomCommandsService : BaseCommandModule
         }
     }
 
-    private async Task ErrorCallback(CommandContext ctx, string name)
+    private async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
     {
-        await ctx.RespondAsync($"There is already a command containing the alias {name}");
+        switch (error)
+        {
+            case CommandErrors.CommandExists:
+                if (additionalParams[0] is string name)
+                {
+                    string message = $"There is already a command containing the alias {additionalParams[0]}";
+                    await UtilityFunctions.BuildEmbedAndExecute("Error", message, UtilityFunctions.Red, ctx, true);
+                }
+                else
+                    throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
+                break;
+        }
     }
 
     private async Task<string> WaitForContent(CommandContext ctx, string name)
     {
-        await ctx.RespondAsync($"Please input the content of the CC **{name}** in one single message. Your next message will count as the content.");
+        string embedMessage = $"Please input the content of the CC **{name}** in one single message. Your next message will count as the content.";
+        await UtilityFunctions.BuildEmbedAndExecute("Waiting for interaction", embedMessage, UtilityFunctions.LightBlue, ctx, true);
+
         string content = string.Empty;
         await ctx.Message.GetNextMessageAsync(m =>
         {

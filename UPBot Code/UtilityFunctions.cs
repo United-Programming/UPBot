@@ -4,6 +4,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Utility functions that don't belong to a specific class or a specific command
@@ -16,6 +17,7 @@ public static class UtilityFunctions
   /// </summary>
   public static readonly DiscordColor Red = new DiscordColor("#f50f48");
   public static readonly DiscordColor Green = new DiscordColor("#32a852");
+  public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
   
   // ---------------------------
   static DiscordClient client;
@@ -64,14 +66,53 @@ public static class UtilityFunctions
   /// <summary>
   /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
   /// </summary>
+  /// <param name="title">Embed title</param>
+  /// <param name="description">Embed description</param>
+  /// <param name="color">Embed color</param>
   public static DiscordEmbedBuilder BuildEmbed(string title, string description, DiscordColor color)
   {
     DiscordEmbedBuilder b = new DiscordEmbedBuilder();
     b.Title = title;
     b.Color = color;
     b.Description = description;
+    
     return b;
   }
+
+  /// <summary>
+  /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
+  /// and SENDS the embed as a message
+  /// </summary>
+  /// <param name="title">Embed title</param>
+  /// <param name="description">Embed description</param>
+  /// <param name="color">Embed color</param>
+  /// <param name="ctx">CommandContext, required to send a message</param>
+  /// <param name="respond">Respond to original message or send an independent message?</param>
+  public static async Task<DiscordEmbedBuilder> BuildEmbedAndExecute(string title, string description, DiscordColor color, 
+    CommandContext ctx, bool respond)
+  {
+    var embedBuilder = BuildEmbed(title, description, color);
+    await LogEmbed(embedBuilder, ctx, respond);
+    
+    return embedBuilder;
+  }
+
+  /// <summary>
+  /// Logs an embed as a message in the relevant channel
+  /// </summary>
+  /// <param name="builder">Embed builder with the embed template</param>
+  /// <param name="ctx">CommandContext, required to send a message</param>
+  /// <param name="respond">Respond to original message or send an independent message?</param>
+  public static async Task LogEmbed(DiscordEmbedBuilder builder, CommandContext ctx, bool respond)
+  {
+    if (respond)
+    {
+      await ctx.RespondAsync(builder.Build());
+      return;
+    }
+
+    await ctx.Channel.SendMessageAsync(builder.Build());
+  } 
 
   static DiscordEmoji[] emojis;
   static ulong[] emojiIDs;
@@ -152,5 +193,6 @@ public enum EmojiEnum {
 public enum CommandErrors
 {
     InvalidParams,
-    InvalidParamsDelete
+    InvalidParamsDelete,
+    CommandExists,
 }
