@@ -12,10 +12,10 @@ namespace UPBot
     {
         static void Main(string[] args)
         {
-            MainAsync(args[0]).GetAwaiter().GetResult();
+      MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
         }
 
-        static async Task MainAsync(string token)
+        static async Task MainAsync(string token, string prefix)
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
@@ -32,10 +32,16 @@ namespace UPBot
             UtilityFunctions.InitClient(discord);
             var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
             {
-                StringPrefixes = new[] { "\\" } // The backslash will be the command prefix
+                StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters
             });
             commands.CommandErrored += CustomCommandsService.CommandError;
             commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
+
+      BannedWords.Init();
+      discord.MessageCreated += async (s, e) =>
+      {
+        BannedWords.CheckMessage(s, e);
+      };
 
             await CustomCommandsService.LoadCustomCommands();
             await discord.ConnectAsync(); // Connects and wait forever
