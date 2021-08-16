@@ -24,7 +24,7 @@ public class CustomCommandsService : BaseCommandModule
     [Description("**Create** a new Custom Command (so-called 'CC') with a specified name and all aliases if desired " +
                  "(no duplicate alias allowed).\nAfter doing this, the bot will ask you to input the content, which will " +
                  "be displayed once someone invokes this CC. Your entire next message will be used for the content, so " +
-                 "be careful what you type!\n\n**Usage:**\n\n- `newcc name` (without alias)\n-`newcc name alias1 alias2`" +
+                 "be careful what you type!\n\n**Usage:**\n\n- `newcc name` (without alias)\n- `newcc name alias1 alias2`" +
                  " (with 2 aliases)\n\nThis command can only be invoked by a Mod.")]
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task CreateCommand(CommandContext ctx, params string[] names)
