@@ -47,18 +47,17 @@ public class HelpLanguagesModel : BaseCommandModule {
     string title = "Help Language - How To Use";
 
     DiscordMember member = ctx.Member;
-    string description = member.Mention + " , if you want to get video course about specific language type: `helplanguage video C#`" +
-        " \nIf you want to get full online course about specific language type: \n`helplanguage course C#`" +
+    string description = member.Mention + " , if you want to get video course about specific language type: `\\helplanguage video C#`" +
+        " \nIf you want to get full online course about specific language type: \n`\\helplanguage course C#`" +
         " \nAvailable languages: `ะก#, C++, Python, JavaScript, Java`";
-    await Utils.BuildEmbedAndExecute(title, description, Utils.Red, ctx, true);
+    await UtilityFunctions.BuildEmbedAndExecute(title, description, UtilityFunctions.Red, ctx, true);
   }
 
   [Command("helplanguage")]
-  [Description("Gives good tutorials on specific language.\n**Usage**: `helplanguage language`")]
+  [Description("Gives good tutorials on specific language.\n**Usage:** `\\helplanguage language`")]
   public async Task HelpCommand(CommandContext ctx, [Description("Choose what you want video or course on specific language.")] string typeOfHelp, [Description("As string `<lang>` put the name of language that you want to learn")] string lang) // C#
   {
-    Utils.LogUserCommand(ctx);
-    try {
+    UtilityFunctions.LogUserCommand(ctx);
     lang = NormalizeLanguage(lang);
 
     if (lang == null)
@@ -74,9 +73,6 @@ public class HelpLanguagesModel : BaseCommandModule {
 
     bool course = typeOfHelp.ToLowerInvariant() != "video";
     await GenerateHelpfulAnswer(ctx, lang, course);
-    } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("WhoIs", ex));
-    }
   }
 
   private string NormalizeLanguage(string language) {
@@ -104,10 +100,11 @@ public class HelpLanguagesModel : BaseCommandModule {
       default:
         return char.ToUpperInvariant(language[0]) + language.Substring(1);
     }
+    
+    //return language;
   }
   
   private async Task GenerateHelpfulAnswer(CommandContext ctx, string language, bool isCourse) {
-    try{
     DiscordMember member = ctx.Member;
     ulong memberId = member.Id;
 
@@ -136,14 +133,12 @@ public class HelpLanguagesModel : BaseCommandModule {
 
     string link = isCourse ? languages[language].CourseLink :languages[language].VideoLink;
     string msg = helpfulAnswers[lastRequest.Num];
-    msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention).Replace("///", link);
+    msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention)
+          .Replace("///", link);
     if (isCourse)
       msg = msg.Replace("video", "course");
 
-    await Utils.BuildEmbedAndExecute(title, msg, languages[language].Color, ctx, true);
-    } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("HelpLanguage", ex));
-    }
+    await UtilityFunctions.BuildEmbedAndExecute(title, msg, languages[language].Color, ctx, true);
   }
 
   private class LastRequestByMember {
