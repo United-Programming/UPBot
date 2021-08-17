@@ -196,7 +196,7 @@ public static class UtilityFunctions
   
   internal static async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
   {
-    DiscordColor red = UtilityFunctions.Red;
+    DiscordColor red = Red;
     string message = string.Empty;
     bool respond = false;
     switch (error)
