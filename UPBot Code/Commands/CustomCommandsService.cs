@@ -29,6 +29,7 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task CreateCommand(CommandContext ctx, [Description("A 'list' of all aliases. The first term is the **main name**, the other ones, separated by a space, are aliases")] params string[] names)
     {
+        names = names.Distinct().ToArray();
         foreach (var name in names)
         {
             if (DiscordClient.GetCommandsNext().RegisteredCommands.ContainsKey(name)) // Check if there is a command with one of the names already
@@ -120,6 +121,7 @@ public class CustomCommandsService : BaseCommandModule
                                                                        "of the CC whose name you want to edit, the **SECOND** term " +
                                                                        "is the new **main name** and all the other terms are new aliases")] params string[] names)
     {
+        names = names.Distinct().ToArray();
         if (names.Length < 2)
         {
             await UtilityFunctions.ErrorCallback(CommandErrors.InvalidParams, ctx);
