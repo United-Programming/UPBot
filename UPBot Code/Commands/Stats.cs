@@ -169,9 +169,9 @@ public class Stats : BaseCommandModule {
         e.WithFooter("Statistics from " + channelIDs.Length + " channels and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
 
     } catch (Exception ex) {
-      string err = ex.Message;
+
     }
-    await ctx.Message.RespondAsync(e.Build());
+    await m.ModifyAsync(e.Build());
   }
 
   public class Mentioner {
