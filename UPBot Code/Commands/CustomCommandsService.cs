@@ -20,7 +20,7 @@ public class CustomCommandsService : BaseCommandModule
     internal const string DirectoryNameCC = "CustomCommands";
 
     [Command("newcc")]
-    [Aliases("createcc", "addcc", "ccadd", "cccreate", "ccnew")]
+    [Aliases("createcc", "addcc", "ccadd", "cccreate")]
     [Description("**Create** a new Custom Command (so-called 'CC') with a specified name and all aliases if desired " +
                  "(no duplicate alias allowed).\nAfter doing this, the bot will ask you to input the content, which will " +
                  "be displayed once someone invokes this CC. Your entire next message will be used for the content, so " +
@@ -29,13 +29,12 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task CreateCommand(CommandContext ctx, [Description("A 'list' of all aliases. The first term is the **main name**, the other ones, separated by a space, are aliases")] params string[] names)
     {
-    Utils.LogUserCommand(ctx);
-    names = names.Distinct().ToArray();
+        names = names.Distinct().ToArray();
         foreach (var name in names)
         {
             if (DiscordClient.GetCommandsNext().RegisteredCommands.ContainsKey(name)) // Check if there is a command with one of the names already
             {
-                await Utils.ErrorCallback(CommandErrors.CommandExists, ctx, name);
+                await UtilityFunctions.ErrorCallback(CommandErrors.CommandExists, ctx, name);
                 return;
             }
             
@@ -43,7 +42,7 @@ public class CustomCommandsService : BaseCommandModule
             {
                 if (cmd.Names.Contains(name)) // Check if there is already a CC with one of the names
                 {
-                    await Utils.ErrorCallback(CommandErrors.CommandExists, ctx, name);
+                    await UtilityFunctions.ErrorCallback(CommandErrors.CommandExists, ctx, name);
                     return;
                 }
             }
@@ -55,7 +54,7 @@ public class CustomCommandsService : BaseCommandModule
         await WriteToFile(command);
         
         string embedMessage = $"CC {names[0]} successfully created and saved!";
-        await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, false);
+        await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
     }
 
     [Command("ccdel")]
@@ -66,8 +65,7 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task DeleteCommand(CommandContext ctx, [Description("Main name of the CC you want to delete")] string name)
     {
-    Utils.LogUserCommand(ctx);
-    string filePath = Utils.ConstructPath(DirectoryNameCC, name, ".txt");
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -75,7 +73,7 @@ public class CustomCommandsService : BaseCommandModule
                 Commands.Remove(cmd);
             
             string embedMessage = $"CC {name} successfully deleted!";
-            await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, true);
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, true);
         }
     }
 
@@ -87,8 +85,7 @@ public class CustomCommandsService : BaseCommandModule
     [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
     public async Task EditCommand(CommandContext ctx, [Description("Main name of the CC you want to edit")] string name)
     {
-    Utils.LogUserCommand(ctx);
-    string filePath = Utils.ConstructPath(DirectoryNameCC, name, ".txt");
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, name, ".txt");
         if (File.Exists(filePath))
         {
             string content = await WaitForContent(ctx, name);
@@ -107,10 +104,10 @@ public class CustomCommandsService : BaseCommandModule
                 command.EditCommand(content);
 
             string embedMessage = $"CC **{name}** successfully edited!";
-            await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, false);
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedMessage, UtilityFunctions.Green, ctx, false);
         }
         else
-            await Utils.ErrorCallback(CommandErrors.MissingCommand, ctx);
+            await UtilityFunctions.ErrorCallback(CommandErrors.MissingCommand, ctx);
     }
 
     [Command("cceditname")]
@@ -124,15 +121,14 @@ public class CustomCommandsService : BaseCommandModule
                                                                        "of the CC whose name you want to edit, the **SECOND** term " +
                                                                        "is the new **main name** and all the other terms are new aliases")] params string[] names)
     {
-    Utils.LogUserCommand(ctx);
-    names = names.Distinct().ToArray();
+        names = names.Distinct().ToArray();
         if (names.Length < 2)
         {
-            await Utils.ErrorCallback(CommandErrors.InvalidParams, ctx);
+            await UtilityFunctions.ErrorCallback(CommandErrors.InvalidParams, ctx);
             return;
         }
         
-        string filePath = Utils.ConstructPath(DirectoryNameCC, names[0], ".txt");
+        string filePath = UtilityFunctions.ConstructPath(DirectoryNameCC, names[0], ".txt");
         if (File.Exists(filePath))
         {
             if (TryGetCommand(names[0], out CustomCommand command))
@@ -147,7 +143,7 @@ public class CustomCommandsService : BaseCommandModule
                     content += c + System.Environment.NewLine;
             }
 
-            string newPath = Utils.ConstructPath(DirectoryNameCC, names[1], ".txt");
+            string newPath = UtilityFunctions.ConstructPath(DirectoryNameCC, names[1], ".txt");
             File.Move(filePath, newPath);
             using (StreamWriter sw = File.CreateText(newPath))
             {
@@ -156,10 +152,10 @@ public class CustomCommandsService : BaseCommandModule
             }
 
             string embedDescription = "The CC names have been successfully edited.";
-            await Utils.BuildEmbedAndExecute("Success", embedDescription, Utils.Green, ctx, false);
+            await UtilityFunctions.BuildEmbedAndExecute("Success", embedDescription, UtilityFunctions.Green, ctx, false);
         }
         else
-            await Utils.ErrorCallback(CommandErrors.MissingCommand, ctx);
+            await UtilityFunctions.ErrorCallback(CommandErrors.MissingCommand, ctx);
     }
 
     [Command("cclist")]
@@ -167,10 +163,9 @@ public class CustomCommandsService : BaseCommandModule
     [Description("Get a list of all Custom Commands (CC's).")]
     public async Task ListCC(CommandContext ctx)
     {
-    Utils.LogUserCommand(ctx);
-    if (Commands.Count <= 0)
+        if (Commands.Count <= 0)
         {
-            await Utils.ErrorCallback(CommandErrors.NoCustomCommands, ctx);
+            await UtilityFunctions.ErrorCallback(CommandErrors.NoCustomCommands, ctx);
             return;
         }
 
@@ -181,7 +176,7 @@ public class CustomCommandsService : BaseCommandModule
                 allCommands += $"- {cmd.Names[0]} ({(cmd.Names.Length > 1 ? string.Join(", ", cmd.Names.Skip(1)) : string.Empty)}){System.Environment.NewLine}";
         }
 
-        await Utils.BuildEmbedAndExecute("CC List", allCommands, Utils.Yellow, ctx, true);
+        await UtilityFunctions.BuildEmbedAndExecute("CC List", allCommands, UtilityFunctions.Yellow, ctx, true);
     }
 
     internal static async Task LoadCustomCommands()
@@ -234,7 +229,7 @@ public class CustomCommandsService : BaseCommandModule
     private async Task<string> WaitForContent(CommandContext ctx, string name)
     {
         string embedMessage = $"Please input the content of the CC **{name}** in one single message. Your next message will count as the content.";
-        await Utils.BuildEmbedAndExecute("Waiting for interaction", embedMessage, Utils.LightBlue, ctx, true);
+        await UtilityFunctions.BuildEmbedAndExecute("Waiting for interaction", embedMessage, UtilityFunctions.LightBlue, ctx, true);
 
         string content = string.Empty;
         await ctx.Message.GetNextMessageAsync(m =>
