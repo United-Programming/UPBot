@@ -72,12 +72,12 @@ public class Stats : BaseCommandModule {
     }
 
     DiscordGuild g = ctx.Guild;
-    DiscordEmbedBuilder e = new DiscordEmbedBuilder();
-    e.Title = UtilityFunctions.GetEmojiSnowflakeID(UtilityFunctions.GetEmoji(EmojiEnum.UnitedProgramming)) + " United Programming Statistics";
-    e.Description = " ---- Fetching data 0/" + channelIDs.Length + " ---- Channel " + channelNames[0] + " ---- ";
-
+    string title = UtilityFunctions.GetEmojiSnowflakeID(UtilityFunctions.GetEmoji(EmojiEnum.UnitedProgramming)) + " United Programming Statistics";
+    string description = " ---- Fetching data 0/" + channelIDs.Length + " ---- Channel " + channelNames[0] + " ---- ";
+    
+    var e = UtilityFunctions.BuildEmbed(title, description, DiscordColor.Black);
     int fieldPos = e.Fields.Count - 1;
-    DiscordMessage m = await ctx.Message.RespondAsync(e.Build());
+    DiscordMessage m = await UtilityFunctions.LogEmbed(e, ctx, true);
 
 
     int step = 0;
@@ -169,9 +169,9 @@ public class Stats : BaseCommandModule {
         e.WithFooter("Statistics from " + channelIDs.Length + " channels and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
 
     } catch (Exception ex) {
-      string err = ex.Message;
+
     }
-    await ctx.Message.RespondAsync(e.Build());
+    await m.ModifyAsync(e.Build());
   }
 
   public class Mentioner {
