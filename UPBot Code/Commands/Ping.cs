@@ -196,8 +196,6 @@ public class PingModule : BaseCommandModule {
           break;
       }
 
-      Console.WriteLine(memberId + ": idx=" + index + " num=" + num + " avg=" + averageBetweenRequests + " amt=" + amount.TotalSeconds); // FIXME remove the debug line
-
       return index;
     }
   }

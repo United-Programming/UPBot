@@ -133,7 +133,7 @@ public class Refactor : BaseCommandModule {
       }
       if (deleteOrig) {
         await Task.Delay(120);
-        List<DiscordMessage> toDelete = new List<DiscordMessage> { /*toRefactor, FIXME*/ctx.Message };
+        List<DiscordMessage> toDelete = new List<DiscordMessage> { toRefactor, ctx.Message };
         await ctx.Channel.DeleteMessagesAsync(toDelete);
       }
       else {

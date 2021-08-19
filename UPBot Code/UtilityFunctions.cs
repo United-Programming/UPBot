@@ -24,6 +24,29 @@ public static class UtilityFunctions
   private static DiscordClient client;
   private static DateTimeFormatInfo sortableDateTimeFormat;
   private static StreamWriter logs;
+  private static DiscordMember mySelf;
+  private static DiscordGuild guild;
+
+  public static void SetMyself(DiscordClient c) {
+    
+  }
+
+  public static DiscordMember GetMyself() {
+    if (mySelf==null) mySelf = client.Guilds[830900174553481236ul].CurrentMember;
+    return mySelf;
+  }
+
+  public static DiscordGuild GetGuild() {
+    if (guild != null) return guild;
+    while (client == null) Task.Delay(1000);
+    while (client.Guilds == null) Task.Delay(1000);
+    while (client.Guilds.Count == 0) Task.Delay(1000);
+
+    guild = client.Guilds[830900174553481236ul];
+    return guild;
+  }
+
+
 
   public static void InitClient(DiscordClient c) {
     client = c;

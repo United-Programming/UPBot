@@ -33,13 +33,17 @@ namespace UPBot {
       BannedWords.Init();
       discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
 
-      discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
-      discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
-
       await CustomCommandsService.LoadCustomCommands();
       await discord.ConnectAsync(); // Connects and wait forever
 
       UtilityFunctions.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd"));
+
+      AppreciationTracking.Init();
+      discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
+      discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
+      discord.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
+      discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
+      discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
 
       await Task.Delay(-1);
     }
