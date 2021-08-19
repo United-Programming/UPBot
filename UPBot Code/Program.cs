@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -45,7 +46,32 @@ namespace UPBot {
       discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
       discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
 
+
+      TestDb();
+
       await Task.Delay(-1);
+    }
+
+    static void TestDb() {
+      string dbName = "TestDatabase.db";
+      if (System.IO.File.Exists(dbName)) {
+        System.IO.File.Delete(dbName);
+      }
+      using (var dbContext = new BotDbContext()) {
+        //Ensure database is created
+        dbContext.Database.EnsureCreated();
+        if (!dbContext.Helpers.Any()) {
+          dbContext.Helpers.AddRange(new HelperMember[] {
+                new HelperMember{ Id=1, Name="CPU"  },
+                new HelperMember{ Id=2, Name="Duck" },
+                new HelperMember{ Id=3, Name="Erem" }
+          });
+          dbContext.SaveChanges();
+        }
+        foreach (var help in dbContext.Helpers) {
+          Console.WriteLine($"HID={help.Id}\tName={help.Name}\tDateTimeAdd={help.DateAdded}");
+        }
+      }
     }
   }
 }
