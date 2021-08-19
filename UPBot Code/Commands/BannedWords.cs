@@ -22,7 +22,7 @@ public class BannedWords : BaseCommandModule {
 
   public static void Init() {
     bannedWords = new List<BannedWord>();
-    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
+    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
     if (!File.Exists(path)) return;
     string[] all = File.ReadAllLines(path);
     foreach (string line in all) {
@@ -37,7 +37,7 @@ public class BannedWords : BaseCommandModule {
   [Description("To handle banned words. It can be done only by Mods and Helpers")]
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task BannedWordsCommand(CommandContext ctx) {
-    UtilityFunctions.LogUserCommand(ctx);
+    Utils.LogUserCommand(ctx);
     await ctx.Channel.SendMessageAsync("Use the commands `list`, `add`, and `remove` to handle banned words.");
   }
 
@@ -45,7 +45,7 @@ public class BannedWords : BaseCommandModule {
   [Description("To handle banned words. It can be done only by Mods and Helpers")]
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task BannedWordsCommand(CommandContext ctx, [Description("Command to use (list, add, remove)")] string command) {
-    UtilityFunctions.LogUserCommand(ctx);
+    Utils.LogUserCommand(ctx);
     await HandleListOfBannedWords(ctx, command);
   }
 
@@ -53,76 +53,81 @@ public class BannedWords : BaseCommandModule {
   [Description("To handle banned words. It can be done only by Mods and Helpers")]
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task BannedWordsCommand(CommandContext ctx, [Description("Command to use (list, add, remove)")] string command, [Description("The word to add or remove (not used when listing)")] string word) {
-    UtilityFunctions.LogUserCommand(ctx);
-    Task<DiscordMessage> msg = await HandleAddRemoveOfBannedWords(ctx, command, word);
-    await Task.Delay(5000);
-    await msg.Result.DeleteAsync();
-    await Task.Delay(1000);
-    await ctx.Message.DeleteAsync();
-
+    Utils.LogUserCommand(ctx);
+    Task<DiscordMessage> msg = HandleAddRemoveOfBannedWords(ctx, command, word).Result;
+    Utils.DeleteDelayed(30, msg.Result).Wait();
+    await Utils.DeleteDelayed(10, ctx.Message);
   }
 
   private async Task<Task<DiscordMessage>> HandleListOfBannedWords(CommandContext ctx, string command) {
-    if (command.ToLowerInvariant() != "list") return ctx.Channel.SendMessageAsync("Use: list, add, or remove.");
-    else if (bannedWords == null || bannedWords.Count == 0) return ctx.Channel.SendMessageAsync("There are no banned words I am aware of.");
-    else {
-      string message = "I have " + bannedWords.Count + " banned word" + (bannedWords.Count == 1 ? "" : "s") + ":\n";
-      for (int i = 0; i < bannedWords.Count; i++) {
-        message += bannedWords[i].word + " (" + GetUserName(bannedWords[i].creator, ctx) + " " + bannedWords[i].date.ToString("yyyy/MM/dd") + ")";
-        if (i < bannedWords.Count - 1) message += ",\n";
+    try {
+      if (command.ToLowerInvariant() != "list") return ctx.Channel.SendMessageAsync("Use: list, add, or remove.");
+      else if (bannedWords == null || bannedWords.Count == 0) return ctx.Channel.SendMessageAsync("There are no banned words I am aware of.");
+      else {
+        string message = "I have " + bannedWords.Count + " banned word" + (bannedWords.Count == 1 ? "" : "s") + ":\n";
+        for (int i = 0; i < bannedWords.Count; i++) {
+          message += bannedWords[i].word + " (" + GetUserName(bannedWords[i].creator, ctx) + " " + bannedWords[i].date.ToString("yyyy/MM/dd") + ")";
+          if (i < bannedWords.Count - 1) message += ",\n";
+        }
+        await Task.Delay(10);
+        return ctx.Channel.SendMessageAsync(message);
       }
-      await Task.Delay(10);
-      return ctx.Channel.SendMessageAsync(message);
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("BannedWords.List", ex));
     }
   }
 
   private async Task<Task<DiscordMessage>> HandleAddRemoveOfBannedWords(CommandContext ctx, string command, string word) {
-    await Task.Delay(10);
-    if (command.ToLowerInvariant() == "add") {
-      word = word.Trim(' ', '\r', '\n').ToLowerInvariant();
-      if (string.IsNullOrWhiteSpace(word) || !valid.IsMatch(word)) return ctx.Channel.SendMessageAsync("Not a valid word");
-      if (bannedWords == null) bannedWords = new List<BannedWord>();
-      // Do we have it?
-      foreach (BannedWord bw in bannedWords) {
-        if (bw.word.Equals(word)) {
-          await ctx.Message.CreateReactionAsync(UtilityFunctions.GetEmoji(EmojiEnum.KO));
-          return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is already in the list.");
+    try {
+      await Task.Delay(10);
+      if (command.ToLowerInvariant() == "add") {
+        word = word.Trim(' ', '\r', '\n').ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(word) || !valid.IsMatch(word)) return ctx.Channel.SendMessageAsync("Not a valid word");
+        if (bannedWords == null) bannedWords = new List<BannedWord>();
+        // Do we have it?
+        foreach (BannedWord bw in bannedWords) {
+          if (bw.word.Equals(word)) {
+            await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.KO));
+            return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is already in the list.");
+          }
         }
-      }
-      BannedWord w = new BannedWord(word, ctx.Message.Author.Id);
-      bannedWords.Add(w);
-      bannedWords.Sort((a, b) => { return a.word.CompareTo(b.word); });
-      SaveWord(w);
+        BannedWord w = new BannedWord(word, ctx.Message.Author.Id);
+        bannedWords.Add(w);
+        bannedWords.Sort((a, b) => { return a.word.CompareTo(b.word); });
+        SaveWord(w);
 
-      await ctx.Message.CreateReactionAsync(UtilityFunctions.GetEmoji(EmojiEnum.OK));
-      return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been added.");
-    }
-    else if (command.ToLowerInvariant() == "remove") {
-      word = word.Trim(' ', '\r', '\n').ToLowerInvariant();
-      if (string.IsNullOrWhiteSpace(word) || !Regex.IsMatch(word, @"^[a-zA-Z0-9]+$")) return ctx.Channel.SendMessageAsync("Not a valid word");
-      if (bannedWords == null) bannedWords = new List<BannedWord>();
-      // Do we have it?
-      BannedWord found = null;
-      foreach (BannedWord bw in bannedWords) {
-        if (bw.word.Equals(word)) {
-          found = bw;
-          break;
+        await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
+        return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been added.");
+      }
+      else if (command.ToLowerInvariant() == "remove") {
+        word = word.Trim(' ', '\r', '\n').ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(word) || !Regex.IsMatch(word, @"^[a-zA-Z0-9]+$")) return ctx.Channel.SendMessageAsync("Not a valid word");
+        if (bannedWords == null) bannedWords = new List<BannedWord>();
+        // Do we have it?
+        BannedWord found = null;
+        foreach (BannedWord bw in bannedWords) {
+          if (bw.word.Equals(word)) {
+            found = bw;
+            break;
+          }
         }
+        if (found == null) {
+          await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.KO));
+          return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is not in the list.");
+        }
+        bannedWords.Remove(found);
+        SaveList();
+        await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
+        return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been removed.");
       }
-      if (found == null) {
-        await ctx.Message.CreateReactionAsync(UtilityFunctions.GetEmoji(EmojiEnum.KO));
-        return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is not in the list.");
-      }
-      bannedWords.Remove(found);
-      SaveList();
-      await ctx.Message.CreateReactionAsync(UtilityFunctions.GetEmoji(EmojiEnum.OK));
-      return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been removed.");
+      else return ctx.Channel.SendMessageAsync("Use: add or remove and then the word.");
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("BannedWords.Handle", ex));
     }
-    else return ctx.Channel.SendMessageAsync("Use: add or remove and then the word.");
   }
 
   void SaveWord(BannedWord w) {
-    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
+    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
     if (!File.Exists(path)) File.CreateText(path);
     try {
       using (StreamWriter sw = File.AppendText(path)) {
@@ -130,17 +135,17 @@ public class BannedWords : BaseCommandModule {
         sw.FlushAsync();
       }
     } catch (Exception e) {
-      UtilityFunctions.Log(e.Message);
+      Utils.Log(e.Message);
     }
   }
 
   void SaveList() {
-    string path = UtilityFunctions.ConstructPath(directoryName, "BannedWords", ".txt");
+    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
     if (File.Exists(path)) {
       try {
         File.Delete(path);
       } catch (Exception e) {
-        UtilityFunctions.Log(e.Message);
+        Utils.Log(e.Message);
         return;
       }
     }
@@ -152,7 +157,7 @@ public class BannedWords : BaseCommandModule {
         }
       }
     } catch (Exception e) {
-      UtilityFunctions.Log(e.Message);
+      Utils.Log(e.Message);
     }
   }
 
@@ -199,33 +204,36 @@ public class BannedWords : BaseCommandModule {
   }
 
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
-    // Who is the author? If the bot or a mod then ignore
-    if (args.Author.Equals(client.CurrentUser)) return;
-    DiscordUser user = args.Author;
-    DiscordGuild guild = await client.GetGuildAsync((ulong)args.Message.Channel.GuildId);
-    DiscordMember member;
     try {
-      member = await guild.GetMemberAsync(user.Id);
-    } catch (Exception) {
-      return;
-    }
-    foreach (DiscordRole role in member.Roles) {
-      if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
-    }
+      // Who is the author? If the bot or a mod then ignore
+      if (args.Author.Equals(client.CurrentUser)) return;
+      DiscordUser user = args.Author;
+      DiscordGuild guild = await client.GetGuildAsync((ulong)args.Message.Channel.GuildId);
+      DiscordMember member;
+      try {
+        member = await guild.GetMemberAsync(user.Id);
+      } catch (Exception) {
+        return;
+      }
+      foreach (DiscordRole role in member.Roles) {
+        if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
+      }
 
-    string msg = args.Message.Content.ToLowerInvariant();
-    foreach (BannedWord w in bannedWords) {
-      int pos = msg.IndexOf(w.word);
-      if (pos == -1) continue;
-      if (pos > 0 && letters.IsMatch(msg[pos - 1].ToString())) continue;
-      if (pos + w.word.Length < msg.Length && letters.IsMatch(msg[pos + w.word.Length].ToString())) continue;
+      string msg = args.Message.Content.ToLowerInvariant();
+      foreach (BannedWord w in bannedWords) {
+        int pos = msg.IndexOf(w.word);
+        if (pos == -1) continue;
+        if (pos > 0 && letters.IsMatch(msg[pos - 1].ToString())) continue;
+        if (pos + w.word.Length < msg.Length && letters.IsMatch(msg[pos + w.word.Length].ToString())) continue;
 
-      UtilityFunctions.Log("Removed word \"" + w.word + "\" from " + user.Username + " in: " + msg);
-      DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Moderate your language, " + user.Mention + ".");
-      await args.Message.DeleteAsync("Bad words: " + w.word);
-      await Task.Delay(10000);
-      await warning.DeleteAsync();
-      return;
+        Utils.Log("Removed word \"" + w.word + "\" from " + user.Username + " in: " + msg);
+        DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Moderate your language, " + user.Mention + ".");
+        await args.Message.DeleteAsync("Bad words: " + w.word);
+        Utils.DeleteDelayed(10000, warning).Wait();
+        return;
+      }
+    } catch (Exception ex) {
+      await args.Message.RespondAsync(Utils.GenerateErrorAnswer("BannedWords.CheckMessage", ex));
     }
   }
 

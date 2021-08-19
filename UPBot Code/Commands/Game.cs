@@ -11,21 +11,39 @@ using DSharpPlus.CommandsNext.Attributes;
 /// </summary>
 public class GameModule : BaseCommandModule
 {
+    [Command("game")]
+    public async Task GameCommand(CommandContext ctx)
+    {
+    Utils.LogUserCommand(ctx);
+    StringBuilder sb = new StringBuilder("Available game commmands\n");
+        sb.AppendLine("========================");
+        sb.AppendLine(String.Format("{0, -10}: {1}", "bool", "True or False"));
+        sb.AppendLine(String.Format("{0, -10}: {1}", "rps", "Rock, Paper, Scissors"));
+
+        await ctx.RespondAsync(String.Format("```{0}```", sb.ToString()));
+    }
+
     [Command("bool")]
-    [Description("Returns True or False")]
     public async Task BoolCommand(CommandContext ctx)
     {
-        UtilityFunctions.LogUserCommand(ctx);
-        await PlayBool(ctx);
+    Utils.LogUserCommand(ctx);
+    await PlayBool(ctx);
     }
 
     [Command("rps")]
-    [Description("Play Rock, Paper, Scissors")]
-    public async Task RPSCommand(CommandContext ctx, [Description("rock | paper | scissors")] string kind)
+    public async Task RPSCommand(CommandContext ctx, string kind)
     {
-        UtilityFunctions.LogUserCommand(ctx);
-        await PlayRockPaperScissors(ctx, kind);
+    Utils.LogUserCommand(ctx);
+    await PlayRockPaperScissors(ctx, kind);
     }
+
+    [Command("rps")]
+    public async Task RPSCommand(CommandContext ctx)
+    {
+    Utils.LogUserCommand(ctx);
+    await PlayRockPaperScissors(ctx, null);
+    }
+
 
     readonly Random random = new Random();
 
@@ -40,6 +58,7 @@ public class GameModule : BaseCommandModule
             default:
                 return ctx.RespondAsync("false");
         }
+        
     }
 
     enum RPSTypes : ushort
@@ -51,6 +70,9 @@ public class GameModule : BaseCommandModule
 
     Task PlayRockPaperScissors(CommandContext ctx, string kind)
     {
+        if (kind == null)
+            return ctx.RespondAsync("```\nRock Paper Scissors\nUsage pattern: rps [rock|paper|scissors]\n```");
+
         RPSTypes playerChoice;
 
         switch(kind)
@@ -72,8 +94,7 @@ public class GameModule : BaseCommandModule
 
         if(playerChoice == botChoice)
         {
-            //return ctx.RespondAsync("@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
-            return ctx.Channel.SendMessageAsync(ctx.Member.Mention + "\n@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
+            return ctx.RespondAsync("@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
         }
         if(playerChoice == RPSTypes.Rock && botChoice == RPSTypes.Scissors)
         {

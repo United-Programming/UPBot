@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 /// Utility functions that don't belong to a specific class or a specific command
 /// "General-purpose" function, which can be needed anywhere.
 /// </summary>
-public static class UtilityFunctions
+public static class Utils
 {
   /// <summary>
   /// Common colors
@@ -27,15 +28,23 @@ public static class UtilityFunctions
   private static DiscordMember mySelf;
   private static DiscordGuild guild;
 
-  public static void SetMyself(DiscordClient c) {
-    
+  public static string GetVersion() {
+    return "0.1 beta - 2021/08/19";
   }
 
+  /// <summary>
+  /// Returns the Bot user as Member of the United Programming Guild
+  /// </summary>
+  /// <returns></returns>
   public static DiscordMember GetMyself() {
     if (mySelf==null) mySelf = client.Guilds[830900174553481236ul].CurrentMember;
     return mySelf;
   }
 
+  /// <summary>
+  /// Gets the UNitedProgramming Guild
+  /// </summary>
+  /// <returns></returns>
   public static DiscordGuild GetGuild() {
     if (guild != null) return guild;
     while (client == null) Task.Delay(1000);
@@ -133,6 +142,21 @@ public static class UtilityFunctions
   }
 
   /// <summary>
+  /// Quick shortcut to generate an error message
+  /// </summary>
+  /// <param name="error">The error to display</param>
+  /// <returns></returns>
+  internal static DiscordEmbed GenerateErrorAnswer(string cmd, Exception exception) {
+    DiscordEmbedBuilder e = new DiscordEmbedBuilder {
+      Color = Red,
+      Title = "Error in " + cmd,
+      Description = exception.Message
+    };
+    Log("Error in " + cmd + ": " + exception.Message);
+    return e.Build();
+  }
+
+  /// <summary>
   /// Logs an embed as a message in the relevant channel
   /// </summary>
   /// <param name="builder">Embed builder with the embed template</param>
@@ -208,7 +232,7 @@ public static class UtilityFunctions
   /// <param name="msg"></param>
   /// <returns></returns>
   internal static void Log(string msg) {
-    Console.WriteLine(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + msg);
+    Console.WriteLine(msg);
     try {
       logs.WriteLine(msg);
       logs.FlushAsync();
@@ -255,8 +279,50 @@ public static class UtilityFunctions
         break;
     }
         
-    await UtilityFunctions.BuildEmbedAndExecute("Error", message, red, ctx, respond);
+    await Utils.BuildEmbedAndExecute("Error", message, red, ctx, respond);
   }
+
+  /// <summary>
+  /// Used to delete some messages after a while
+  /// </summary>
+  /// <param name="msg1"></param>
+  public static Task DeleteDelayed(int seconds, DiscordMessage msg1) {
+    Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
+    return Task.FromResult(0);
+  }
+
+  /// <summary>
+  /// Used to delete some messages after a while
+  /// </summary>
+  /// <param name="msg1"></param>
+  /// <param name="msg2"></param>
+  public static Task DeleteDelayed(int seconds, DiscordMessage msg1, DiscordMessage msg2) {
+    Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
+    Task.Run(() => DelayAfterAWhile(msg2, seconds * 1000));
+    return Task.FromResult(0);
+  }
+
+  /// <summary>
+  /// Used to delete some messages after a while
+  /// </summary>
+  /// <param name="msg1"></param>
+  /// <param name="msg2"></param>
+  /// <param name="msg3"></param>
+  public static Task DeleteDelayed(int seconds, DiscordMessage msg1, DiscordMessage msg2, DiscordMessage msg3) {
+    Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
+    Task.Run(() => DelayAfterAWhile(msg2, seconds * 1000));
+    Task.Run(() => DelayAfterAWhile(msg3, seconds * 1000));
+    return Task.FromResult(0);
+  }
+
+  static void DelayAfterAWhile(DiscordMessage msg, int delay) {
+    try {
+      Task.Delay(delay).Wait();
+      msg.DeleteAsync().Wait();
+    } catch (Exception) { }
+  }
+
+
 }
 
 public enum EmojiEnum {
