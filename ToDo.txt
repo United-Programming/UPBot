@@ -1,0 +1,30 @@
+﻿Have command to alter the command character [NOT POSSIBLE!]
+Check all command names
+Add wikis for each command on GitHub
+Uniform all error messages with Embeds (use Duck code)
+Have all messages and commands to disappear after a while (configurable) if not needed to stay
+Have a cmd to configure how long messages should stay
+Add TryCatch to all code and commands
+
+
+                  Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin
+MemberTracking  |         |         |           |    X      |          |
+Appreciation    |         |         |           |    X      |    X     |
+EmojiForRole    |         |         |           |    X      |    X     |
+BannedWords     |         |    X    |           |    X      |    X     |
+newcc           |         |         |           |           |    X     |
+ccdel           |         |         |           |           |    X     |
+ccedit          |         |         |           |           |    X     |
+cceditname      |         |         |           |           |    X     |
+cclist          |         |         |           |           |    X     |
+delete          |    X    |    X    |           |    X      |    X     |
+game            |         |         |           |           |    X     |
+bool            |         |         |           |           |    X     |
+rps             |         |         |           |           |    X     |
+helplanguage    |         |         |     X     |    X      |    X     |
+ping            |         |    X    |           |    X      |    X     |
+checklanguage   |         |         |           |    X      |    X     |
+reformat        |         |         |           |    X      |    X     |
+stats           |         |         |     X     |    X      |    X     |
+whois           |         |         |     X     |    X      |    X     |
+

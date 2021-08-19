@@ -14,11 +14,9 @@ public class PingModule : BaseCommandModule {
   private List<LastRequestByMember> lastRequests = null;
 
   [Command("ping")]
-  public async Task GreetCommand(CommandContext ctx) {
-    await GeneratePong(ctx);
-  }
-  [Command("upbot")]
-  public async Task GreetCommand2(CommandContext ctx) {
+  [Aliases("upbot")]
+  [Description("Checks if the bot is alive")]
+  public async Task PongCommand(CommandContext ctx) {
     await GeneratePong(ctx);
   }
 
@@ -37,39 +35,47 @@ public class PingModule : BaseCommandModule {
   int lastGlobal = -1;
 
   Task GeneratePong(CommandContext ctx) {
+    Utils.LogUserCommand(ctx);
+    try {
 
-    // Check if we have to initiialize our history of pings
-    if (lastRequests == null) lastRequests = new List<LastRequestByMember>();
+      // Check if we have to initiialize our history of pings
+      if (lastRequests == null) lastRequests = new List<LastRequestByMember>();
 
-    // Grab the current member id
-    DiscordMember member = ctx.Member;
-    ulong memberId = member.Id;
+      // Grab the current member id
+      DiscordMember member = ctx.Member;
+      ulong memberId = member.Id;
 
-    // Find the last request
-    LastRequestByMember lastRequest = null;
-    int annoyedLevel = 0;
-    foreach (LastRequestByMember lr in lastRequests)
-      if (lr.memberId == memberId) {
-        lastRequest = lr;
-        break;
+      // Find the last request
+      LastRequestByMember lastRequest = null;
+      int annoyedLevel = 0;
+      foreach (LastRequestByMember lr in lastRequests)
+        if (lr.memberId == memberId) {
+          lastRequest = lr;
+          break;
+        }
+      if (lastRequest == null) { // No last request, create one
+        lastRequest = new LastRequestByMember(memberId);
+        lastRequests.Add(lastRequest);
       }
-    if (lastRequest == null) { // No last request, create one
-      lastRequest = new LastRequestByMember(memberId);
-      lastRequests.Add(lastRequest);
-    }
-    else {
-      annoyedLevel = lastRequest.AddRequest();
-    }
-    if (annoyedLevel == -1) return ctx.RespondAsync(""); // No answer
+      else {
+        annoyedLevel = lastRequest.AddRequest();
+      }
+      if (annoyedLevel == -1) return ctx.RespondAsync(""); // No answer
 
-    // Was the request already done recently?
-    int rnd = random.Next(0, 7);
-    while (rnd == lastRequest.lastRandom || rnd == lastGlobal) rnd = random.Next(0, 7); // Find one that is not the same of last one
-    lastRequest.lastRandom = rnd; // Record for the next time
-    lastGlobal = rnd; // Record for the next time
-    string msg = answers[annoyedLevel, rnd];
-    msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-    return ctx.RespondAsync(msg);
+      // Was the request already done recently?
+      int rnd = random.Next(0, 7);
+      while (rnd == lastRequest.lastRandom || rnd == lastGlobal) rnd = random.Next(0, 7); // Find one that is not the same of last one
+      lastRequest.lastRandom = rnd; // Record for the next time
+      lastGlobal = rnd; // Record for the next time
+      string msg = answers[annoyedLevel, rnd];
+      msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
+
+
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer); // We want to remove the ping and the answer after a minute
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Ping", ex));
+    }
   }
 
   const int MaxTrackedRequests = 10;
