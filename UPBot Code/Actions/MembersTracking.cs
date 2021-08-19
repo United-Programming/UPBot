@@ -9,6 +9,7 @@ public class MembersTracking {
   static DiscordChannel trackChannel = null;
 
   public static async Task DiscordMemberRemoved(DiscordClient client, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
+    try{
     if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
     if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
 
@@ -16,54 +17,65 @@ public class MembersTracking {
       tracking.Remove(args.Member.Id);
       string msg = "User " + args.Member.DisplayName + " did a kiss and go.";
       await trackChannel.SendMessageAsync(msg);
-      UtilityFunctions.Log(msg);
+      Utils.Log(msg);
     }
     else {
-      string msgC = UtilityFunctions.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
+      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
       string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
       await trackChannel.SendMessageAsync(msgC);
-      UtilityFunctions.Log(msgL);
+      Utils.Log(msgL);
+    }
+    } catch (Exception ex) {
+      Utils.Log("Error in DiscordMemberRemoved: " + ex.Message);
     }
 
     await Task.Delay(10);
   }
 
   public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
+    try{
     if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
     if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
     tracking[args.Member.Id] = DateTime.Now;
     _ = SomethingAsync(args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
+    } catch (Exception ex) {
+      Utils.Log("Error in DiscordMemberAdded: " + ex.Message);
+    }
     await Task.Delay(10);
   }
 
   public static async Task DiscordMemberUpdated(DiscordClient client, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
-    if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-    if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
+    try {
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+      if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
 
-    IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
-    IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
-    List<DiscordRole> rolesAdded = new List<DiscordRole>();
-    // Changed role?
-    foreach (DiscordRole r1 in rolesAfter) {
-      bool addedRole = true;
-      foreach (DiscordRole r2 in rolesBefore) {
-        if (r1.Equals(r2)) {
-          addedRole = false;
+      IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
+      IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
+      List<DiscordRole> rolesAdded = new List<DiscordRole>();
+      // Changed role?
+      foreach (DiscordRole r1 in rolesAfter) {
+        bool addedRole = true;
+        foreach (DiscordRole r2 in rolesBefore) {
+          if (r1.Equals(r2)) {
+            addedRole = false;
+          }
         }
+        if (addedRole) rolesAdded.Add(r1);
       }
-      if (addedRole) rolesAdded.Add(r1);
-    }
-    string msgC;
-    string msgL;
-    if (rolesAdded.Count > 0) {
-      msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
-      msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
-      foreach (DiscordRole r in rolesAdded) {
-        msgC += r.Mention;
-        msgL += r.Name;
+      string msgC;
+      string msgL;
+      if (rolesAdded.Count > 0) {
+        msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+        msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+        foreach (DiscordRole r in rolesAdded) {
+          msgC += r.Mention;
+          msgL += r.Name;
+        }
+        await trackChannel.SendMessageAsync(msgC);
+        Utils.Log(msgL);
       }
-      await trackChannel.SendMessageAsync(msgC);
-      UtilityFunctions.Log(msgL);
+    } catch (Exception ex) {
+      Utils.Log("Error in DiscordMemberUpdated: " + ex.Message);
     }
 
     await Task.Delay(10);
@@ -73,10 +85,10 @@ public class MembersTracking {
   static async Task SomethingAsync(ulong id, string name, string mention, int numMembers) {
     await Task.Delay(25000);
     if (tracking.ContainsKey(id)) {
-      string msgC = UtilityFunctions.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " memebrs total)";
+      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " memebrs total)";
       string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " memebrs total)";
       await trackChannel.SendMessageAsync(msgC);
-      UtilityFunctions.Log(msgL);
+      Utils.Log(msgL);
       tracking.Remove(id);
     }
   }

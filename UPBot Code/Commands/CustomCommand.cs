@@ -10,7 +10,7 @@ public class CustomCommand
     public CustomCommand(string[] names, string content)
     {
         this.Names = names;
-        this.FilePath = UtilityFunctions.ConstructPath(CustomCommandsService.DirectoryNameCC, names[0], ".txt");
+        this.FilePath = Utils.ConstructPath(CustomCommandsService.DirectoryNameCC, names[0], ".txt");
         this.Content = content;
     }
     

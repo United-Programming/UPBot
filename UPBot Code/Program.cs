@@ -23,8 +23,8 @@ namespace UPBot {
       });
       CustomCommandsService.DiscordClient = discord;
 
-      UtilityFunctions.InitClient(discord);
-      var commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
+      Utils.InitClient(discord);
+      CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters
       });
       commands.CommandErrored += CustomCommandsService.CommandError;
@@ -36,7 +36,7 @@ namespace UPBot {
       await CustomCommandsService.LoadCustomCommands();
       await discord.ConnectAsync(); // Connects and wait forever
 
-      UtilityFunctions.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd"));
+      Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
 
       AppreciationTracking.Init();
       discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
