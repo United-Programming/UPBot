@@ -1,11 +1,11 @@
 ﻿Have command to alter the command character [NOT POSSIBLE!]
-Check all command names
+!Check all command names
 Add wikis for each command on GitHub
-Uniform all error messages with Embeds (use Duck code)
-Have all messages and commands to disappear after a while (configurable) if not needed to stay
+!Uniform all error messages with Embeds (use Duck code)
+!Have all messages and commands to disappear after a while (configurable) if not needed to stay
 Have a cmd to configure how long messages should stay
-Add TryCatch to all code and commands
-
+!Add TryCatch to all code and commands
+Add "keep" option to reformat
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin
 MemberTracking  |         |         |           |    X      |          |

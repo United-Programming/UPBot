@@ -146,23 +146,4 @@ public class HelpLanguagesModel : BaseCommandModule {
     }
   }
 
-  private class LastRequestByMember {
-    public ulong MemberId { get; set; }
-    public DateTime DateTime { get; set; }
-    public int Num { get; set; }
-  }
-
-  private class LanguageInfo
-  {
-    public LanguageInfo(string videoLink, string courseLink, string colorHex)
-    {
-      this.VideoLink = videoLink;
-      this.CourseLink = courseLink;
-      this.Color = new DiscordColor(colorHex);
-    }
-    
-    internal readonly string VideoLink;
-    internal readonly string CourseLink;
-    internal readonly DiscordColor Color;
-  }
 }

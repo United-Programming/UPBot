@@ -29,7 +29,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return "0.1 beta - 2021/08/19";
+    return "0.1.1 dev - 2021/08/19";
   }
 
   /// <summary>
