@@ -36,6 +36,40 @@ public class MembersTracking {
     await Task.Delay(10);
   }
 
+  public static async Task DiscordMemberUpdated(DiscordClient client, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
+    if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+    if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
+
+    IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
+    IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
+    List<DiscordRole> rolesAdded = new List<DiscordRole>();
+    // Changed role?
+    foreach (DiscordRole r1 in rolesAfter) {
+      bool addedRole = true;
+      foreach (DiscordRole r2 in rolesBefore) {
+        if (r1.Equals(r2)) {
+          addedRole = false;
+        }
+      }
+      if (addedRole) rolesAdded.Add(r1);
+    }
+    string msgC;
+    string msgL;
+    if (rolesAdded.Count > 0) {
+      msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+      msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+      foreach (DiscordRole r in rolesAdded) {
+        msgC += r.Mention;
+        msgL += r.Name;
+      }
+      await trackChannel.SendMessageAsync(msgC);
+      UtilityFunctions.Log(msgL);
+    }
+
+    await Task.Delay(10);
+  }
+
+
   static async Task SomethingAsync(ulong id, string name, string mention, int numMembers) {
     await Task.Delay(25000);
     if (tracking.ContainsKey(id)) {
