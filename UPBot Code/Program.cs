@@ -25,6 +25,8 @@ namespace UPBot {
       CustomCommandsService.DiscordClient = discord;
 
       Utils.InitClient(discord);
+      Utils.ConnectToDb();
+
       CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters
       });
@@ -46,14 +48,11 @@ namespace UPBot {
       discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
       discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
 
-
-      TestDb();
-
       await Task.Delay(-1);
     }
 
-    static void TestDb() {
-      string dbName = "TestDatabase.db";
+    static void TestDb() { // FIXME code to be removed
+      string dbName = "Database/UPBot.db";
       if (System.IO.File.Exists(dbName)) {
         System.IO.File.Delete(dbName);
       }

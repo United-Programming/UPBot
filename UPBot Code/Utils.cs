@@ -81,6 +81,24 @@ public static class Utils
     else logs = File.CreateText(logPath);
   }
 
+  internal static BotDbContext db;
+  internal static void ConnectToDb() {
+    // db => "Database/UPBot.db";
+    db = new BotDbContext();
+    db.Database.EnsureCreated(); //Ensure database is created
+    if (false /*!db.Helpers.Any()*/) {
+      db.Helpers.AddRange(new HelperMember[] {
+                new HelperMember{ Id=1, Name="CPU"  },
+                new HelperMember{ Id=2, Name="Duck" },
+                new HelperMember{ Id=3, Name="Erem" }
+          });
+      db.SaveChanges();
+    }
+
+
+    Log("DB Connected: " + db.Database.ProviderName);
+  }
+
   /// <summary>
   /// Change a string based on the count it's referring to (e.g. "one apple", "two apples")
   /// </summary>

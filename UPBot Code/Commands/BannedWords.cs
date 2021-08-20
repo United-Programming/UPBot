@@ -22,15 +22,12 @@ public class BannedWords : BaseCommandModule {
 
   public static void Init() {
     bannedWords = new List<BannedWord>();
-    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
-    if (!File.Exists(path)) return;
-    string[] all = File.ReadAllLines(path);
-    foreach (string line in all) {
-      BannedWord word = new BannedWord(line);
-      if (word.word == null) continue;
-      bannedWords.Add(word);
-    }
-    bannedWords.Sort((a, b) => { return a.word.CompareTo(b.word); });
+    if (Utils.db.BannedWords != null)
+      foreach (BannedWord bannedWord in Utils.db.BannedWords) {
+        Console.WriteLine($"bannedWord ={bannedWord.Word}");
+        bannedWords.Add(bannedWord);
+      }
+    bannedWords.Sort((a, b) => { return a.Word.CompareTo(b.Word); });
   }
 
   [Command("bannedwords")]
@@ -66,7 +63,7 @@ public class BannedWords : BaseCommandModule {
       else {
         string message = "I have " + bannedWords.Count + " banned word" + (bannedWords.Count == 1 ? "" : "s") + ":\n";
         for (int i = 0; i < bannedWords.Count; i++) {
-          message += bannedWords[i].word + " (" + GetUserName(bannedWords[i].creator, ctx) + " " + bannedWords[i].date.ToString("yyyy/MM/dd") + ")";
+          message += bannedWords[i].Word + " (" + GetUserName(bannedWords[i].Creator, ctx) + " " + bannedWords[i].Date.ToString("yyyy/MM/dd") + ")";
           if (i < bannedWords.Count - 1) message += ",\n";
         }
         await Task.Delay(10);
@@ -86,15 +83,16 @@ public class BannedWords : BaseCommandModule {
         if (bannedWords == null) bannedWords = new List<BannedWord>();
         // Do we have it?
         foreach (BannedWord bw in bannedWords) {
-          if (bw.word.Equals(word)) {
+          if (bw.Word.Equals(word)) {
             await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.KO));
             return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is already in the list.");
           }
         }
         BannedWord w = new BannedWord(word, ctx.Message.Author.Id);
         bannedWords.Add(w);
-        bannedWords.Sort((a, b) => { return a.word.CompareTo(b.word); });
-        SaveWord(w);
+        bannedWords.Sort((a, b) => { return a.Word.CompareTo(b.Word); });
+        Utils.db.BannedWords.Add(w);
+        Utils.db.SaveChanges();
 
         await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
         return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been added.");
@@ -106,7 +104,7 @@ public class BannedWords : BaseCommandModule {
         // Do we have it?
         BannedWord found = null;
         foreach (BannedWord bw in bannedWords) {
-          if (bw.word.Equals(word)) {
+          if (bw.Word.Equals(word)) {
             found = bw;
             break;
           }
@@ -116,7 +114,9 @@ public class BannedWords : BaseCommandModule {
           return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is not in the list.");
         }
         bannedWords.Remove(found);
-        SaveList();
+        Utils.db.BannedWords.Remove(found);
+        Utils.db.SaveChanges();
+
         await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
         return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been removed.");
       }
@@ -126,64 +126,6 @@ public class BannedWords : BaseCommandModule {
     }
   }
 
-  void SaveWord(BannedWord w) {
-    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
-    if (!File.Exists(path)) File.CreateText(path);
-    try {
-      using (StreamWriter sw = File.AppendText(path)) {
-        sw.Write(w.ToString());
-        sw.FlushAsync();
-      }
-    } catch (Exception e) {
-      Utils.Log(e.Message);
-    }
-  }
-
-  void SaveList() {
-    string path = Utils.ConstructPath(directoryName, "BannedWords", ".txt");
-    if (File.Exists(path)) {
-      try {
-        File.Delete(path);
-      } catch (Exception e) {
-        Utils.Log(e.Message);
-        return;
-      }
-    }
-    try {
-      using (StreamWriter sw = File.CreateText(path)) {
-        foreach (BannedWord w in bannedWords) {
-          sw.Write(w.ToString());
-          sw.FlushAsync();
-        }
-      }
-    } catch (Exception e) {
-      Utils.Log(e.Message);
-    }
-  }
-
-  class BannedWord {
-    public string word;
-    public ulong creator = 0;
-    public DateTime date = DateTime.MinValue;
-
-    public BannedWord(string w, ulong id) {
-      word = w;
-      creator = id;
-      date = DateTime.Now;
-    }
-
-    public BannedWord(string line) {
-      string[] parts = line.Trim(' ', '\r', '\n').Split('\t');
-      if (parts.Length != 3) return;
-      word = parts[0].Trim(' ', '\r', '\n', '\t').ToLowerInvariant();
-      ulong.TryParse(parts[1].Trim(' ', '\r', '\n', '\t'), out creator);
-      DateTime.TryParse(parts[2].Trim(' ', '\r', '\n', '\t'), out date);
-    }
-
-    public override string ToString() {
-      return word + "\t" + creator + "\t" + date + "\n";
-    }
-  }
 
   Dictionary<ulong, string> knownUsers;
 
@@ -221,14 +163,14 @@ public class BannedWords : BaseCommandModule {
 
       string msg = args.Message.Content.ToLowerInvariant();
       foreach (BannedWord w in bannedWords) {
-        int pos = msg.IndexOf(w.word);
+        int pos = msg.IndexOf(w.Word);
         if (pos == -1) continue;
         if (pos > 0 && letters.IsMatch(msg[pos - 1].ToString())) continue;
-        if (pos + w.word.Length < msg.Length && letters.IsMatch(msg[pos + w.word.Length].ToString())) continue;
+        if (pos + w.Word.Length < msg.Length && letters.IsMatch(msg[pos + w.Word.Length].ToString())) continue;
 
-        Utils.Log("Removed word \"" + w.word + "\" from " + user.Username + " in: " + msg);
+        Utils.Log("Removed word \"" + w.Word + "\" from " + user.Username + " in: " + msg);
         DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Moderate your language, " + user.Mention + ".");
-        await args.Message.DeleteAsync("Bad words: " + w.word);
+        await args.Message.DeleteAsync("Bad words: " + w.Word);
         Utils.DeleteDelayed(10000, warning).Wait();
         return;
       }
