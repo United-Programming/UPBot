@@ -22,11 +22,14 @@ public class BannedWords : BaseCommandModule {
 
   public static void Init() {
     bannedWords = new List<BannedWord>();
-    if (Utils.db.BannedWords != null)
+    if (Utils.db.BannedWords != null) {
+      int num = 0;
       foreach (BannedWord bannedWord in Utils.db.BannedWords) {
-        Console.WriteLine($"bannedWord ={bannedWord.Word}");
+        num++;
         bannedWords.Add(bannedWord);
       }
+      Utils.Log("Found " + num + " banned words");
+    }
     bannedWords.Sort((a, b) => { return a.Word.CompareTo(b.Word); });
   }
 
@@ -63,7 +66,7 @@ public class BannedWords : BaseCommandModule {
       else {
         string message = "I have " + bannedWords.Count + " banned word" + (bannedWords.Count == 1 ? "" : "s") + ":\n";
         for (int i = 0; i < bannedWords.Count; i++) {
-          message += bannedWords[i].Word + " (" + GetUserName(bannedWords[i].Creator, ctx) + " " + bannedWords[i].Date.ToString("yyyy/MM/dd") + ")";
+          message += bannedWords[i].Word + " (" + GetUserName(bannedWords[i].Creator, ctx) + " " + bannedWords[i].DateAdded.ToString("yyyy/MM/dd") + ")";
           if (i < bannedWords.Count - 1) message += ",\n";
         }
         await Task.Delay(10);
@@ -150,10 +153,9 @@ public class BannedWords : BaseCommandModule {
       // Who is the author? If the bot or a mod then ignore
       if (args.Author.Equals(client.CurrentUser)) return;
       DiscordUser user = args.Author;
-      DiscordGuild guild = await client.GetGuildAsync((ulong)args.Message.Channel.GuildId);
       DiscordMember member;
       try {
-        member = await guild.GetMemberAsync(user.Id);
+        member = await Utils.GetGuild().GetMemberAsync(user.Id);
       } catch (Exception) {
         return;
       }

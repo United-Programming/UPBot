@@ -1,8 +1,18 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
-public class Reputation { // 16 bytes
-  public ulong user;              // 8
-  public ushort reputation;       // 2
-  public ushort fun;              // 2
-  public DateTime startTracking;  // 4
+public class Reputation {
+  [Key]
+  [Required]
+  public ulong User { get; set; }
+  [Required]
+  public ushort Rep { get; set; }
+  [Required]
+  public ushort Fun { get; set; }
+  [Required]
+  public ushort Tnk { get; set; }
+  [Required]
+  public DateTime DateAdded { get; set; }
 }
+
+

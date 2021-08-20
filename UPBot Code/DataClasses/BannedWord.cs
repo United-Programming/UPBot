@@ -9,27 +9,27 @@ public class BannedWord {
   [Required]
   public ulong Creator { get; set; }
   [Required]
-  public DateTime Date { get; set; }
+  public DateTime DateAdded { get; set; }
 
   public BannedWord(string w, ulong id) {
     Word = w;
     Creator = id;
-    Date = DateTime.Now;
+    DateAdded = DateTime.Now;
   }
   public BannedWord() {
     Word = "";
     Creator = 0;
-    Date = DateTime.Now;
+    DateAdded = DateTime.Now;
   }
 
   public BannedWord(string w, ulong id, DateTime d) {
     Word = w;
     Creator = id;
-    Date = d;
+    DateAdded = d;
   }
 
   public override string ToString() {
-    return Word + "\t" + Creator + "\t" + Date + "\n";
+    return Word + "\t" + Creator + "\t" + DateAdded + "\n";
   }
 }
 
