@@ -2,7 +2,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -86,16 +85,6 @@ public static class Utils
     // db => "Database/UPBot.db";
     db = new BotDbContext();
     db.Database.EnsureCreated(); //Ensure database is created
-    if (false /*!db.Helpers.Any()*/) {
-      db.Helpers.AddRange(new HelperMember[] {
-                new HelperMember{ Id=1, Name="CPU"  },
-                new HelperMember{ Id=2, Name="Duck" },
-                new HelperMember{ Id=3, Name="Erem" }
-          });
-      db.SaveChanges();
-    }
-
-
     Log("DB Connected: " + db.Database.ProviderName);
   }
 

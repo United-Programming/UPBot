@@ -4,6 +4,8 @@ using System.Reflection;
 public class BotDbContext : DbContext {
   public DbSet<HelperMember> Helpers { get; set; }
   public DbSet<BannedWord> BannedWords { get; set; }
+  public DbSet<Reputation> Reputations { get; set; }
+  public DbSet<EmojiForRoleValue> EmojiForRoles { get; set; }
   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
     optionsBuilder.UseSqlite("Filename=Database/UPBot.db", options => {
       options.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
@@ -23,7 +25,24 @@ public class BotDbContext : DbContext {
       entity.HasKey(e => e.Word);
       entity.HasIndex(e => e.Word).IsUnique();
       entity.Property(e => e.Creator);
-      entity.Property(e => e.Date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+      entity.Property(e => e.DateAdded).HasDefaultValueSql("CURRENT_TIMESTAMP");
+    });
+    modelBuilder.Entity<Reputation>().ToTable("Reputation", "UPBotSchema");
+    modelBuilder.Entity<Reputation>(entity => {
+      entity.HasKey(e => e.User);
+      entity.HasIndex(e => e.User).IsUnique();
+      entity.Property(e => e.Rep);
+      entity.Property(e => e.Fun);
+      entity.Property(e => e.Tnk);
+      entity.Property(e => e.DateAdded).HasDefaultValueSql("CURRENT_TIMESTAMP");
+    });
+    modelBuilder.Entity<EmojiForRoleValue>().ToTable("EmojiForRole", "UPBotSchema");
+    modelBuilder.Entity<EmojiForRoleValue>(entity => {
+      entity.Property(e => e.Channel);
+      entity.HasKey(e => e.Message);
+      entity.Property(e => e.Role);
+      entity.Property(e => e.EmojiId);
+      entity.Property(e => e. EmojiName);
     });
     base.OnModelCreating(modelBuilder);
   }

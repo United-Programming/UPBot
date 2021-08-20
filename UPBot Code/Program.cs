@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -35,42 +34,23 @@ namespace UPBot {
 
       BannedWords.Init();
       discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
+      discord.MessageCreated += AppreciationTracking.ThanksAdded;
 
       await CustomCommandsService.LoadCustomCommands();
       await discord.ConnectAsync(); // Connects and wait forever
 
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
 
-      AppreciationTracking.Init();
       discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       discord.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
       discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
+      discord.MessageReactionAdded += EmojisForRole.ReacionAdded;
       discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
+      discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
       await Task.Delay(-1);
     }
 
-    static void TestDb() { // FIXME code to be removed
-      string dbName = "Database/UPBot.db";
-      if (System.IO.File.Exists(dbName)) {
-        System.IO.File.Delete(dbName);
-      }
-      using (var dbContext = new BotDbContext()) {
-        //Ensure database is created
-        dbContext.Database.EnsureCreated();
-        if (!dbContext.Helpers.Any()) {
-          dbContext.Helpers.AddRange(new HelperMember[] {
-                new HelperMember{ Id=1, Name="CPU"  },
-                new HelperMember{ Id=2, Name="Duck" },
-                new HelperMember{ Id=3, Name="Erem" }
-          });
-          dbContext.SaveChanges();
-        }
-        foreach (var help in dbContext.Helpers) {
-          Console.WriteLine($"HID={help.Id}\tName={help.Name}\tDateTimeAdd={help.DateAdded}");
-        }
-      }
-    }
   }
 }
