@@ -121,7 +121,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (authorId == a.User.Id) return Task.Delay(10); // If member is equal to author ignore (no self emojis)
       return HandleReactions(emojiId, emojiName, authorId, true);
     } catch (Exception ex) {
-      Utils.Log("Error in ReacionAdded: " + ex.Message);
+      Utils.Log("Error in AppreciationTracking.ReatcionAdded: " + ex.Message);
       return Task.FromResult(0);
     }
   }
@@ -143,7 +143,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (authorId == a.User.Id) return Task.Delay(10); // If member is equal to author ignore (no self emojis)
       return HandleReactions(emojiId, emojiName, authorId, false);
     } catch (Exception ex) {
-      Utils.Log("Error in ReacionAdded: " + ex.Message);
+      Utils.Log("Error in AppreciationTracking.ReactionAdded: " + ex.Message);
       return Task.FromResult(0);
     }
   }
