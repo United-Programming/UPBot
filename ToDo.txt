@@ -7,24 +7,24 @@ Have a cmd to configure how long messages should stay
 !Add TryCatch to all code and commands
 Add "keep" option to reformat
 
-                  Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin
-MemberTracking  |         |         |           |    X      |          |
-Appreciation    |         |         |           |    X      |    X     |
-EmojiForRole    |         |         |           |    X      |    X     |
-BannedWords     |         |    X    |           |    X      |    X     |
-newcc           |         |         |           |           |    X     |
-ccdel           |         |         |           |           |    X     |
-ccedit          |         |         |           |           |    X     |
-cceditname      |         |         |           |           |    X     |
-cclist          |         |         |           |           |    X     |
-delete          |    X    |    X    |           |    X      |    X     |
-game            |         |         |           |           |    X     |
-bool            |         |         |           |           |    X     |
-rps             |         |         |           |           |    X     |
-helplanguage    |         |         |     X     |    X      |    X     |
-ping            |         |    X    |           |    X      |    X     |
-checklanguage   |         |         |           |    X      |    X     |
-reformat        |         |         |           |    X      |    X     |
-stats           |         |         |     X     |    X      |    X     |
-whois           |         |         |     X     |    X      |    X     |
+                  Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
+MemberTracking  |         |         |           |    X      |          |          |
+Appreciation    |         |         |           |    X      |    X     |          |
+EmojiForRole    |         |         |           |    X      |    X     |          |
+BannedWords     |         |    X    |           |    X      |    X     |    X     |
+newcc           |         |         |           |           |    X     |          |
+ccdel           |         |         |           |           |    X     |          |
+ccedit          |         |         |           |           |    X     |          |
+cceditname      |         |         |           |           |    X     |          |
+cclist          |         |         |           |           |    X     |          |
+delete          |    X    |    X    |           |    X      |    X     |          |
+game            |         |         |           |           |    X     |          |
+bool            |         |         |           |           |    X     |          |
+rps             |         |         |           |           |    X     |          |
+helplanguage    |         |         |     X     |    X      |    X     |          |
+ping            |         |    X    |           |    X      |    X     |          |
+checklanguage   |         |         |           |    X      |    X     |          |
+reformat        |         |         |           |    X      |    X     |          |
+stats           |         |         |     X     |    X      |    X     |          |
+whois           |         |         |     X     |    X      |    X     |          |
 

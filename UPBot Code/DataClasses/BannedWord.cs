@@ -1,25 +1,35 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+
 
 public class BannedWord {
-  public string word;
-  public ulong creator = 0;
-  public DateTime date = DateTime.MinValue;
+  [Key]
+  [Required]
+  public string Word { get; set; }
+  [Required]
+  public ulong Creator { get; set; }
+  [Required]
+  public DateTime Date { get; set; }
 
   public BannedWord(string w, ulong id) {
-    word = w;
-    creator = id;
-    date = DateTime.Now;
+    Word = w;
+    Creator = id;
+    Date = DateTime.Now;
+  }
+  public BannedWord() {
+    Word = "";
+    Creator = 0;
+    Date = DateTime.Now;
   }
 
-  public BannedWord(string line) {
-    string[] parts = line.Trim(' ', '\r', '\n').Split('\t');
-    if (parts.Length != 3) return;
-    word = parts[0].Trim(' ', '\r', '\n', '\t').ToLowerInvariant();
-    ulong.TryParse(parts[1].Trim(' ', '\r', '\n', '\t'), out creator);
-    DateTime.TryParse(parts[2].Trim(' ', '\r', '\n', '\t'), out date);
+  public BannedWord(string w, ulong id, DateTime d) {
+    Word = w;
+    Creator = id;
+    Date = d;
   }
 
   public override string ToString() {
-    return word + "\t" + creator + "\t" + date + "\n";
+    return Word + "\t" + Creator + "\t" + Date + "\n";
   }
 }
+
