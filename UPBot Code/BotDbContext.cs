@@ -2,24 +2,19 @@
 using System.Reflection;
 
 public class BotDbContext : DbContext {
-  public DbSet<HelperMember> Helpers { get; set; }
   public DbSet<BannedWord> BannedWords { get; set; }
   public DbSet<Reputation> Reputations { get; set; }
   public DbSet<EmojiForRoleValue> EmojiForRoles { get; set; }
+  public DbSet<CustomCommand> CustomCommands { get; set; }
+
   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
     optionsBuilder.UseSqlite("Filename=Database/UPBot.db", options => {
       options.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
     });
     base.OnConfiguring(optionsBuilder);
   }
+
   protected override void OnModelCreating(ModelBuilder modelBuilder) {
-    // Map table names
-    modelBuilder.Entity<HelperMember>().ToTable("HelperMember", "UPBotSchema");
-    modelBuilder.Entity<HelperMember>(entity => {
-      entity.HasKey(e => e.Id);
-      entity.HasIndex(e => e.Name);// .IsUnique();
-      entity.Property(e => e.DateAdded).HasDefaultValueSql("CURRENT_TIMESTAMP");
-    });
     modelBuilder.Entity<BannedWord>().ToTable("BannedWord", "UPBotSchema");
     modelBuilder.Entity<BannedWord>(entity => {
       entity.HasKey(e => e.Word);
@@ -43,6 +38,16 @@ public class BotDbContext : DbContext {
       entity.Property(e => e.Role);
       entity.Property(e => e.EmojiId);
       entity.Property(e => e. EmojiName);
+    });
+    modelBuilder.Entity<CustomCommand>().ToTable("CustomCommand", "UPBotSchema");
+    modelBuilder.Entity<CustomCommand>(entity => {
+      entity.Property(e => e.Name);
+      entity.HasKey(e => e.Name);
+      entity.Property(e => e.Content);
+      entity.Property(e => e.Alias0);
+      entity.Property(e => e.Alias1);
+      entity.Property(e => e.Alias2);
+      entity.Property(e => e.Alias3);
     });
     base.OnModelCreating(modelBuilder);
   }

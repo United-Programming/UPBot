@@ -9,7 +9,21 @@ using DSharpPlus.Interactivity.Extensions;
 namespace UPBot {
   class Program {
     static void Main(string[] args) {
-      MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
+      Database.InitDb();
+      Database.AddTable<ExampleEntity>();
+      ExampleEntity ee = new ExampleEntity { id = 123, comment = "A comment", blob = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 }, l = long.MaxValue, ul = ulong.MaxValue, name = "The first row in the db" };
+      Database.Add(ee);
+
+      ExampleEntity read = Database.Get<ExampleEntity>(123);
+      Console.WriteLine(read.comment);
+
+      ee.comment = "new comment";
+      Database.Add(ee);
+
+      read = Database.Get<ExampleEntity>(123);
+      Console.WriteLine(read.comment);
+
+      //      MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
     }
 
     static async Task MainAsync(string token, string prefix) {
@@ -36,7 +50,7 @@ namespace UPBot {
       discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
       discord.MessageCreated += AppreciationTracking.ThanksAdded;
 
-      await CustomCommandsService.LoadCustomCommands();
+      CustomCommandsService.LoadCustomCommands();
       await discord.ConnectAsync(); // Connects and wait forever
 
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");

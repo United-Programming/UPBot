@@ -19,8 +19,8 @@ public class CustomCommandsService : BaseCommandModule
     internal static DiscordClient DiscordClient { get; set; }
     internal const string DirectoryNameCC = "CustomCommands";
 
-    [Command("newcc")]
-    [Aliases("createcc", "addcc", "ccadd", "cccreate", "ccnew")]
+    [Command("ccnew")]
+    [Aliases("createcc", "addcc", "ccadd", "cccreate", "newcc")]
     [Description("**Create** a new Custom Command (so-called 'CC') with a specified name and all aliases if desired " +
                  "(no duplicate alias allowed).\nAfter doing this, the bot will ask you to input the content, which will " +
                  "be displayed once someone invokes this CC. Your entire next message will be used for the content, so " +
@@ -30,6 +30,10 @@ public class CustomCommandsService : BaseCommandModule
     public async Task CreateCommand(CommandContext ctx, [Description("A 'list' of all aliases. The first term is the **main name**, the other ones, separated by a space, are aliases")] params string[] names)
     {
     Utils.LogUserCommand(ctx);
+    if (names.Length == 0) {
+      await Utils.ErrorCallback(CommandErrors.CommandNotSpecified, ctx);
+      return;
+    }
     names = names.Distinct().ToArray();
         foreach (var name in names)
         {
@@ -39,9 +43,9 @@ public class CustomCommandsService : BaseCommandModule
                 return;
             }
             
-            foreach (var cmd in Commands)
+            foreach (CustomCommand cmd in Commands)
             {
-                if (cmd.Names.Contains(name)) // Check if there is already a CC with one of the names
+                if (cmd.Contains(name)) // Check if there is already a CC with one of the names
                 {
                     await Utils.ErrorCallback(CommandErrors.CommandExists, ctx, name);
                     return;
@@ -52,8 +56,9 @@ public class CustomCommandsService : BaseCommandModule
         string content = await WaitForContent(ctx, names[0]);
         CustomCommand command = new CustomCommand(names, content);
         Commands.Add(command);
-        await WriteToFile(command);
-        
+    Utils.db.CustomCommands.Add(command);
+    Utils.db.SaveChanges();
+
         string embedMessage = $"CC {names[0]} successfully created and saved!";
         await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, false);
     }
@@ -177,39 +182,19 @@ public class CustomCommandsService : BaseCommandModule
         string allCommands = string.Empty;
         foreach (var cmd in Commands)
         {
-            if(cmd.Names.Length > 0)
-                allCommands += $"- {cmd.Names[0]} ({(cmd.Names.Length > 1 ? string.Join(", ", cmd.Names.Skip(1)) : string.Empty)}){System.Environment.NewLine}";
+              allCommands += $"- {cmd.GetNames()}{System.Environment.NewLine}";
         }
 
         await Utils.BuildEmbedAndExecute("CC List", allCommands, Utils.Yellow, ctx, true);
     }
 
-    internal static async Task LoadCustomCommands()
+    internal static void LoadCustomCommands()
     {
-        string path = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "CustomCommands");
-        if (!Directory.Exists(path))
-            Directory.CreateDirectory(path);
+          foreach(CustomCommand cmd in Utils.db.CustomCommands)
+                    Commands.Add(cmd);
+  }
 
-        foreach (string fileName in Directory.GetFiles(path))
-        {
-            using (StreamReader sr = File.OpenText(fileName))
-            {
-                string names = await sr.ReadLineAsync();
-                if (string.IsNullOrEmpty(names))
-                    continue;
-
-                string content = string.Empty;
-                string c;
-                while ((c = await sr.ReadLineAsync()) != null)
-                    content += c + System.Environment.NewLine;
-
-                CustomCommand cmd = new CustomCommand(names.Split(','), content);
-                Commands.Add(cmd);
-            }
-        }
-    }
-
-    internal static async Task CommandError(CommandsNextExtension extension, CommandErrorEventArgs args)
+  internal static async Task CommandError(CommandsNextExtension extension, CommandErrorEventArgs args)
     {
         if (args.Exception is DSharpPlus.CommandsNext.Exceptions.CommandNotFoundException)
         {
@@ -219,17 +204,6 @@ public class CustomCommandsService : BaseCommandModule
         }
     }
 
-    private async Task WriteToFile(CustomCommand command)
-    {
-        if (!File.Exists(command.FilePath))
-        {
-            await using (StreamWriter sw = File.AppendText(command.FilePath))
-            {
-                await sw.WriteLineAsync(string.Join(',', command.Names));
-                await sw.WriteLineAsync(command.Content);
-            }
-        }
-    }
 
     private async Task<string> WaitForContent(CommandContext ctx, string name)
     {
@@ -254,6 +228,6 @@ public class CustomCommandsService : BaseCommandModule
 
     private static CustomCommand GetCommandByName(string name)
     {
-        return Commands.FirstOrDefault(cc => cc.Names.Contains(name));
+        return Commands.FirstOrDefault(cc => cc.Contains(name));
     }
 }
