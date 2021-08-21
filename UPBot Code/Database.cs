@@ -51,23 +51,29 @@ public class Database {
       Console.WriteLine("Table " + tableName + " does NOT exist!");
 
     string theKey = null;
-    bool donefirst = false;
+    bool donefirst;
     if (!exists) {
       string sql = "create table " + tableName + " (";
       donefirst = false;
+      string index = null;
       foreach (FieldInfo field in t.GetFields()) {
         bool comment = false;
         bool blob = false;
         bool notnull = false;
         bool key = false;
-        bool index = false; // FIXME this is to do
+        bool ignore = false;
         foreach (CustomAttributeData attr in field.CustomAttributes) {
           if (attr.AttributeType == typeof(Entity.Blob)) blob = true;
           if (attr.AttributeType == typeof(Entity.Comment)) comment = true;
           if (attr.AttributeType == typeof(Entity.Key)) { key = true; notnull = true; theKey = field.Name; }
           if (attr.AttributeType == typeof(Entity.NotNull)) notnull = true;
-          if (attr.AttributeType == typeof(Entity.Index)) index = true;
+          if (attr.AttributeType == typeof(Entity.Index)) {
+            if (index == null) index = "CREATE INDEX idx_" + tableName + " ON " + tableName + "(" + field.Name;
+            else index += ", " + field.Name;
+          }
+          if (attr.AttributeType == typeof(Entity.NotPersistent)) ignore = true;
         }
+        if (ignore) continue;
 
         if (donefirst) sql += ", ";
         else donefirst = true;
@@ -99,16 +105,26 @@ public class Database {
       if (theKey == null) throw new Exception("Missing [Key] for class " + typeof(T));
       command.CommandText = sql;
       command.ExecuteNonQuery();
-    }
 
+      if (index != null) {
+        command.CommandText = index;
+        command.ExecuteNonQuery();
+      }
+    }
 
     // Construct the entity
     EntityDef ed = new EntityDef { type = t };
     foreach (FieldInfo field in t.GetFields()) {
       bool blob = false;
+      bool ignore = false;
       foreach (CustomAttributeData attr in field.CustomAttributes) {
         if (attr.AttributeType == typeof(Entity.Key)) { theKey = field.Name; ed.key = field;  }
         if (attr.AttributeType == typeof(Entity.Blob)) { blob = true; }
+        if (attr.AttributeType == typeof(Entity.NotPersistent)) { ignore = true; }
+      }
+      if (ignore) {
+        ed.fields[field.Name] = FieldType.IGNORE;
+        continue;
       }
       if (blob) ed.fields[field.Name] = FieldType.ByteArray;
       else switch (field.FieldType.Name.ToLowerInvariant()) {
@@ -204,7 +220,7 @@ public class Database {
     try {
       EntityDef ed = entities[val.GetType()];
       SQLiteCommand cmd = new SQLiteCommand(ed.delete, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", (val as Entity).GetKey().GetValue(val)));
+      cmd.Parameters.Add(new SQLiteParameter("@param1", ed.key.GetValue(val)));
       cmd.ExecuteNonQuery();
     } catch (Exception ex) {
       Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message);
@@ -252,7 +268,7 @@ public class Database {
     try {
       Type t = typeof(T);
       EntityDef ed = entities[t];
-      SQLiteCommand cmd = new SQLiteCommand(ed.select, connection);
+      SQLiteCommand cmd = new SQLiteCommand(ed.select+";", connection);
       SQLiteDataReader reader = cmd.ExecuteReader();
       List<T> res = new List<T>();
       while (reader.Read()) {
@@ -307,6 +323,7 @@ public class Database {
   }
 
   enum FieldType {
+    IGNORE,
     Bool,
     Byte,
     Int,

@@ -9,21 +9,7 @@ using DSharpPlus.Interactivity.Extensions;
 namespace UPBot {
   class Program {
     static void Main(string[] args) {
-      Database.InitDb();
-      Database.AddTable<ExampleEntity>();
-      ExampleEntity ee = new ExampleEntity { id = 123, comment = "A comment", blob = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 }, l = long.MaxValue, ul = ulong.MaxValue, name = "The first row in the db" };
-      Database.Add(ee);
-
-      ExampleEntity read = Database.Get<ExampleEntity>(123);
-      Console.WriteLine(read.comment);
-
-      ee.comment = "new comment";
-      Database.Add(ee);
-
-      read = Database.Get<ExampleEntity>(123);
-      Console.WriteLine(read.comment);
-
-      //      MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
+      MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
     }
 
     static async Task MainAsync(string token, string prefix) {
@@ -38,7 +24,11 @@ namespace UPBot {
       CustomCommandsService.DiscordClient = discord;
 
       Utils.InitClient(discord);
-      Utils.ConnectToDb();
+      Database.InitDb();
+      Database.AddTable<BannedWord>();
+      Database.AddTable<Reputation>();
+      Database.AddTable<EmojiForRoleValue>();
+      Database.AddTable<CustomCommand>();
 
       CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters

@@ -12,15 +12,8 @@ public class EmojisForRole : BaseCommandModule {
 
   static void GetValues() {
     if (values != null) return;
-    values = new List<EmojiForRoleValue>();
-    if (Utils.db.EmojiForRoles != null) {
-      int num = 0;
-      foreach (EmojiForRoleValue v in Utils.db.EmojiForRoles) {
-        num++;
-        values.Add(v);
-      }
-      Utils.Log("Found " + num + " EmojiForRoles entries");
-    }
+    values = Database.GetAll<EmojiForRoleValue>();
+    Utils.Log("Found " + values.Count + " EmojiForRoles entries");
   }
 
   [Command("WhatRole")]
@@ -108,8 +101,7 @@ public class EmojisForRole : BaseCommandModule {
       }
       else {
         values.Remove(toRemove);
-        Utils.db.EmojiForRoles.Remove(toRemove);
-        Utils.db.SaveChanges();
+        Database.Delete(toRemove);
         Utils.Log("Memeber " + ctx.Member.DisplayName + " removed EmojiForRoles with code " + code + " https://discord.com/channels/" + Utils.GetGuild().Id + "/" + toRemove.Channel + "/" + toRemove.Message);
         DiscordMessage answer = await Utils.BuildEmbedAndExecute("EmojiForRoles removal", "Entry with code " + code + " has been removed", Utils.Red, ctx, true);
         await Utils.DeleteDelayed(30, answer);
@@ -235,8 +227,7 @@ public class EmojisForRole : BaseCommandModule {
     }
     if (toRemove != null) {
       values.Remove(toRemove);
-      Utils.db.EmojiForRoles.Remove(toRemove);
-      Utils.db.SaveChanges();
+      Database.Delete(toRemove);
     }
     else {
       here = true;
@@ -249,8 +240,7 @@ public class EmojisForRole : BaseCommandModule {
         dRole = role
       };
       values.Add(v);
-      Utils.db.EmojiForRoles.Add(v);
-      Utils.db.SaveChanges();
+      Database.Add(v);
 
       if (emoji != null) {
         // Check if we have the emoji already, if not add it
