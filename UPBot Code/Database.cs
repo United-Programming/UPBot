@@ -226,6 +226,16 @@ public class Database {
       Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message);
     }
   }
+  public static void DeleteByKey<T>(object key) {
+    try {
+      EntityDef ed = entities[typeof(T)];
+      SQLiteCommand cmd = new SQLiteCommand(ed.delete, connection);
+      cmd.Parameters.Add(new SQLiteParameter("@param1", key));
+      cmd.ExecuteNonQuery();
+    } catch (Exception ex) {
+      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
+    }
+  }
 
   public static T Get<T>(object keyvalue) {
     try {

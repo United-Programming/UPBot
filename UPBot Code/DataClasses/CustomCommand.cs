@@ -32,6 +32,7 @@ public class CustomCommand : Entity {
 
   internal void EditCommand(string newContent) {
     Content = newContent;
+    Database.Update(this);
   }
 
   internal void EditCommand(string[] newNames) {
@@ -40,6 +41,7 @@ public class CustomCommand : Entity {
     if (newNames.Length > 2) Alias1 = newNames[2];
     if (newNames.Length > 3) Alias2 = newNames[3];
     if (newNames.Length >= 4) Alias3 = newNames[4];
+    Database.Update(this);
   }
 
   internal bool Contains(string name) {
