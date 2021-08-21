@@ -23,6 +23,7 @@ public class Entity {
   public class Index : Attribute {}
   public class Comment : Attribute {}
   public class Blob : Attribute {}
+  public class NotPersistent : Attribute {}
 
 
   private FieldInfo _key = null;

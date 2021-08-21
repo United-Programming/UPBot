@@ -1,16 +1,13 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 
 /// <summary>
 /// Holds information about a CustomCommand
 /// and contains functions which execute or edit the command
 /// </summary>
-public class CustomCommand {
+public class CustomCommand : Entity {
 
-  public CustomCommand() {
-  }
+  public CustomCommand() { }
 
   public CustomCommand(string[] names, string content) {
     Name = names[0];
@@ -22,14 +19,12 @@ public class CustomCommand {
   }
 
   [Key]
-  [Required]
-  public string Name { get; set; }
-  public string Alias0 { get; set; }
-  public string Alias1 { get; set; }
-  public string Alias2 { get; set; }
-  public string Alias3 { get; set; }
-  [Required]
-  public string Content { get; set; }
+  public string Name;
+  public string Alias0;
+  public string Alias1;
+  public string Alias2;
+  public string Alias3;
+  public string Content;
 
   internal async Task ExecuteCommand(CommandContext ctx) {
     await ctx.Channel.SendMessageAsync(Content);

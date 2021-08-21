@@ -1,7 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Globalization;
 using System.IO;
@@ -82,22 +81,6 @@ public static class Utils
     string logPath = ConstructPath("Logs", "BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
     if (File.Exists(logPath)) logs = new StreamWriter(logPath, append: true);
     else logs = File.CreateText(logPath);
-  }
-
-  internal static BotDbContext db;
-  internal static void ConnectToDb() {
-    // db => "Database/UPBot.db";
-    db = new BotDbContext();
-
-
-    var entityType = db.Model.FindEntityType(typeof(CustomCommand));
-    var schema = entityType.GetSchema();
-    var tableName = entityType.GetTableName();
-    var stableName = entityType.GetSchemaQualifiedTableName();
-
-    //    db.Database.Migrate();
-    db.Database.EnsureCreated(); //Ensure database is created
-    Log("DB Connected: " + db.Database.ProviderName);
   }
 
   /// <summary>

@@ -21,15 +21,8 @@ public class BannedWords : BaseCommandModule {
   private const string directoryName = "Restrictions";
 
   public static void Init() {
-    bannedWords = new List<BannedWord>();
-    if (Utils.db.BannedWords != null) {
-      int num = 0;
-      foreach (BannedWord bannedWord in Utils.db.BannedWords) {
-        num++;
-        bannedWords.Add(bannedWord);
-      }
-      Utils.Log("Found " + num + " banned words");
-    }
+    bannedWords = Database.GetAll<BannedWord>();
+    Utils.Log("Found " + bannedWords.Count + " banned words");
     bannedWords.Sort((a, b) => { return a.Word.CompareTo(b.Word); });
   }
 
@@ -94,8 +87,7 @@ public class BannedWords : BaseCommandModule {
         BannedWord w = new BannedWord(word, ctx.Message.Author.Id);
         bannedWords.Add(w);
         bannedWords.Sort((a, b) => { return a.Word.CompareTo(b.Word); });
-        Utils.db.BannedWords.Add(w);
-        Utils.db.SaveChanges();
+        Database.Add(w);
 
         await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
         return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been added.");
@@ -117,8 +109,7 @@ public class BannedWords : BaseCommandModule {
           return ctx.Channel.SendMessageAsync("The word \"" + word + "\" is not in the list.");
         }
         bannedWords.Remove(found);
-        Utils.db.BannedWords.Remove(found);
-        Utils.db.SaveChanges();
+        Database.Delete(found);
 
         await ctx.Message.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.OK));
         return ctx.Channel.SendMessageAsync("The word \"" + word + "\" has been removed.");
