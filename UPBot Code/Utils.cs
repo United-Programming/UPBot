@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Globalization;
 using System.IO;
@@ -12,6 +13,9 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
+  public const int vmajor = 0, vminor = 1, vbuild = 2;
+
+
   /// <summary>
   /// Common colors
   /// </summary>
@@ -28,7 +32,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return "0.1.1 dev - 2021/08/19";
+    return vmajor + "." + vminor + "." + vbuild + " dev - 2021/08/19";
   }
 
   /// <summary>
@@ -84,6 +88,14 @@ public static class Utils
   internal static void ConnectToDb() {
     // db => "Database/UPBot.db";
     db = new BotDbContext();
+
+
+    var entityType = db.Model.FindEntityType(typeof(CustomCommand));
+    var schema = entityType.GetSchema();
+    var tableName = entityType.GetTableName();
+    var stableName = entityType.GetSchemaQualifiedTableName();
+
+    //    db.Database.Migrate();
     db.Database.EnsureCreated(); //Ensure database is created
     Log("DB Connected: " + db.Database.ProviderName);
   }
@@ -244,7 +256,7 @@ public static class Utils
       logs.WriteLine(msg);
       logs.FlushAsync();
     } catch (Exception e) {
-      string m = e.Message;
+      _ = e.Message;
     }
   }
   
@@ -267,7 +279,7 @@ public static class Utils
         respond = false;
         break;
       case CommandErrors.InvalidParams:
-        message = "The given parameters are invalid. Enter \\help [commandName] to get help with the usage of the command.";
+        message = "The given parameters are invalid. Enter `\\help [commandName]` to get help with the usage of the command.";
         respond = true;
         break;
       case CommandErrors.InvalidParamsDelete:
@@ -283,6 +295,10 @@ public static class Utils
       case CommandErrors.NoCustomCommands:
         message = "There are no CC's currently.";
         respond = false;
+        break;
+      case CommandErrors.CommandNotSpecified:
+        message = "No command name was specified. Enter `\\help ccnew` to get help with the usage of the command.";
+        respond = true;
         break;
     }
         
@@ -356,5 +372,6 @@ public enum CommandErrors
     CommandExists,
     UnknownError,
     MissingCommand,
-    NoCustomCommands
+    NoCustomCommands,
+    CommandNotSpecified
 }
