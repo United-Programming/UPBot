@@ -24,6 +24,12 @@ namespace UPBot {
       CustomCommandsService.DiscordClient = discord;
 
       Utils.InitClient(discord);
+      Database.InitDb();
+      Database.AddTable<BannedWord>();
+      Database.AddTable<Reputation>();
+      Database.AddTable<EmojiForRoleValue>();
+      Database.AddTable<CustomCommand>();
+
       CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
         StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters
       });
@@ -32,20 +38,23 @@ namespace UPBot {
 
       BannedWords.Init();
       discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
+      discord.MessageCreated += AppreciationTracking.ThanksAdded;
 
-      await CustomCommandsService.LoadCustomCommands();
+      CustomCommandsService.LoadCustomCommands();
       await discord.ConnectAsync(); // Connects and wait forever
 
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
 
-      AppreciationTracking.Init();
       discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       discord.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
       discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
+      discord.MessageReactionAdded += EmojisForRole.ReacionAdded;
       discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
+      discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
       await Task.Delay(-1);
     }
+
   }
 }

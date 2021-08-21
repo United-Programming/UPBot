@@ -2,7 +2,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -13,6 +12,9 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
+  public const int vmajor = 0, vminor = 1, vbuild = 2;
+
+
   /// <summary>
   /// Common colors
   /// </summary>
@@ -29,7 +31,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return "0.1 beta - 2021/08/19";
+    return vmajor + "." + vminor + "." + vbuild + " dev - 2021/08/19";
   }
 
   /// <summary>
@@ -237,7 +239,7 @@ public static class Utils
       logs.WriteLine(msg);
       logs.FlushAsync();
     } catch (Exception e) {
-      string m = e.Message;
+      _ = e.Message;
     }
   }
   
@@ -260,7 +262,7 @@ public static class Utils
         respond = false;
         break;
       case CommandErrors.InvalidParams:
-        message = "The given parameters are invalid. Enter \\help [commandName] to get help with the usage of the command.";
+        message = "The given parameters are invalid. Enter `\\help [commandName]` to get help with the usage of the command.";
         respond = true;
         break;
       case CommandErrors.InvalidParamsDelete:
@@ -276,6 +278,10 @@ public static class Utils
       case CommandErrors.NoCustomCommands:
         message = "There are no CC's currently.";
         respond = false;
+        break;
+      case CommandErrors.CommandNotSpecified:
+        message = "No command name was specified. Enter `\\help ccnew` to get help with the usage of the command.";
+        respond = true;
         break;
     }
         
@@ -342,12 +348,12 @@ public enum EmojiEnum {
   AutoRefactored = 12,
 }
 
-public enum CommandErrors
-{
+public enum CommandErrors {
     InvalidParams,
     InvalidParamsDelete,
     CommandExists,
     UnknownError,
     MissingCommand,
-    NoCustomCommands
+    NoCustomCommands,
+    CommandNotSpecified
 }
