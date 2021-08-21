@@ -348,8 +348,7 @@ public enum EmojiEnum {
   AutoRefactored = 12,
 }
 
-public enum CommandErrors
-{
+public enum CommandErrors {
     InvalidParams,
     InvalidParamsDelete,
     CommandExists,

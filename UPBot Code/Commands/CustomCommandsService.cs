@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -16,7 +15,6 @@ using DSharpPlus.Interactivity.Extensions;
 public class CustomCommandsService : BaseCommandModule {
   private static List<CustomCommand> Commands = null;
   internal static DiscordClient DiscordClient { get; set; }
-  internal const string DirectoryNameCC = "CustomCommands";
 
   [Command("ccnew")]
   [Aliases("createcc", "addcc", "ccadd", "cccreate", "newcc")]
@@ -66,11 +64,8 @@ public class CustomCommandsService : BaseCommandModule {
   [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
   public async Task DeleteCommand(CommandContext ctx, [Description("Main name of the CC you want to delete")] string name) {
     Utils.LogUserCommand(ctx);
-    string filePath = Utils.ConstructPath(DirectoryNameCC, name, ".txt");
-    if (File.Exists(filePath)) {
-      File.Delete(filePath);
-      if (TryGetCommand(name, out CustomCommand cmd))
-        Commands.Remove(cmd);
+    if (TryGetCommand(name, out CustomCommand cmd)) {
+      Commands.Remove(cmd);
 
       string embedMessage = $"CC {name} successfully deleted!";
       await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, true);
@@ -85,27 +80,12 @@ public class CustomCommandsService : BaseCommandModule {
   [RequireRoles(RoleCheckMode.Any, "Mod", "Owner")] // Restrict access to users with the "Mod" or "Owner" role only
   public async Task EditCommand(CommandContext ctx, [Description("Main name of the CC you want to edit")] string name) {
     Utils.LogUserCommand(ctx);
-    string filePath = Utils.ConstructPath(DirectoryNameCC, name, ".txt");
-    if (File.Exists(filePath)) {
-      string content = await WaitForContent(ctx, name);
-      string firstLine;
-      using (StreamReader sr = File.OpenText(filePath))
-        firstLine = await sr.ReadLineAsync();
+    string content = await WaitForContent(ctx, name);
+    if (TryGetCommand(name, out CustomCommand command))
+      command.EditCommand(content);
 
-
-      await using (StreamWriter sw = File.CreateText(filePath)) {
-        await sw.WriteLineAsync(firstLine);
-        await sw.WriteLineAsync(content);
-      }
-
-      if (TryGetCommand(name, out CustomCommand command))
-        command.EditCommand(content);
-
-      string embedMessage = $"CC **{name}** successfully edited!";
-      await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, false);
-    }
-    else
-      await Utils.ErrorCallback(CommandErrors.MissingCommand, ctx);
+    string embedMessage = $"CC **{name}** successfully edited!";
+    await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, false);
   }
 
   [Command("cceditname")]
@@ -125,25 +105,10 @@ public class CustomCommandsService : BaseCommandModule {
       return;
     }
 
-    string filePath = Utils.ConstructPath(DirectoryNameCC, names[0], ".txt");
-    if (File.Exists(filePath)) {
-      if (TryGetCommand(names[0], out CustomCommand command))
-        command.EditCommand(names.Skip(1).ToArray());
+    Database.DeleteByKey<CustomCommand>(names[0]);
 
-      string content = string.Empty;
-      using (StreamReader sr = File.OpenText(filePath)) {
-        string c;
-        await sr.ReadLineAsync();
-        while ((c = await sr.ReadLineAsync()) != null)
-          content += c + System.Environment.NewLine;
-      }
-
-      string newPath = Utils.ConstructPath(DirectoryNameCC, names[1], ".txt");
-      File.Move(filePath, newPath);
-      using (StreamWriter sw = File.CreateText(newPath)) {
-        await sw.WriteLineAsync(string.Join(',', names.Skip(1)));
-        await sw.WriteLineAsync(content);
-      }
+    if (TryGetCommand(names[0], out CustomCommand command)) {
+      command.EditCommand(names.Skip(1).ToArray());
 
       string embedDescription = "The CC names have been successfully edited.";
       await Utils.BuildEmbedAndExecute("Success", embedDescription, Utils.Green, ctx, false);
