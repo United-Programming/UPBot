@@ -167,7 +167,7 @@ public class Database {
       update += field.Name + "=@p" + field.Name;
     }
     ed.insert = insert + insertpost + ");";
-    ed.update = update;
+    ed.update = update + " WHERE " + theKey + "=@param1";
     entities.Add(t, ed);
   }
 
@@ -189,13 +189,15 @@ public class Database {
       EntityDef ed = entities[t];
       // Get the values with this key from the db
       SQLiteCommand cmd = new SQLiteCommand(ed.count, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", (val as Entity).GetKey().GetValue(val)));
+      object key = (val as Entity).GetKey().GetValue(val);
+      cmd.Parameters.Add(new SQLiteParameter("@param1", key));
       // Do we have our value?
       if (Convert.ToInt32(cmd.ExecuteScalar()) > 0) { // Yes -> Update
         SQLiteCommand update = new SQLiteCommand(ed.update, connection);
         foreach (FieldInfo field in t.GetFields()) {
           update.Parameters.Add(new SQLiteParameter("@p" + field.Name, field.GetValue(val)));
         }
+        update.Parameters.Add(new SQLiteParameter("@param1", key));
         update.ExecuteNonQuery();
       }
       else { // No - Insert
