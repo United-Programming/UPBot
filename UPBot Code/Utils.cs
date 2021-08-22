@@ -31,7 +31,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " dev - 2021/08/19";
+    return vmajor + "." + vminor + "." + vbuild + " dev - 2021/08/22";
   }
 
   /// <summary>

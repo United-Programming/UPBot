@@ -169,12 +169,6 @@ public class Database {
     ed.insert = insert + insertpost + ");";
     ed.update = update;
     entities.Add(t, ed);
-
-    /*
-     * FIXME add indexes if we will need them
-    */
-
-
   }
 
   public static int Count<T>() {
@@ -226,11 +220,11 @@ public class Database {
       Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message);
     }
   }
-  public static void DeleteByKey<T>(object key) {
+  public static void DeleteByKey<T>(object keyvalue) {
     try {
       EntityDef ed = entities[typeof(T)];
       SQLiteCommand cmd = new SQLiteCommand(ed.delete, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", key));
+      cmd.Parameters.Add(new SQLiteParameter("@param1", keyvalue));
       cmd.ExecuteNonQuery();
     } catch (Exception ex) {
       Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
@@ -248,6 +242,7 @@ public class Database {
       T res = (T)Activator.CreateInstance(t);
       int num = 0;
       foreach (FieldInfo field in t.GetFields()) {
+        if (reader.IsDBNull(num)) continue;
         FieldType ft = ed.fields[field.Name];
         switch (ft) {
           case FieldType.Bool: field.SetValue(res, reader.GetByte(num) != 0); break;
@@ -286,6 +281,7 @@ public class Database {
         int num = 0;
         foreach (FieldInfo field in t.GetFields()) {
           FieldType ft = ed.fields[field.Name];
+          if (reader.IsDBNull(num)) continue;
           switch (ft) {
             case FieldType.Bool: field.SetValue(val, reader.GetByte(num) != 0); break;
             case FieldType.Byte: field.SetValue(val, reader.GetByte(num)); break;
@@ -308,7 +304,7 @@ public class Database {
       }
       return res;
     } catch (Exception ex) {
-      Utils.Log("Error in Reading data for " + typeof(T) + ": " + ex.Message);
+      Utils.Log(" " + typeof(T) + ": " + ex.Message);
     }
     return null;
   }
