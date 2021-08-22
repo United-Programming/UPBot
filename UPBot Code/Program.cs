@@ -53,8 +53,6 @@ namespace UPBot {
       discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
       discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
-      var b = new DSharpPlus.Entities.DiscordButtonComponent(ButtonStyle.Primary, "TestButton", "I am a test button", false);
-
       await Task.Delay(-1);
     }
 
