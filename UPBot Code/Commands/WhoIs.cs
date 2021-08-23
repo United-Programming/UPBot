@@ -76,7 +76,7 @@ public class WhoIs : BaseCommandModule {
       }
       if (num == 1)
         embed.AddField("Role", roles, false);
-      else
+      else if (num != 0)
         embed.AddField(num + " Roles", roles, false);
 
       string perms = ""; // Not all permissions are shown
