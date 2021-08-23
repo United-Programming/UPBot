@@ -45,7 +45,11 @@ public class CustomCommand : Entity {
   }
 
   internal bool Contains(string name) {
-    return (Name.Equals(name) || Alias0.Equals(name) || Alias1.Equals(name) || Alias2.Equals(name) || Alias3.Equals(name));
+    return ((Name != null && Name.Equals(name)) ||
+      (Alias0 != null && Alias0.Equals(name)) ||
+      (Alias1 != null && Alias1.Equals(name)) ||
+      (Alias2 != null && Alias2.Equals(name)) ||
+      (Alias3 != null && Alias3.Equals(name)));
   }
 
   internal string GetNames() {
