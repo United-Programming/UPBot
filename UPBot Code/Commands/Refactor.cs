@@ -88,8 +88,6 @@ public class Refactor : BaseCommandModule {
   }
 
   [Command("reformat")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post, specify a **language** if you want to force one.")] string what) { // Refactor the last post of the specified user in the channel
     if (IsBest(what)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(what)) await RefactorCode(ctx, member, Action.Replace, Langs.NONE);
@@ -97,8 +95,6 @@ public class Refactor : BaseCommandModule {
   }
 
   [Command("reformat")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
     if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(cmd1)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd2));
@@ -175,8 +171,10 @@ public class Refactor : BaseCommandModule {
       bool deleteOrig = action == Action.Replace;
       Match codeMatch = codeBlock.Match(code);
       if (codeMatch.Success) {
-        code = codeMatch.Groups[5].Value;
-        deleteOrig = string.IsNullOrWhiteSpace(codeMatch.Groups[1].Value);
+        if (codeMatch.Groups[3].Value.IndexOf(';') != -1)
+          code = codeMatch.Groups[3].Value.Substring(3) + codeMatch.Groups[6].Value;
+        else
+          code = codeMatch.Groups[6].Value;
       }
       code = code.Trim(' ', '\t', '\r', '\n');
       code = emptyLines.Replace(code, "\n");
@@ -344,7 +342,7 @@ public class Refactor : BaseCommandModule {
     return Langs.NONE;
   }
 
-  readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
+  readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n)|```[^;]*;(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
   readonly Regex emptyLines = new Regex("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
 
   readonly LangKWord[] keywords = {
