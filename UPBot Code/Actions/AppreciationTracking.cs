@@ -75,21 +75,32 @@ public class AppreciationTracking : BaseCommandModule {
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
     try {
-      if (args.Message.Reference == null && (args.Message.MentionedUsers == null || args.Message.MentionedUsers.Count == 0)) return Task.FromResult(0);
-
       string msg = args.Message.Content.ToLowerInvariant();
       if (thanks.IsMatch(msg) || thankyou.IsMatch(msg) || thank2you.IsMatch(msg)) { // Add thanks
         if (thank4n.IsMatch(msg)) return Task.FromResult(0);
         if (GetTracking()) return Task.FromResult(0);
 
-        IReadOnlyList<DiscordUser> mentions = args.Message.MentionedUsers;
-        ulong authorId = args.Message.Author.Id;
-        ulong refAuthorId = args.Message.Reference != null ? args.Message.Reference.Message.Author.Id : 0;
+        DiscordMessage theMsg = args.Message;
+        ulong authorId = theMsg.Author.Id;
+        if (theMsg.Reference == null && (theMsg.MentionedUsers == null || theMsg.MentionedUsers.Count == 0)) {
+          // Unrelated thank you, get the previous message and check
+          IReadOnlyList<DiscordMessage> msgs = theMsg.Channel.GetMessagesBeforeAsync(theMsg.Id, 2).Result;
+          theMsg = null;
+          foreach (DiscordMessage m in msgs)
+            if (m.Author.Id != authorId) {
+              theMsg = m;
+              break;
+            }
+          if (theMsg == null) return Task.FromResult(0);
+        }
+
+        IReadOnlyList<DiscordUser> mentions = theMsg.MentionedUsers;
+        ulong refAuthorId = theMsg.Reference != null ? theMsg.Reference.Message.Author.Id : 0;
         if (mentions != null)
           foreach (DiscordUser u in mentions)
             if (u.Id != authorId && u.Id != refAuthorId) tracking.AlterThankYou(u.Id);
-        if (args.Message.Reference != null)
-          if (args.Message.Reference.Message.Author.Id != authorId) tracking.AlterThankYou(args.Message.Reference.Message.Author.Id);
+        if (theMsg.Reference != null)
+          if (theMsg.Reference.Message.Author.Id != authorId) tracking.AlterThankYou(theMsg.Reference.Message.Author.Id);
       }
 
       return Task.FromResult(0);
