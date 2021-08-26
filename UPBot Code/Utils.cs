@@ -31,7 +31,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " dev - 2021/08/19";
+    return vmajor + "." + vminor + "." + vbuild + " - 2021/08/26";
   }
 
   /// <summary>
@@ -328,6 +328,13 @@ public static class Utils
     } catch (Exception) { }
   }
 
+  public static bool IsAdmin(DiscordMember m) {
+    if (m.Permissions.HasFlag(Permissions.Administrator)) return true;
+    if (m.Permissions.HasFlag(Permissions.ManageMessages)) return true;
+    foreach (DiscordRole r in m.Roles)
+      if (r.Id == 830901562960117780ul /* Owner */ || r.Id == 830901743624650783ul /* Mod */ || r.Id == 831050318171078718ul /* Helper */) return true;
+    return false;
+  }
 
 }
 

@@ -12,113 +12,187 @@ using DSharpPlus;
 /// </summary>
 public class Refactor : BaseCommandModule {
 
+  enum Action {
+    Analyze,
+    Replace,
+    Keep
+  }
+
+  enum Langs {
+    NONE, cs, js, cpp, java, python
+  }
+
+  /*
+  <reply> /refactor 
+  <reply> /refactor lng
+  <reply> /refactor lng replace
+  <reply> /refactor keep lng
+  <reply> /refactor best
+  <reply> /refactor keep
+   
+  /refactor <usr> 
+  /refactor <usr> lng
+  /refactor <usr> lng replace
+  /refactor <usr> keep lng
+  /refactor <usr> best
+  /refactor <usr> keep
+   
+   normal users can reformat their own posts
+  admins can reformat messages from other users
+   
+   */
+
+
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx) { // Refactors the previous post, if it is code
-    await RefactorCode(ctx, null, "best");
+    await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
   }
 
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
-  public async Task CheckLanguage(CommandContext ctx, [Description("The user the posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
-    await RefactorCode(ctx, member, "best");
+  public async Task CheckLanguage(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
+    await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace a specified post with a reformatted code block using the specified language or the best language")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
-    await RefactorCode(ctx, null, null);
+    await RefactorCode(ctx, null, Action.Keep, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
-  public async Task ReformatCommand(CommandContext ctx, [Description("Force the Language to use. Use **Best** or **Analyze** to find the best language.")] string language) { // Refactors the previous post, if it is code
-    await RefactorCode(ctx, null, language);
+  public async Task ReformatCommand(CommandContext ctx, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post (only your own posts or if you are an admin), specify a **language** if you want to force one.")] string what) { // Refactors the previous post, if it is code
+    if (IsBest(what)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
+    else if (IsReplace(what)) await RefactorCode(ctx, null, Action.Replace, Langs.NONE);
+    else await RefactorCode(ctx, null, Action.Keep, NormalizeLanguage(what));
   }
 
   [Command("reformat")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
-  public async Task ReformatCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
-    await RefactorCode(ctx, member, null);
+  [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
+  public async Task ReformatCommand(CommandContext ctx, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
+    if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
+    else if (IsReplace(cmd1)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd2));
+    else if (IsReplace(cmd2)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd1));
+    else {
+      Langs l = NormalizeLanguage(cmd1);
+      if (l == Langs.NONE) l = NormalizeLanguage(cmd2);
+      await RefactorCode(ctx, null, Action.Keep, l);
+    }
   }
 
   [Command("reformat")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
-  public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user the posted the message to refactor")] DiscordMember member, [Description("Force the Language to use. Use 'best' or 'Analyze' to find the best language.")]  string language) { // Refactor the last post of the specified user in the channel
-    await RefactorCode(ctx, member, language);
+  public async Task ReformatCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
+    await RefactorCode(ctx, member, Action.Keep, Langs.NONE);
   }
 
-  private async Task<Task<DiscordMessage>> RefactorCode(CommandContext ctx, DiscordMember m, string language) {
+  [Command("reformat")]
+  public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post, specify a **language** if you want to force one.")] string what) { // Refactor the last post of the specified user in the channel
+    if (IsBest(what)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
+    else if (IsReplace(what)) await RefactorCode(ctx, member, Action.Replace, Langs.NONE);
+    else await RefactorCode(ctx, member, Action.Keep, NormalizeLanguage(what));
+  }
+
+  [Command("reformat")]
+  public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
+    if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
+    else if (IsReplace(cmd1)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd2));
+    else if (IsReplace(cmd2)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd1));
+    else {
+      Langs l = NormalizeLanguage(cmd1);
+      if (l == Langs.NONE) l = NormalizeLanguage(cmd2);
+      await RefactorCode(ctx, member, Action.Keep, l);
+    }
+  }
+
+  private async Task<Task<DiscordMessage>> RefactorCode(CommandContext ctx, DiscordMember m, Action action, Langs lang) {
     Utils.LogUserCommand(ctx);
+
     try {
-      DiscordChannel c = ctx.Channel;
+      // Find the message
       DiscordMessage toRefactor = null;
+      Langs msgLang = Langs.NONE;
       if (ctx.Message.Reference != null) toRefactor = ctx.Message.Reference.Message;
-      else {
-        IReadOnlyList<DiscordMessage> msgs = await c.GetMessagesAsync(50);
-        if (m == null) toRefactor = msgs[1];
-        else {
-          for (int i = 1; i < msgs.Count; i++) {
-            if (msgs[i].Author.Id.Equals(m.Id)) {
-              toRefactor = msgs[i];
-              break;
-            }
+      else if (m != null) { // Get last post of the specified member
+        IReadOnlyList<DiscordMessage> msgs = await ctx.Channel.GetMessagesAsync(50);
+        for (int i = 1; i < msgs.Count; i++) {
+          if (msgs[i].Author.Id.Equals(m.Id)) {
+            toRefactor = msgs[i];
+            break;
           }
         }
-        if (toRefactor == null) return ctx.RespondAsync("Nothing to refactor found");
       }
-
-      // Is the message some code?
-      string code = toRefactor.Content;
-      int weightCs = 0, weightCp = 0, weightJv = 0, weightJs = 0, weightPy = 0;
-      foreach (LangKWord k in keywords) {
-        if (k.regexp.IsMatch(code)) {
-          weightCs += k.wCs;
-          weightCp += k.wCp;
-          weightJv += k.wJv;
-          weightJs += k.wJs;
-          weightPy += k.wPy;
+      else { // Get last post that looks like code
+        IReadOnlyList<DiscordMessage> msgs = await ctx.Channel.GetMessagesAsync(50);
+        for (int i = 1; i < msgs.Count; i++) {
+          string content = msgs[i].Content;
+          msgLang = GetBestMatch(content);
+          if (msgLang != Langs.NONE) {
+            toRefactor = msgs[i];
+            break;
+          }
         }
       }
 
-      string guessed = "no one";
-      string best = "";
-      EmojiEnum langEmoji = EmojiEnum.None;
-      int w = 0;
-      if (weightCs > w) { guessed = "<:csharp:831465428214743060> C#"; w = weightCs; best = "cs"; langEmoji = EmojiEnum.CSharp; }
-      if (weightCp > w) { guessed = "<:cpp:831465408874676273> C++"; w = weightCp; best = "cpp"; langEmoji = EmojiEnum.Cpp; }
-      if (weightJs > w) { guessed = "<:Javascript:876103767068647435> Javascript"; w = weightJs; best = "js"; langEmoji = EmojiEnum.Javascript; }
-      if (weightJv > w) { guessed = "<:java:875852276017815634> Java"; w = weightJv; best = "java"; langEmoji = EmojiEnum.Java; }
-      if (weightPy > w) { guessed = "<:python:831465381016895500> Python"; w = weightPy; best = "python"; langEmoji = EmojiEnum.Python; }
-      if (w == 0 && language == null) return ctx.RespondAsync("Nothing to reformat");
+      if (toRefactor == null) return ctx.RespondAsync("Nothing to refactor found");
+      // FIXME If we are not an admin, and the message is not from ourselves, do not accept the replace option.
+      if (action == Action.Replace && !Utils.IsAdmin(ctx.Member) && toRefactor.Author.Id != ctx.Member.Id) action = Action.Keep;
 
-      language = NormalizeLanguage(language, best);
-      if (language == null)
+      // Is the message some code, or at least somethign we recognize?
+      string code = toRefactor.Content;
+      if (msgLang==Langs.NONE)
+        msgLang = GetBestMatch(code);
+
+      if (action == Action.Analyze) {
+        int weightCs = 0, weightCp = 0, weightJv = 0, weightJs = 0, weightPy = 0;
+        foreach (LangKWord k in keywords) {
+          if (k.regexp.IsMatch(code)) {
+            weightCs += k.wCs;
+            weightCp += k.wCp;
+            weightJv += k.wJv;
+            weightJs += k.wJs;
+            weightPy += k.wPy;
+          }
+        }
+        string guessed = "no one";
+        switch (msgLang) {
+          case Langs.cs: guessed = "<:csharp:831465428214743060> C#"; break;
+          case Langs.js: guessed = "<:Javascript:876103767068647435> Javascript"; break;
+          case Langs.cpp: guessed = "<:cpp:831465408874676273> C++"; break;
+          case Langs.java: guessed = "<:java:875852276017815634> Java"; break;
+          case Langs.python: guessed = "<:python:831465381016895500> Python"; break;
+        }
         return ctx.RespondAsync("Best guess for the language is: " + guessed + "\nC# = " + weightCs + " C++ = " + weightCp + " Java = " + weightJv + " Javascript = " + weightJs + " Python = " + weightPy);
+      }
+
 
       // Remove the ``` at begin and end, if any. And the code name after initial ```
-      bool deleteOrig = true;
+      bool deleteOrig = action == Action.Replace;
       Match codeMatch = codeBlock.Match(code);
       if (codeMatch.Success) {
-        code = codeMatch.Groups[5].Value;
-        deleteOrig = string.IsNullOrWhiteSpace(codeMatch.Groups[1].Value);
+        if (codeMatch.Groups[3].Value.IndexOf(';') != -1)
+          code = codeMatch.Groups[3].Value.Substring(3) + codeMatch.Groups[6].Value;
+        else
+          code = codeMatch.Groups[6].Value;
       }
       code = code.Trim(' ', '\t', '\r', '\n');
       code = emptyLines.Replace(code, "\n");
 
-      if (langEmoji == EmojiEnum.CSharp || langEmoji == EmojiEnum.Cpp || langEmoji == EmojiEnum.Java || langEmoji == EmojiEnum.Javascript) code = FixIndentation(code);
-
-      code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + language + "\n" + code + "\n```";
-
-      if (guessed == "no one" && language != null) {
-        langEmoji = GetLanguageEmoji(language);
+      if (lang != Langs.NONE) msgLang = lang;
+      EmojiEnum langEmoji = EmojiEnum.None;
+      string lmd = "";
+      switch (msgLang) {
+        case Langs.cs: langEmoji = EmojiEnum.CSharp; lmd = "cs"; break;
+        case Langs.js: langEmoji = EmojiEnum.Javascript; lmd = "js"; break;
+        case Langs.cpp: langEmoji = EmojiEnum.Cpp; lmd = "cpp"; break;
+        case Langs.java: langEmoji = EmojiEnum.Java; lmd = "java"; break;
+        case Langs.python: langEmoji = EmojiEnum.Python; lmd = "python"; break;
       }
+
+      if ( langEmoji != EmojiEnum.None && langEmoji != EmojiEnum.Python) code = FixIndentation(code);
+
+      code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + lmd + "\n" + code + "\n```";
 
       DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
       DiscordEmoji autoRefactored = Utils.GetEmoji(EmojiEnum.AutoRefactored);
@@ -201,50 +275,74 @@ public class Refactor : BaseCommandModule {
     return res;
   }
 
-  private string NormalizeLanguage(string language, string best) {
-    if (language == null) return best;
-    language = language.ToLowerInvariant();
-    if (language == "best") return null;
-    if (language == "what") return null;
-    if (language == "whatis") return null;
-    if (language == "analyze") return null;
-    if (language == "analysis") return null;
-    if (language == "c#") return "cs";
-    if (language == "cs") return "cs";
-    if (language == "csharp") return "cs";
-    if (language == "cpp") return "cpp";
-    if (language == "c++") return "cpp";
-    if (language == "java") return "java";
-    if (language == "javascript") return "js";
-    if (language == "jscript") return "js";
-    if (language == "js") return "js";
-    if (language == "json") return "js";
-    if (language == "typescript") return "js";
-    if (language == "phyton") return "python";
-    if (language == "python") return "python";
-    if (language == "py") return "python";
-    return "";
-  }
-  private EmojiEnum GetLanguageEmoji(string language) {
-    language = language.ToLowerInvariant();
-    if (language == "c#") return EmojiEnum.CSharp;
-    if (language == "cs") return EmojiEnum.CSharp;
-    if (language == "csharp") return EmojiEnum.CSharp;
-    if (language == "cpp") return EmojiEnum.Cpp;
-    if (language == "c++") return EmojiEnum.Cpp;
-    if (language == "java") return EmojiEnum.Java;
-    if (language == "javascript") return EmojiEnum.Javascript;
-    if (language == "jscript") return EmojiEnum.Javascript;
-    if (language == "js") return EmojiEnum.Javascript;
-    if (language == "typescript") return EmojiEnum.Javascript;
-    if (language == "json") return EmojiEnum.Javascript;
-    if (language == "phyton") return EmojiEnum.Python;
-    if (language == "python") return EmojiEnum.Python;
-    if (language == "py") return EmojiEnum.Python;
-    return EmojiEnum.None;
+  private Langs GetBestMatch(string code) {
+    int weightCs = 0, weightCp = 0, weightJv = 0, weightJs = 0, weightPy = 0;
+    foreach (LangKWord k in keywords) {
+      if (k.regexp.IsMatch(code)) {
+        weightCs += k.wCs;
+        weightCp += k.wCp;
+        weightJv += k.wJv;
+        weightJs += k.wJs;
+        weightPy += k.wPy;
+      }
+    }
+    int w = 0;
+    Langs res = Langs.NONE;
+    if (weightCs > w) { w = weightCs; res = Langs.cs; }
+    if (weightCp > w) { w = weightCp; res = Langs.cpp; }
+    if (weightJs > w) { w = weightJs; res = Langs.js; }
+    if (weightJv > w) { w = weightJv; res = Langs.java; }
+    if (weightPy > w) { w = weightPy; res = Langs.python; }
+    return res;
   }
 
-  readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
+  private bool IsBest(string what) {
+    if (what == null) return false;
+    what = what.ToLowerInvariant();
+    if (what == "best") return true;
+    if (what == "what") return true;
+    if (what == "whatis") return true;
+    if (what == "analyze") return true;
+    if (what == "analysis") return true;
+    return false;
+  }
+
+  private bool IsReplace(string what) {
+    if (what == null) return false;
+    what = what.ToLowerInvariant();
+    if (what == "rep") return true;
+    if (what == "repl") return true;
+    if (what == "replace") return true;
+    if (what == "remove") return true;
+    if (what == "change") return true;
+    if (what == "substitute") return true;
+    if (what == "destroy") return true;
+    if (what == "delete") return true;
+    return false;
+  }
+
+  private Langs NormalizeLanguage(string language) {
+    if (language == null) return Langs.NONE;
+    language = language.ToLowerInvariant();
+    if (language == "c#") return Langs.cs;
+    if (language == "cs") return Langs.cs;
+    if (language == "csharp") return Langs.cs;
+    if (language == "cpp") return Langs.cpp;
+    if (language == "c++") return Langs.cpp;
+    if (language == "c") return Langs.cpp;
+    if (language == "java") return Langs.java;
+    if (language == "javascript") return Langs.js;
+    if (language == "jscript") return Langs.js;
+    if (language == "js") return Langs.js;
+    if (language == "json") return Langs.js;
+    if (language == "typescript") return Langs.js;
+    if (language == "phyton") return Langs.python;
+    if (language == "python") return Langs.python;
+    if (language == "py") return Langs.python;
+    return Langs.NONE;
+  }
+
+  readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n)|```[^;]*;(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
   readonly Regex emptyLines = new Regex("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
 
   readonly LangKWord[] keywords = {

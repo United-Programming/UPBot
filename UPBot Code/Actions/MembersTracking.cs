@@ -9,22 +9,22 @@ public class MembersTracking {
   static DiscordChannel trackChannel = null;
 
   public static async Task DiscordMemberRemoved(DiscordClient client, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
-    try{
-    if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-    if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
+    try {
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+      if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
 
-    if (tracking.ContainsKey(args.Member.Id)) {
-      tracking.Remove(args.Member.Id);
-      string msg = "User " + args.Member.DisplayName + " did a kiss and go.";
-      await trackChannel.SendMessageAsync(msg);
-      Utils.Log(msg);
-    }
-    else {
-      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
-      string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
-      await trackChannel.SendMessageAsync(msgC);
-      Utils.Log(msgL);
-    }
+      if (tracking.ContainsKey(args.Member.Id)) {
+        tracking.Remove(args.Member.Id);
+        string msg = "User " + args.Member.DisplayName + " did a kiss and go.";
+        await trackChannel.SendMessageAsync(msg);
+        Utils.Log(msg);
+      }
+      else {
+        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
+        string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " memebrs total)";
+        await trackChannel.SendMessageAsync(msgC);
+        Utils.Log(msgL);
+      }
     } catch (Exception ex) {
       Utils.Log("Error in DiscordMemberRemoved: " + ex.Message);
     }
