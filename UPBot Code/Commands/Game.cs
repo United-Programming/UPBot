@@ -24,26 +24,27 @@ public class GameModule : BaseCommandModule
     }
 
     [Command("bool")]
+    [Description("Returns True or False")]
     public async Task BoolCommand(CommandContext ctx)
     {
-    Utils.LogUserCommand(ctx);
+    UtilityFunctions.LogUserCommand(ctx);
     await PlayBool(ctx);
     }
 
     [Command("rps")]
-    public async Task RPSCommand(CommandContext ctx, string kind)
+    [Description("Play Rock, Paper, Scissors")]
+    public async Task RPSCommand(CommandContext ctx, [Description("rock | paper | scissors")] string kind)
     {
-    Utils.LogUserCommand(ctx);
+    UtilityFunctions.LogUserCommand(ctx);
     await PlayRockPaperScissors(ctx, kind);
     }
 
     [Command("rps")]
     public async Task RPSCommand(CommandContext ctx)
     {
-    Utils.LogUserCommand(ctx);
+    UtilityFunctions.LogUserCommand(ctx);
     await PlayRockPaperScissors(ctx, null);
     }
-
 
     readonly Random random = new Random();
 
@@ -58,7 +59,6 @@ public class GameModule : BaseCommandModule
             default:
                 return ctx.RespondAsync("false");
         }
-        
     }
 
     enum RPSTypes : ushort
@@ -70,9 +70,6 @@ public class GameModule : BaseCommandModule
 
     Task PlayRockPaperScissors(CommandContext ctx, string kind)
     {
-        if (kind == null)
-            return ctx.RespondAsync("```\nRock Paper Scissors\nUsage pattern: rps [rock|paper|scissors]\n```");
-
         RPSTypes playerChoice;
 
         switch(kind)
@@ -94,7 +91,8 @@ public class GameModule : BaseCommandModule
 
         if(playerChoice == botChoice)
         {
-            return ctx.RespondAsync("@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
+            //return ctx.RespondAsync("@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
+            return ctx.Channel.SendMessageAsync(ctx.Member.Mention + "\n@@@\nDRAW!".Replace("@@@", botChoice.ToString()));
         }
         if(playerChoice == RPSTypes.Rock && botChoice == RPSTypes.Scissors)
         {
