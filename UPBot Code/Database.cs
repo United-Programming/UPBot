@@ -11,14 +11,16 @@ public class Database {
 
 
   public static void InitDb() {
-    // Do we have the db?
-    if (File.Exists("Database/BotDb.db"))
-      connection = new SQLiteConnection("Data Source=Database/" + DbName + ".db; Version=3; Journal Mode=Off; UTF8Encoding=True;"); // Open the database
-    else
-      connection = new SQLiteConnection("Data Source=Database/" + DbName + ".db; Version=3; Journal Mode=Off; New=True; UTF8Encoding=True;"); // Create a new database
-
-    // Open the connection
     try {
+      // Do we have the db?
+      if (File.Exists("Database/BotDb.db"))
+        connection = new SQLiteConnection("Data Source=Database/" + DbName + ".db; Version=3; Journal Mode=Off; UTF8Encoding=True;"); // Open the database
+      else {
+        if (!Directory.Exists("Database")) Directory.CreateDirectory("Database");
+        connection = new SQLiteConnection("Data Source=Database/" + DbName + ".db; Version=3; Journal Mode=Off; New=True; UTF8Encoding=True;"); // Create a new database
+      }
+
+      // Open the connection
       connection.Open();
       Console.WriteLine("DB connection open");
     } catch (Exception ex) {
