@@ -9,6 +9,9 @@ Have a cmd to configure how long messages should stay
 Add wikis for each command on GitHub
 Check if a message to reformat has something after the ```, consider the ``` the end of the block to reformat
 
+Keep the last poster from each channel, and use it for te "thanks" in case there is no mention
+
+
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
 MemberTracking  |         |         |           |    X      |          |          |
 Appreciation    |         |         |           |    X      |    X     |    X     |

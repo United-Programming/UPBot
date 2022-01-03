@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 
@@ -11,6 +13,9 @@ namespace UPBot {
   class Program {
     static StreamWriter lw = null;
     static void Main(string[] args) {
+
+
+
       lw = File.CreateText(args.Length >= 3 ?  args[2] : "debug.log");
       lw.WriteLine("Log Started. Woho.");
       lw.Flush();
@@ -92,5 +97,9 @@ namespace UPBot {
       await Task.Delay(-1);
     }
 
+
+
   }
+
 }
+

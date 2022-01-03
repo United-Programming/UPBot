@@ -73,9 +73,25 @@ public class AppreciationTracking : BaseCommandModule {
     }
   }
 
+
+  private static Dictionary<ulong, LastPosters> LastMemberPerChannels = null;
+
+  internal static void InitChannelList() {
+    IReadOnlyDictionary<ulong, DiscordChannel> channels = Utils.GetGuild().Channels;
+    LastMemberPerChannels = new Dictionary<ulong, LastPosters>();
+    foreach (ulong cid in channels.Keys)
+      LastMemberPerChannels[cid] = new LastPosters();
+  }
+
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
     try {
       string msg = args.Message.Content.ToLowerInvariant();
+      ulong memberid = args.Message.Author.Id;
+      ulong channelid = args.Message.ChannelId;
+      if (LastMemberPerChannels == null) InitChannelList();
+      LastPosters lp = LastMemberPerChannels[channelid];
+      lp.Add(memberid);
+
       if (thanks.IsMatch(msg) || thankyou.IsMatch(msg) || thank2you.IsMatch(msg)) { // Add thanks
         if (thank4n.IsMatch(msg)) return Task.FromResult(0);
         if (GetTracking()) return Task.FromResult(0);
@@ -83,14 +99,18 @@ public class AppreciationTracking : BaseCommandModule {
         DiscordMessage theMsg = args.Message;
         ulong authorId = theMsg.Author.Id;
         if (theMsg.Reference == null && (theMsg.MentionedUsers == null || theMsg.MentionedUsers.Count == 0)) {
-          // Unrelated thank you, get the previous message and check
-          IReadOnlyList<DiscordMessage> msgs = theMsg.Channel.GetMessagesBeforeAsync(theMsg.Id, 2).Result;
-          theMsg = null;
-          foreach (DiscordMessage m in msgs)
-            if (m.Author.Id != authorId) {
-              theMsg = m;
-              break;
-            }
+          if (lp.secondLast != 0 || lp.secondLast != 875701548301299743ul)
+            tracking.AlterThankYou(lp.secondLast);
+          else {
+            // Unrelated thank you, get the previous message and check /*
+            IReadOnlyList<DiscordMessage> msgs = theMsg.Channel.GetMessagesBeforeAsync(theMsg.Id, 2).Result;
+            theMsg = null;
+            foreach (DiscordMessage m in msgs)
+              if (m.Author.Id != authorId) {
+                theMsg = m;
+                break;
+              }
+          }
           if (theMsg == null) return Task.FromResult(0);
         }
 
@@ -111,7 +131,18 @@ public class AppreciationTracking : BaseCommandModule {
   }
 
 
+  internal class LastPosters {
+    public ulong thirdLast;
+    public ulong secondLast;
+    public ulong last;
 
+    internal void Add(ulong memberid) {
+      if (last == memberid) return;
+      thirdLast = secondLast;
+      secondLast = last;
+      last = memberid;
+    }
+  }
 
 
 
