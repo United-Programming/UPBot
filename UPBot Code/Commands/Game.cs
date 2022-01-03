@@ -27,7 +27,7 @@ public class GameModule : BaseCommandModule
     [Description("Returns True or False")]
     public async Task BoolCommand(CommandContext ctx)
     {
-    UtilityFunctions.LogUserCommand(ctx);
+    Utils.LogUserCommand(ctx);
     await PlayBool(ctx);
     }
 
@@ -35,14 +35,14 @@ public class GameModule : BaseCommandModule
     [Description("Play Rock, Paper, Scissors")]
     public async Task RPSCommand(CommandContext ctx, [Description("rock | paper | scissors")] string kind)
     {
-    UtilityFunctions.LogUserCommand(ctx);
+    Utils.LogUserCommand(ctx);
     await PlayRockPaperScissors(ctx, kind);
     }
 
     [Command("rps")]
     public async Task RPSCommand(CommandContext ctx)
     {
-    UtilityFunctions.LogUserCommand(ctx);
+    Utils.LogUserCommand(ctx);
     await PlayRockPaperScissors(ctx, null);
     }
 
