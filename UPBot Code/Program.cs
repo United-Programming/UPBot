@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 
@@ -13,12 +11,15 @@ namespace UPBot {
   class Program {
     static StreamWriter lw = null;
     static void Main(string[] args) {
-
-
-
       lw = File.CreateText(args.Length >= 3 ?  args[2] : "debug.log");
       lw.WriteLine("Log Started. Woho.");
       lw.Flush();
+      if (args.Length < 1) {
+        lw.WriteLine("You have to specify the bot token as first parameter!");
+        lw.Flush();
+        return;
+      }
+
       MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
     }
 
