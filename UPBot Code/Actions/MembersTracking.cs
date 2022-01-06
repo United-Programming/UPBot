@@ -20,8 +20,8 @@ public class MembersTracking {
         Utils.Log(msg);
       }
       else {
-        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
-        string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
+        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
+        string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         await trackChannel.SendMessageAsync(msgC);
         Utils.Log(msgL);
       }
@@ -85,8 +85,8 @@ public class MembersTracking {
   static async Task SomethingAsync(ulong id, string name, string mention, int numMembers) {
     await Task.Delay(25000);
     if (tracking.ContainsKey(id)) {
-      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " members total)";
-      string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyyMMdd HH:mm:ss") + " (" + numMembers + " members total)";
+      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
+      string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
       await trackChannel.SendMessageAsync(msgC);
       Utils.Log(msgL);
       tracking.Remove(id);
