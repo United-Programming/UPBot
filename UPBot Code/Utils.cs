@@ -31,7 +31,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + "b - 2022/01/03";
+    return vmajor + "." + vminor + "." + vbuild + "c - 2022/01/09";
   }
 
   /// <summary>
@@ -81,6 +81,15 @@ public static class Utils
     string logPath = ConstructPath("Logs", "BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
     if (File.Exists(logPath)) logs = new StreamWriter(logPath, append: true);
     else logs = File.CreateText(logPath);
+  }
+
+  internal static string GetSafeMemberName(CommandContext ctx, ulong userSnoflake) {
+    try {
+      return ctx.Guild.GetMemberAsync(userSnoflake).Result.DisplayName;
+    } catch (Exception e) {
+      Log("Invalid user snowflake: " + userSnoflake + " -> " + e.Message);
+      return null;
+    }
   }
 
   /// <summary>

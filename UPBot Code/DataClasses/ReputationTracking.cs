@@ -74,4 +74,9 @@ public class ReputationTracking {
     return dic.Values;
   }
 
+  internal void RemoveEntry(ulong id) {
+    if (dic.Remove(id)) { // Remove from the dictionary.
+      Database.DeleteByKey<Reputation>(id); // If found remove also from the database
+    }
+  }
 }

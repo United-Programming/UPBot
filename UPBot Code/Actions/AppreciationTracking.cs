@@ -38,9 +38,13 @@ public class AppreciationTracking : BaseCommandModule {
         Reputation r = vals[i];
         if (r.Rep == 0) break;
         if (!users.ContainsKey(r.User)) {
-          users[r.User] = ctx.Guild.GetMemberAsync(r.User).Result.DisplayName;
+          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
+          if (users[r.User] == null) {
+            tracking.RemoveEntry(r.User); // Remove the entry
+            users.Remove(r.User);
+          }
         }
-        e.AddField(users[r.User], "Reputation: _" + r.Rep + "_", true);
+        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Reputation: _" + r.Rep + "_", true);
       }
 
       e.AddField("Fun -----------------------", "For receving these emojis in the posts: 😀😃😄😁😆😅🤣😂🙂🙃😉😊😇<:StrongSmile:830907626928996454>", false);
@@ -50,9 +54,14 @@ public class AppreciationTracking : BaseCommandModule {
         Reputation r = vals[i];
         if (r.Fun == 0) break;
         if (!users.ContainsKey(r.User)) {
-          users[r.User] = ctx.Guild.GetMemberAsync(r.User).Result.DisplayName;
+          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
+          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
+          if (users[r.User] == null) {
+            tracking.RemoveEntry(r.User); // Remove the entry
+            users.Remove(r.User);
+          }
         }
-        e.AddField(users[r.User], "Fun: _" + r.Fun + "_", (i < vals.Count - 1 && i < 5));
+        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Fun: _" + r.Fun + "_", (i < vals.Count - 1 && i < 5));
       }
 
       e.AddField("Thanks --------------------", "For receving a message with _Thanks_ or _Thank you_", false);
@@ -62,9 +71,13 @@ public class AppreciationTracking : BaseCommandModule {
         Reputation r = vals[i];
         if (r.Tnk == 0) break;
         if (!users.ContainsKey(r.User)) {
-          users[r.User] = ctx.Guild.GetMemberAsync(r.User).Result.DisplayName;
+          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
+          if (users[r.User] == null) {
+            tracking.RemoveEntry(r.User); // Remove the entry
+            users.Remove(r.User);
+          }
         }
-        e.AddField(users[r.User], "Thanks: _" + r.Tnk + "_", (i < vals.Count - 1 && i < 5));
+        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Thanks: _" + r.Tnk + "_", (i < vals.Count - 1 && i < 5));
       }
 
       await ctx.Message.RespondAsync(e.Build());
