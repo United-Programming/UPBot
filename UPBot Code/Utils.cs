@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
-  public const int vmajor = 0, vminor = 1, vbuild = 4;
+  public const int vmajor = 0, vminor = 1, vbuild = 5;
 
 
   /// <summary>
@@ -31,7 +31,7 @@ public static class Utils
   private static DiscordGuild guild;
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + "c - 2022/01/09";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/01/23";
   }
 
   /// <summary>

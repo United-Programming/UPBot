@@ -70,6 +70,7 @@ namespace UPBot {
         lw?.WriteLine("BannedWords");
         lw.Flush();
         discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
+        discord.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
         discord.MessageCreated += AppreciationTracking.ThanksAdded;
 
         CustomCommandsService.LoadCustomCommands();
