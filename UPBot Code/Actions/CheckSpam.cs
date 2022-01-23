@@ -65,7 +65,7 @@ public class CheckSpam : BaseCommandModule {
     if (pos > 0) pos = s.LastIndexOf('.', pos - 1);
     if (pos > 0) s = s[(pos + 1)..];
 
-    if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net") return 0;
+    if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net" || s == "discord.gift") return 0;
     if (s == "steamcommunity.com" || s == "store.steampowered.com" || s == "steampowered.com") return 0;
     if (s == "epicgames.com") return 0;
     int extra = 0;
