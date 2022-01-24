@@ -12,20 +12,17 @@ using System.Threading.Tasks;
 /// </summary>
 public class Stats : BaseCommandModule {
 
-  ulong[] defChannelIDs = {
-      830904407540367441ul,
-      830904726375628850ul,
-      830921265648631878ul,
-      830921315657449472ul
-    };
-  string[] defChannelNames = {
-      "Unity",
-      "CSharp",
-      "Help1",
-      "Help2",
-      "Completed!"
-    };
+  public class StatChannel {
+    public ulong id;
+    public string name;
+  }
 
+  StatChannel[] defChannes = {
+    new StatChannel{id=830904407540367441ul, name="Unity" }, 
+    new StatChannel{id=830904726375628850ul, name="CSharp" }, 
+    new StatChannel{id=830921265648631878ul, name="Help1" },
+    new StatChannel{id=830921315657449472ul, name="Help2" } 
+  };
 
 
   [Command("stats")]
@@ -59,20 +56,17 @@ public class Stats : BaseCommandModule {
       DateTime start = DateTime.Now;
       if (numMessages > 2000) numMessages = 2000;
 
-      ulong[] channelIDs;
-      string[] channelNames;
+      StatChannel[] statChannels;
       if (channel == null) {
-        channelIDs = defChannelIDs;
-        channelNames = defChannelNames;
+        statChannels = SetupModule.StatsChannels.ToArray();
       }
       else {
-        channelIDs = new ulong[] { channel.Id };
-        channelNames = new string[] { channel.Name };
+        statChannels = new StatChannel[] { new StatChannel { id=channel.Id, name=channel.Name } };
       }
 
       DiscordGuild g = ctx.Guild;
       string title = Utils.GetEmojiSnowflakeID(Utils.GetEmoji(EmojiEnum.UnitedProgramming)) + " United Programming Statistics";
-      string description = " ---- Fetching data 0/" + channelIDs.Length + " ---- Channel " + channelNames[0] + " ---- ";
+      string description = " ---- Fetching data 0/" + statChannels.Length + " ---- Channel " + statChannels[0].name + " ---- ";
 
       var e = Utils.BuildEmbed(title, description, DiscordColor.Black);
       int fieldPos = e.Fields.Count - 1;
@@ -85,7 +79,8 @@ public class Stats : BaseCommandModule {
       Dictionary<ulong, int> mentioneds = new Dictionary<ulong, int>();
       IReadOnlyDictionary<ulong, DiscordChannel> cs = g.Channels;
       int mentioned = 0;
-      foreach (ulong cid in channelIDs) {
+      foreach (var sc in statChannels) {
+        ulong cid = sc.id;
         DiscordChannel c = g.GetChannel(cid);
         if (c.Type != ChannelType.Text) continue;
         System.Console.WriteLine("Scanning channel " + c.Name + " for stats: " + numMessages + " messages");
@@ -110,8 +105,8 @@ public class Stats : BaseCommandModule {
         }
 
         step++;
-        if (step < channelIDs.Length) {
-          e.Description = " ---- Fetching data " + step + "/" + channelIDs.Length + " ---- Channel " + channelNames[step] + " ---- ";
+        if (step < statChannels.Length) {
+          e.Description = " ---- Fetching data " + step + "/" + statChannels.Length + " ---- Channel " + statChannels[step].name + " ---- ";
           await m.ModifyAsync(e.Build());
           await Task.Delay(200);
         }
@@ -161,10 +156,10 @@ public class Stats : BaseCommandModule {
       }
 
       double time = (DateTime.Now - start).TotalMilliseconds / 1000;
-      if (channelIDs.Length == 1)
-        e.WithFooter("Statistics from channel " + channelNames[0] + " and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
+      if (statChannels.Length == 1)
+        e.WithFooter("Statistics from channel " + statChannels[0].name + " and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
       else
-        e.WithFooter("Statistics from " + channelIDs.Length + " channels and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
+        e.WithFooter("Statistics from " + statChannels.Length + " channels and " + numMessages + " messages per channel.\nGenerated in " + time.ToString("N1") + " seconds");
 
       await m.ModifyAsync(e.Build());
     } catch (Exception ex) {

@@ -13,12 +13,21 @@ public class SetupModule : BaseCommandModule {
   private static List<SetupParam> Params = null;
   public static ulong trackChannelID = 0;
   public static List<ulong> AdminRoles;
+  public static List<Stats.StatChannel> StatsChannels;
 
   internal static void LoadParams(bool forceCleanBad = false) {
     DiscordGuild guild = Utils.GetGuild();
     Params = Database.GetAll<SetupParam>();
     if (Params == null) Params = new List<SetupParam>();
     trackChannelID = GetIDParam("TrackingChannel"); // 831186370445443104ul
+    if (trackChannelID == 0) {
+      trackChannelID = guild.SystemChannel.Id;
+      SetupParam p = new SetupParam("TrackingChannel", trackChannelID);
+      Params.Add(p);
+      Database.Add(p);
+      Utils.Log("Tracking channel set as default system channel: " + guild.SystemChannel.Name);
+    }
+    // Admin roles
     AdminRoles = new List<ulong>();
     foreach (var param in Params) {
       if (param.Param == "AdminRole") {
@@ -43,6 +52,43 @@ public class SetupModule : BaseCommandModule {
           Utils.Log("Added role " + role.Name + " as default admin role (no admins were found)");
         }
       }
+    }
+    // Stats channels
+    StatsChannels = new List<Stats.StatChannel>();
+    foreach (var param in Params) {
+      if (param.Param == "StatsChannel") {
+        try {
+          DiscordChannel c = guild.GetChannel(param.IdVal);
+          if (c != null) StatsChannels.Add(new Stats.StatChannel { id = c.Id, name = c.Name });
+        } catch (Exception ex) {
+          Utils.Log("Error in reading channels from Setup: " + param.IdVal + " " + ex.Message);
+          if (forceCleanBad) {
+            Database.Delete(param);
+          }
+        }
+      }
+    }
+    if (StatsChannels.Count == 0) {
+      // Check the basic 4 channels of UnitedPrograming, other servers will have nothing
+      TryAddDefaultChannel(guild, 830904407540367441ul);
+      TryAddDefaultChannel(guild, 830904726375628850ul);
+      TryAddDefaultChannel(guild, 830921265648631878ul);
+      TryAddDefaultChannel(guild, 830921315657449472ul);
+    }
+  }
+
+  static void TryAddDefaultChannel(DiscordGuild guild, ulong id) {
+    try {
+      DiscordChannel c = guild.GetChannel(id);
+      if (c != null) {
+        SetupParam p = new SetupParam("StatsChannel", id);
+        Database.Add(p);
+        Params.Add(p);
+        StatsChannels.Add(new Stats.StatChannel { id = id, name = c.Name });
+        Utils.Log("Adding default Stats channel for United Programming: " + id);
+      }
+    } catch(Exception ex) {
+      Utils.Log("Problems finding a channel with ID " + id + ": " + ex.Message);
     }
   }
 
@@ -79,6 +125,7 @@ public class SetupModule : BaseCommandModule {
   [Description("Configure the bot")]
   [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
   public async Task Setup(CommandContext ctx, string command) { // Command with no parameters
+    Utils.LogUserCommand(ctx);
     command = command.ToLowerInvariant().Trim();
     switch (command) {
       case "trackingchannel": await TrackingChannel(ctx, null); break;
@@ -88,6 +135,9 @@ public class SetupModule : BaseCommandModule {
       case "listadminroles": await ListAdminRoles(ctx); break;
       case "addadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to add parameter").Result); break;
       case "removeadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to remove parameter").Result); break;
+      case "liststatschannels": await ListStatChannels(ctx); break;
+      case "addstatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to add parameter").Result); break;
+      case "removestatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to remove parameter").Result); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -100,6 +150,7 @@ public class SetupModule : BaseCommandModule {
   [Description("Configure the bot")]
   [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
   public async Task Setup(CommandContext ctx, string command, DiscordRole role) { // Command with role as parameter
+    Utils.LogUserCommand(ctx);
     command = command.ToLowerInvariant().Trim();
     switch (command) {
       case "addadminrole": await AddRemoveAdminRoles(ctx, role, true); break;
@@ -116,9 +167,12 @@ public class SetupModule : BaseCommandModule {
   [Description("Configure the bot")]
   [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
   public async Task Setup(CommandContext ctx, string command, DiscordChannel channel) { // Command with channel as parameter
+    Utils.LogUserCommand(ctx);
     command = command.ToLowerInvariant().Trim();
     switch (command) {
       case "trackingchannel": await TrackingChannel(ctx, channel); break;
+      case "addstatschannel": await AddRemoveStatChannel(ctx, channel, true); break;
+      case "removestatschannel": await AddRemoveStatChannel(ctx, channel, false); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -232,13 +286,77 @@ public class SetupModule : BaseCommandModule {
     }
   }
 
+  
+  Task ListStatChannels(CommandContext ctx) {
+    try   {
+      string msg = "";
+      if (StatsChannels == null || StatsChannels.Count == 0) { // Try to read again the guild
+        LoadParams();
+      }
+      if (StatsChannels == null || StatsChannels.Count == 0) {
+        msg = "No stat channels defined";
+      } else {
+        DiscordGuild guild = Utils.GetGuild();
+        foreach (var sc in StatsChannels) {
+          DiscordChannel c = guild.GetChannel(sc.id);
+          if (c != null) msg += c.Mention + ", ";
+        }
+        msg = msg[0..^2];
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListStatChannels", ex));
+    }
+  }
+
+  Task AddRemoveStatChannel(CommandContext ctx, DiscordChannel channel, bool add) {
+    try {
+      string msg = null;
+      if (add) {
+        foreach (var sc in StatsChannels) if (sc.id == channel.Id) {
+            msg = "The channel " + channel.Name + " is already a stat channel.";
+            break;
+          }
+        if (msg == null) {
+          SetupParam p = new SetupParam("StatsChannel", channel.Id);
+          StatsChannels.Add(new Stats.StatChannel { id = channel.Id, name = channel.Name });
+          Database.Add(p);
+          Params.Add(p);
+          Utils.Log("Added channel " + channel.Name + " as stats channel");
+          msg = "Channel " + channel.Name + " added as stats channel";
+        }
+      } else {
+        foreach (var p in Params) {
+          if (p.Param == "StatsChannel" && p.IdVal == channel.Id) {
+            Database.Delete(p);
+            Params.Remove(p);
+            foreach (var sc in StatsChannels) 
+              if (sc.id == channel.Id) {
+                StatsChannels.Remove(sc);
+                break;
+              }
+            msg = "Channel " + channel.Name + " removed from stats channel";
+            Utils.Log("Removed channel " + channel.Name + " from stats channel");
+            break;
+          }
+        }
+        if (msg == null) msg = "Channel " + channel.Name + " was not a stats channel";
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveStatChannel", ex));
+    }
+  }
+
 
   //  public async Task Setup(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
 
   /*
-  bot self id: 875701548301299743ul
+
   roles for commands
-  server guild: 830900174553481236ul
   ids for emojis
   ids for admins: 830901562960117780ul 830901743624650783ul 831050318171078718ul
   channels for stats: 
