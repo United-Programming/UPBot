@@ -76,10 +76,6 @@ namespace UPBot {
         lw?.WriteLine("Tracking");
         lw.Flush();
 
-        SetupModule.LoadParams();
-        lw?.WriteLine("SetupModule.LoadParams");
-        lw.Flush();
-
         CustomCommandsService.LoadCustomCommands();
         lw?.WriteLine("CustomCommandsService.LoadCustomCommands");
         lw.Flush();
@@ -96,6 +92,13 @@ namespace UPBot {
         discord.MessageReactionAdded += EmojisForRole.ReacionAdded;
         discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
         discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
+        lw?.WriteLine("Adding action events");
+        lw.Flush();
+
+        // Wait a few seconds and re-load some parameters (they will arrive only after a while)
+        await Task.Delay(5000); // 5 secs
+        lw?.WriteLine("LoadParams");
+        SetupModule.LoadParams();
         lw?.WriteLine("done");
         lw.Flush();
 

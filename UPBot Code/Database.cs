@@ -13,7 +13,7 @@ public class Database {
   public static void InitDb() {
     try {
       // Do we have the db?
-      if (File.Exists("Database/BotDb.db"))
+      if (File.Exists("Database/" + DbName + ".db"))
         connection = new SQLiteConnection("Data Source=Database/" + DbName + ".db; Version=3; Journal Mode=Off; UTF8Encoding=True;"); // Open the database
       else {
         if (!Directory.Exists("Database")) Directory.CreateDirectory("Database");
@@ -156,6 +156,7 @@ public class Database {
     ed.count = "SELECT Count(*) FROM " + t.ToString() + " WHERE " + theKey + "=@param1";
     ed.select = "SELECT * FROM " + t.ToString();
     ed.delete = "DELETE FROM " + t.Name + " WHERE " + theKey + "=@param1";
+    ed.delete2 = "DELETE FROM " + t.Name + " WHERE @col1=@param1 And @col2=@param2";
     // Insert, Update
     string insert = "INSERT INTO " + t.ToString() + " (";
     string insertpost = ") VALUES (";
@@ -235,6 +236,19 @@ public class Database {
     }
   }
 
+  public static void DeleteBy2Keys<T>(string col1, object keyvalue1, string col2, object keyvalue2) {
+    try {
+      EntityDef ed = entities[typeof(T)];
+      string scmd = ed.delete2.Replace("@col1", col1).Replace("@col2", col2);
+      SQLiteCommand cmd = new SQLiteCommand(scmd, connection);
+      cmd.Parameters.Add(new SQLiteParameter("@param1", keyvalue1));
+      cmd.Parameters.Add(new SQLiteParameter("@param2", keyvalue2));
+      cmd.ExecuteNonQuery();
+    } catch (Exception ex) {
+      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
+    }
+  }
+
   public static T Get<T>(object keyvalue) {
     try {
       Type t = typeof(T);
@@ -277,7 +291,7 @@ public class Database {
     try {
       Type t = typeof(T);
       EntityDef ed = entities[t];
-      SQLiteCommand cmd = new SQLiteCommand(ed.select+";", connection);
+      SQLiteCommand cmd = new SQLiteCommand(ed.select + ";", connection);
       SQLiteDataReader reader = cmd.ExecuteReader();
       List<T> res = new List<T>();
       while (reader.Read()) {
@@ -330,6 +344,7 @@ public class Database {
     public string insert;
     public string update;
     public string delete;
+    public string delete2;
   }
 
   enum FieldType {

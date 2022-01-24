@@ -12,10 +12,38 @@ using DSharpPlus.Entities;
 public class SetupModule : BaseCommandModule {
   private static List<SetupParam> Params = null;
   public static ulong trackChannelID = 0;
+  public static List<ulong> AdminRoles;
 
-  internal static void LoadParams() {
+  internal static void LoadParams(bool forceCleanBad = false) {
+    DiscordGuild guild = Utils.GetGuild();
     Params = Database.GetAll<SetupParam>();
+    if (Params == null) Params = new List<SetupParam>();
     trackChannelID = GetIDParam("TrackingChannel"); // 831186370445443104ul
+    AdminRoles = new List<ulong>();
+    foreach (var param in Params) {
+      if (param.Param == "AdminRole") {
+        try {
+          DiscordRole r = guild.GetRole(param.IdVal);
+          if (r != null) AdminRoles.Add(r.Id);
+        } catch (Exception ex) {
+          Utils.Log("Error in reading roles from Setup: " + param.IdVal + ": " + ex.Message);
+          if (forceCleanBad) {
+            Database.Delete(param);
+          }
+        }
+      }
+    }
+    if (AdminRoles.Count == 0) {
+      foreach(DiscordRole role in guild.Roles.Values) {
+        if (role.CheckPermission(DSharpPlus.Permissions.Administrator) == DSharpPlus.PermissionLevel.Allowed || role.CheckPermission(DSharpPlus.Permissions.ManageGuild) == DSharpPlus.PermissionLevel.Allowed) {
+          AdminRoles.Add(role.Id);
+          SetupParam p = new SetupParam("AdminRole", role.Id);
+          Database.Add(p);
+          Params.Add(p);
+          Utils.Log("Added role " + role.Name + " as default admin role (no admins were found)");
+        }
+      }
+    }
   }
 
   [Command("setup")]
@@ -57,6 +85,9 @@ public class SetupModule : BaseCommandModule {
       case "botid": await GetIDs(ctx, true); break;
       case "serverid": await GetIDs(ctx, false); break;
       case "guildid": await GetIDs(ctx, false); break;
+      case "listadminroles": await ListAdminRoles(ctx); break;
+      case "addadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to add parameter").Result); break;
+      case "removeadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to remove parameter").Result); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -68,7 +99,23 @@ public class SetupModule : BaseCommandModule {
   [Command("setup")]
   [Description("Configure the bot")]
   [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-  public async Task Setup(CommandContext ctx, string command, DiscordChannel channel) { // Command with no parameters
+  public async Task Setup(CommandContext ctx, string command, DiscordRole role) { // Command with role as parameter
+    command = command.ToLowerInvariant().Trim();
+    switch (command) {
+      case "addadminrole": await AddRemoveAdminRoles(ctx, role, true); break;
+      case "removeadminrole": await AddRemoveAdminRoles(ctx, role, false); break;
+
+      default:
+        DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
+        await Utils.DeleteDelayed(30, ctx.Message, answer);
+        break;
+    }
+  }
+
+  [Command("setup")]
+  [Description("Configure the bot")]
+  [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
+  public async Task Setup(CommandContext ctx, string command, DiscordChannel channel) { // Command with channel as parameter
     command = command.ToLowerInvariant().Trim();
     switch (command) {
       case "trackingchannel": await TrackingChannel(ctx, channel); break;
@@ -94,8 +141,9 @@ public class SetupModule : BaseCommandModule {
         }
       }
       else { // set the channel
-        SetupParam p = new SetupParam(Utils.GetGuild().Id, "TrackingChannel", channel.Id);
+        SetupParam p = new SetupParam("TrackingChannel", channel.Id);
         Database.Add(p);
+        Params.Add(p);
         msg = "TrackingChannel set to " + channel.Mention;
       }
       DiscordMessage answer = ctx.RespondAsync(msg).Result;
@@ -124,6 +172,67 @@ public class SetupModule : BaseCommandModule {
     }
   }
 
+  Task ListAdminRoles(CommandContext ctx) {
+    try   {
+      string msg = "";
+      if (AdminRoles == null || AdminRoles.Count == 0) { // Try to read again the guild
+        LoadParams();
+      }
+      if (AdminRoles == null || AdminRoles.Count == 0) {
+        msg = "No admin roles defined";
+      } else {
+        DiscordGuild guild = Utils.GetGuild();
+        foreach (ulong id in AdminRoles) {
+          DiscordRole r = guild.GetRole(id);
+          if (r != null) msg += r.Mention + ", ";
+        }
+        msg = msg[0..^2];
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListAdminRoles", ex));
+    }
+  }
+
+  Task AddRemoveAdminRoles(CommandContext ctx, DiscordRole role, bool add) {
+    try {
+      string msg = null;
+      if (add) {
+        foreach (var p in AdminRoles) if (p == role.Id) {
+            msg = "The role " + role.Name + " is already an Admin role for the bot.";
+            break;
+          }
+        if (msg == null) {
+          SetupParam p = new SetupParam("AdminRole", role.Id);
+          AdminRoles.Add(role.Id);
+          Database.Add(p);
+          Params.Add(p);
+          Utils.Log("Added role " + role.Name + " as admin role");
+          msg = "Role " + role.Name + " added as Admin Role";
+        }
+      } else {
+        foreach (var p in Params) {
+          if (p.Param == "AdminRole" && p.IdVal == role.Id) {
+            Database.Delete(p);
+            Params.Remove(p);
+            AdminRoles.Remove(role.Id);
+            msg = "Role " + role.Name + " removed from Admin Roles";
+            Utils.Log("Removed role " + role.Name + " as admin role");
+            break;
+          }
+        }
+        if (msg == null) msg = "Role " + role.Name + " was not an Admin Role";
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveAdminRoles", ex));
+    }
+  }
+
+
   //  public async Task Setup(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
 
   /*
@@ -140,6 +249,7 @@ public class SetupModule : BaseCommandModule {
   */
 
   static ulong GetIDParam(string param) {
+    if (Params == null) return 0;
     foreach (SetupParam p in Params) {
       if (p.Param == param) return p.IdVal;
     }
