@@ -14,7 +14,7 @@
     StrVal = null;
   }
 
-  public SetupParam(ulong guild, string p, string val) {
+  public SetupParam(string p, string val) {
     ParamTypeVal = p + val;
     Param = p;
     IdVal = 0;

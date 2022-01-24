@@ -31,11 +31,10 @@ public class EmojisForRole : BaseCommandModule {
       else {
         DiscordEmbedBuilder e = new DiscordEmbedBuilder();
         e.Title = values.Count + (values.Count != 1 ? " messages are" : " message is") + " known to give a Role by Emoji\n";
-        DiscordGuild guild = Utils.GetGuild();
         string msg = "";
         foreach (EmojiForRoleValue val in values) {
-          if (val.dRole == null) val.dRole = guild.GetRole(val.Role);
-          msg += "- " + val.dRole.Mention + " from the message: [Link to message](https://discord.com/channels/" + guild.Id + "/" + val.Channel + "/" + val.Message + ")\n";
+          if (val.dRole == null) val.dRole = ctx.Guild.GetRole(val.Role);
+          msg += "- " + val.dRole.Mention + " from the message: [Link to message](https://discord.com/channels/" + ctx.Guild.Id + "/" + val.Channel + "/" + val.Message + ")\n";
         }
         e.Description = msg;
         e.Color = Utils.LightBlue;
@@ -63,11 +62,10 @@ public class EmojisForRole : BaseCommandModule {
       else {
         DiscordEmbedBuilder e = new DiscordEmbedBuilder();
         e.Title = values.Count + (values.Count != 1 ? " messages are" : " message is") + " known to give a Role by Emoji\n";
-        DiscordGuild guild = Utils.GetGuild();
         string msg = "";
         foreach (EmojiForRoleValue val in values) {
-          if (val.dRole == null) val.dRole = guild.GetRole(val.Role);
-          msg += "- [Jump to message](https://discord.com/channels/" + guild.Id + "/" + val.Channel + "/" + val.Message + ") ❌Remove command: `e4rremove " + val.GetId() + "`  Role " + val.dRole.Mention + "\n";
+          if (val.dRole == null) val.dRole = ctx.Guild.GetRole(val.Role);
+          msg += "- [Jump to message](https://discord.com/channels/" + ctx.Guild.Id + "/" + val.Channel + "/" + val.Message + ") ❌Remove command: `e4rremove " + val.GetId() + "`  Role " + val.dRole.Mention + "\n";
         }
         e.Description = msg;
         e.Color = Utils.Red;
@@ -102,7 +100,7 @@ public class EmojisForRole : BaseCommandModule {
       else {
         values.Remove(toRemove);
         Database.Delete(toRemove);
-        Utils.Log("Memeber " + ctx.Member.DisplayName + " removed EmojiForRoles with code " + code + " https://discord.com/channels/" + Utils.GetGuild().Id + "/" + toRemove.Channel + "/" + toRemove.Message);
+        Utils.Log("Memeber " + ctx.Member.DisplayName + " removed EmojiForRoles with code " + code + " https://discord.com/channels/" + ctx.Guild.Id + "/" + toRemove.Channel + "/" + toRemove.Message);
         DiscordMessage answer = await Utils.BuildEmbedAndExecute("EmojiForRoles removal", "Entry with code " + code + " has been removed", Utils.Red, ctx, true);
         await Utils.DeleteDelayed(30, answer);
         await Task.FromResult(0);

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -14,8 +16,13 @@ public class SetupModule : BaseCommandModule {
   public static ulong trackChannelID = 0;
   public static List<ulong> AdminRoles;
   public static List<Stats.StatChannel> StatsChannels;
+  public static HashSet<string> RepSEmojis;
+  public static HashSet<ulong> RepIEmojis;
+  public static HashSet<string> FunSEmojis;
+  public static HashSet<ulong> FunIEmojis;
+  private readonly static Regex emjSnowflakeER = new Regex(@"(<:[a-z0-9_]+:[0-9]+>)", RegexOptions.IgnoreCase);
 
-  internal static void LoadParams(bool forceCleanBad = false) {
+  internal static void LoadParams(bool forceCleanBad = false) { // FIXME this ahs to be server specific
     DiscordGuild guild = Utils.GetGuild();
     Params = Database.GetAll<SetupParam>();
     if (Params == null) Params = new List<SetupParam>();
@@ -75,6 +82,50 @@ public class SetupModule : BaseCommandModule {
       TryAddDefaultChannel(guild, 830921265648631878ul);
       TryAddDefaultChannel(guild, 830921315657449472ul);
     }
+    // Rep and Fun Emojis
+    RepSEmojis = new HashSet<string>();
+    RepIEmojis = new HashSet<ulong>();
+    FunSEmojis = new HashSet<string>();
+    FunIEmojis = new HashSet<ulong>();
+    foreach (var param in Params) {
+      if (param.Param == "RepEmoji") {
+        if (param.IdVal == 0) RepSEmojis.Add(param.StrVal);
+        else RepIEmojis.Add(param.IdVal);
+      }
+      if (param.Param == "FunEmoji") {
+        if (param.IdVal == 0) FunSEmojis.Add(param.StrVal);
+        else FunIEmojis.Add(param.IdVal);
+      }
+    }
+    if (RepIEmojis.Count == 0 && RepSEmojis.Count == 0) { // Add defaults
+      RepIEmojis.Add(830907665869570088ul); // :OK:
+      RepIEmojis.Add(840702597216337990ul); // :whatthisguysaid:
+      RepIEmojis.Add(552147917876625419ul); // :thoose:
+      RepSEmojis.Add("👍"); // :thumbsup:
+      RepSEmojis.Add("❤️"); // :hearth:
+      RepSEmojis.Add("🥰"); // :hearth:
+      RepSEmojis.Add("😍"); // :hearth:
+      RepSEmojis.Add("🤩"); // :hearth:
+      RepSEmojis.Add("😘"); // :hearth:
+      RepSEmojis.Add("💯"); // :100:
+    }
+
+    if (FunIEmojis.Count == 0 && FunSEmojis.Count == 0) { // Add defaults
+      FunIEmojis.Add(830907626928996454ul); // :StrongSmile: 
+      FunSEmojis.Add("😀");
+      FunSEmojis.Add("😃");
+      FunSEmojis.Add("😄");
+      FunSEmojis.Add("😁");
+      FunSEmojis.Add("😆");
+      FunSEmojis.Add("😅");
+      FunSEmojis.Add("🤣");
+      FunSEmojis.Add("😂");
+      FunSEmojis.Add("🙂");
+      FunSEmojis.Add("🙃");
+      FunSEmojis.Add("😉");
+      FunSEmojis.Add("😊");
+      FunSEmojis.Add("😇");
+    }
   }
 
   static void TryAddDefaultChannel(DiscordGuild guild, ulong id) {
@@ -104,18 +155,15 @@ public class SetupModule : BaseCommandModule {
       "**ServerId** - prints the current server guild id.\n" +
       "**GuildId** - prints the current server guild id.\n" +
       "**BotID** - prints the bot id in the current server guild.\n" +
-      "**ListEmojiAppreciation** - to list all emojis for appreciation tracking.\n" +
-      "**ListEmojiReputation** - to list all emojis for reputation tracking.\n" +
-      "**ListEmojiFun** - to list all emojis for fun tracking.\n" +
-      "**AddEmojiAppreciation** _emoji_ - to add an emoji for appreciation tracking.\n" +
-      "**AddEmojiReputation** _emoji_ - to add an emoji for reputation tracking.\n" +
-      "**AddEmojiFun** - _emoji_ - to add an emoji for fun tracking.\n" +
-      "**RemoveEmojiAppreciation** _emoji_ - to remove an emoji for appreciation tracking.\n" +
-      "**RemoveEmojiReputation** _emoji_ - to remove an emoji for reputation tracking.\n" +
-      "**RemoveEmojiFun** - _emoji_ - to remove an emoji for fun tracking.\n" +
+      "**ListEmojiReputation** - to list all emojis for Reputation tracking.\n" +
+      "**ListEmojiFun** - to list all emojis for Fun tracking.\n" +
+      "**AddEmojiReputation** _emoji_ - to add an emoji for Reputation tracking.\n" +
+      "**AddEmojiFun** - _emoji_ - to add an emoji for Fun tracking.\n" +
+      "**RemoveEmojiReputation** _emoji_ - to remove an emoji for Reputation tracking.\n" +
+      "**RemoveEmojiFun** - _emoji_ - to remove an emoji for Fun tracking.\n" +
       "**ListStatsChannels** - to list all channels used for stats.\n" +
       "**AddStatsChannel** _<#channel>_ - adds a channel to the channels used for stats.\n" +
-      "**removeStatsChannel** _<#channel>_ - removes the channel from the channels used for stats.";
+      "**RemoveStatsChannel** _<#channel>_ - removes the channel from the channels used for stats.";
 
     DiscordMessage answer = ctx.RespondAsync(msg).Result;
     await Utils.DeleteDelayed(30, ctx.Message, answer);
@@ -138,6 +186,8 @@ public class SetupModule : BaseCommandModule {
       case "liststatschannels": await ListStatChannels(ctx); break;
       case "addstatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to add parameter").Result); break;
       case "removestatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to remove parameter").Result); break;
+      case "listemojireputation": await ListEmojiAppreciation(ctx, true); break;
+      case "listemojifun": await ListEmojiAppreciation(ctx, false); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -173,6 +223,25 @@ public class SetupModule : BaseCommandModule {
       case "trackingchannel": await TrackingChannel(ctx, channel); break;
       case "addstatschannel": await AddRemoveStatChannel(ctx, channel, true); break;
       case "removestatschannel": await AddRemoveStatChannel(ctx, channel, false); break;
+
+      default:
+        DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
+        await Utils.DeleteDelayed(30, ctx.Message, answer);
+        break;
+    }
+  }
+
+  [Command("setup")]
+  [Description("Configure the bot")]
+  [RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
+  public async Task Setup(CommandContext ctx, string command, string msg) { // Command with string as parameter
+    Utils.LogUserCommand(ctx);
+    command = command.ToLowerInvariant().Trim();
+    switch (command) {
+      case "addemojireputation": await AddRemoveEmojiAppreciation(ctx, true, true); break;
+      case "removeemojireputation": await AddRemoveEmojiAppreciation(ctx, true, false); break;
+      case "addemojifun": await AddRemoveEmojiAppreciation(ctx, false, true); break;
+      case "removeemojifun": await AddRemoveEmojiAppreciation(ctx, false, false); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -343,6 +412,113 @@ public class SetupModule : BaseCommandModule {
         }
         if (msg == null) msg = "Channel " + channel.Name + " was not a stats channel";
       }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveStatChannel", ex));
+    }
+  }
+
+  Task ListEmojiAppreciation(CommandContext ctx, bool rep) {
+    try {
+      string msg = "";
+      if (rep) {
+        if (RepIEmojis.Count == 0 && RepSEmojis.Count == 0) msg = "No emojis for reputation are defined";
+        else {
+          msg = "Emojis for reputation: ";
+          foreach (string emj in RepSEmojis) msg += emj;
+          foreach (ulong emj in RepIEmojis) msg += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
+        }
+      }
+      else {
+        if (FunIEmojis.Count == 0 && FunSEmojis.Count == 0) msg = "No emojis for fun are defined";
+        else {
+          msg = "Emojis for fun: ";
+          foreach (string emj in FunSEmojis) msg += emj;
+          foreach (ulong emj in FunIEmojis) msg += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
+        }
+      }
+      if (StatsChannels == null || StatsChannels.Count == 0) { // Try to read again the guild
+        LoadParams();
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListEmojiAppreciation", ex));
+    }
+  }
+
+  Task AddRemoveEmojiAppreciation(CommandContext ctx, bool rep, bool add) {
+    try {
+      string[] contentParts = ctx.Message.Content.Split(' ');
+      // Get the 3rd that is not empty
+      string content = null;
+      int num = 0;
+      foreach (string part in contentParts) {
+        if (!string.IsNullOrEmpty(part)) {
+          num++;
+          if (num == 3) { content = part; break; }
+        }
+      }
+      string msg = null;
+      // Do we have an emoji snoflake id?
+      Match match = emjSnowflakeER.Match(content);
+      if (match.Success) {
+        content = match.Groups[1].Value;
+        if (add) {
+          if (rep) {
+            if (RepSEmojis.Contains(content)) msg = "Emoji " + content + " already in the reputation list";
+            else {
+
+//              WeakReference should get the ulong for the emoji here!!!! Not the string!!!!!
+
+              SetupParam p = new SetupParam("RepEmoji", content);
+              Params.Add(p);
+              Database.Add(p);
+              RepSEmojis.Add(content);
+              msg = "Emoji " + content + " added to the reputation list";
+            }
+
+          } else {
+            if (FunSEmojis.Contains(content)) msg = "Emoji " + content + " already in the fun list";
+            else {
+              SetupParam p = new SetupParam("FunEmoji", content);
+              Params.Add(p);
+              Database.Add(p);
+              FunSEmojis.Add(content);
+              msg = "Emoji " + content + " added to the fun list";
+            }
+          }
+        } else { // Remove
+          string t = (rep ? "RepEmoji" : "FunEmoji");
+            foreach (var p in Params) {
+            if (p.Param == t && p.StrVal == content) {
+              Params.Remove(p);
+              Database.Delete(p);
+              if (rep) {
+                RepSEmojis.Remove(content);
+                msg = "Emoji " + content + " removed to the reputation list";
+              } else {
+                FunSEmojis.Remove(content);
+                msg = "Emoji " + content + " removed to the fun list";
+              }
+              break;
+            }
+          }
+        }
+      }
+      else { // Grab the very first unicode emoji we can find
+        for (int i = 0; i < content.Length - 1; i++) {
+          if (char.IsSurrogate(content[i]) && char.IsSurrogatePair(content[i], content[i + 1])) {
+            int codePoint = char.ConvertToUtf32(content[i], content[i + 1]);
+            content = "" + content[i] + content[i + 1];
+            break;
+          }
+        }
+      }
+
+
       DiscordMessage answer = ctx.RespondAsync(msg).Result;
       return Utils.DeleteDelayed(30, ctx.Message, answer);
 

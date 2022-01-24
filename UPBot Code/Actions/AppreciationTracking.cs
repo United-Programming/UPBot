@@ -31,7 +31,10 @@ public class AppreciationTracking : BaseCommandModule {
 
       List<Reputation> vals = new List<Reputation>(tracking.GetReputation());
       Dictionary<ulong, string> users = new Dictionary<ulong, string>();
-      e.AddField("Reputation ----------------", "For receving these emojis in the posts: <:OK:830907665869570088>👍❤️🥰😍🤩😘💯<:whatthisguysaid:840702597216337990>", false);
+      string emjs = "";
+      foreach (string emj in SetupModule.RepSEmojis) emjs += emj;
+      foreach (ulong emj in SetupModule.RepIEmojis) emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
+      e.AddField("Reputation ----------------", "For receving these emojis in the posts: " + emjs, false);
       vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
       for (int i = 0; i < 6; i++) {
         if (i >= vals.Count) break;
@@ -47,7 +50,10 @@ public class AppreciationTracking : BaseCommandModule {
         if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Reputation: _" + r.Rep + "_", true);
       }
 
-      e.AddField("Fun -----------------------", "For receving these emojis in the posts: 😀😃😄😁😆😅🤣😂🙂🙃😉😊😇<:StrongSmile:830907626928996454>", false);
+      emjs = "";
+      foreach (string emj in SetupModule.FunSEmojis) emjs += emj;
+      foreach (ulong emj in SetupModule.FunIEmojis) emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
+      e.AddField("Fun -----------------------", "For receving these emojis in the posts: " + emjs, false);
       vals.Sort((a, b) => { return b.Fun.CompareTo(a.Fun); });
       for (int i = 0; i < 6; i++) {
         if (i >= vals.Count) break;
@@ -90,7 +96,7 @@ public class AppreciationTracking : BaseCommandModule {
   private static Dictionary<ulong, LastPosters> LastMemberPerChannels = null;
 
   internal static void InitChannelList() {
-    IReadOnlyDictionary<ulong, DiscordChannel> channels = Utils.GetGuild().Channels;
+    IReadOnlyDictionary<ulong, DiscordChannel> channels = Utils.GetGuild().Channels; // FIXME this should be specific for each server
     LastMemberPerChannels = new Dictionary<ulong, LastPosters>();
     foreach (ulong cid in channels.Keys)
       LastMemberPerChannels[cid] = new LastPosters();
@@ -205,41 +211,18 @@ public class AppreciationTracking : BaseCommandModule {
 
   static Task HandleReactions(ulong emojiId, string emojiName, ulong authorId, bool added) {
     // check if emoji is :smile: :rolf: :strongsmil: (find valid emojis -> increase fun level of user
-    if (emojiName == "😀" ||
-        emojiName == "😃" ||
-        emojiName == "😄" ||
-        emojiName == "😁" ||
-        emojiName == "😆" ||
-        emojiName == "😅" ||
-        emojiName == "🤣" ||
-        emojiName == "😂" ||
-        emojiName == "🙂" ||
-        emojiName == "🙃" ||
-        emojiName == "😉" ||
-        emojiName == "😊" ||
-        emojiName == "😇" ||
-        emojiId == 830907626928996454ul || // :StrongSmile: 
-        false) { // just to keep the other lines aligned
+    if ((emojiId != 0 && SetupModule.FunIEmojis.Contains(emojiId)) || (!string.IsNullOrEmpty(emojiName) && SetupModule.FunSEmojis.Contains(emojiName))) {
       if (GetTracking()) return Task.FromResult(0);
       tracking.AlterFun(authorId, added);
     }
 
     // check if emoji is :OK: or :ThumbsUp: -> Increase reputation for user
-    if (emojiId == 830907665869570088ul || // :OK:
-        emojiName == "👍" || // :thumbsup:
-        emojiName == "❤️" || // :hearth:
-        emojiName == "🥰" || // :hearth:
-        emojiName == "😍" || // :hearth:
-        emojiName == "🤩" || // :hearth:
-        emojiName == "😘" || // :hearth:
-        emojiName == "💯" || // :100:
-        emojiId == 840702597216337990ul || // :whatthisguysaid:
-        emojiId == 552147917876625419ul || // :thoose:
-        false) { // just to keep the other lines aligned
+    if ((emojiId != 0 && SetupModule.RepIEmojis.Contains(emojiId)) || (!string.IsNullOrEmpty(emojiName) && SetupModule.RepSEmojis.Contains(emojiName))) {
       if (GetTracking()) return Task.FromResult(0);
       tracking.AlterRep(authorId, added);
     }
 
     return Task.Delay(10);
   }
+
 }

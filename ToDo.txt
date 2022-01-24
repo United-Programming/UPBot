@@ -1,15 +1,14 @@
-﻿Have command to alter the command character [NOT POSSIBLE!]
-!Check all command names
-!Uniform all error messages with Embeds (use Duck code)
-!Have all messages and commands to disappear after a while (configurable) if not needed to stay
-!Add TryCatch to all code and commands
-!Extend the reputation by checking "tanks and thank you" in messages and add to mentioned mebers or author of referenced message
+﻿Have all settings stored per server/guild
+Check that all comands work on the current server
 Have a cmd to configure how long messages should stay
-!Add "delete" option to reformat
 Add wikis for each command on GitHub
-Check if a message to reformat has something after the ```, consider the ``` the end of the block to reformat
-
-Keep the last poster from each channel, and use it for te "thanks" in case there is no mention
+Add timezones
+Add cppref and unityref
+Add ranking?
+Add games with buttons
+Remove Utils.GetGuild(), get the guild always by the context.
+I am not saving the right types for appreciation emojis when they are ids.
+Replace all setup stuff with manu and buttons
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -33,3 +32,8 @@ reformat        |         |         |           |    X      |    X     |        
 stats           |         |         |     X     |    X      |    X     |          |
 whois           |         |         |     X     |    X      |    X     |          |
 
+
+
+
+
+To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot

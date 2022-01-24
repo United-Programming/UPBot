@@ -34,8 +34,13 @@ namespace UPBot {
         });
         lw?.WriteLine("discord object");
         lw.Flush();
+
+
+
         discord.UseInteractivity(new InteractivityConfiguration() {
-          Timeout = TimeSpan.FromHours(2)
+          Timeout = TimeSpan.FromSeconds(120),
+          ButtonBehavior = DSharpPlus.Interactivity.Enums.ButtonPaginationBehavior.DeleteMessage,
+          ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
         lw?.WriteLine("use interactivity");
         lw.Flush();
@@ -58,7 +63,11 @@ namespace UPBot {
         lw.Flush();
 
         CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-          StringPrefixes = new[] { prefix[0].ToString() } // The backslash will be the default command prefix if not specified in the parameters
+          StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters
+
+          CaseSensitive = false,
+          EnableDms = true,
+          EnableMentionPrefix = true
         });
         lw?.WriteLine("CommandsNextExtension");
         lw.Flush();
@@ -96,11 +105,15 @@ namespace UPBot {
         lw.Flush();
 
         // Wait a few seconds and re-load some parameters (they will arrive only after a while)
-        await Task.Delay(5000); // 5 secs
+        await Task.Delay(2000); // 2 secs
         lw?.WriteLine("LoadParams");
         SetupModule.LoadParams();
         lw?.WriteLine("done");
         lw.Flush();
+        Utils.Log("--->>> Bot ready <<<---");
+
+        foreach(var g in discord.Guilds.Values)
+          Utils.Log(">>" + g.Name);
 
       } catch (Exception ex) {
         lw?.WriteLine("with exception: " + ex.Message);

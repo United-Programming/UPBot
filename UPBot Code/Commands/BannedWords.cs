@@ -144,14 +144,9 @@ public class BannedWords : BaseCommandModule {
       // Who is the author? If the bot or a mod then ignore
       if (args.Author.Equals(client.CurrentUser)) return;
       DiscordUser user = args.Author;
-      DiscordMember member;
-      try {
-        member = await Utils.GetGuild().GetMemberAsync(user.Id);
-      } catch (Exception) {
-        return;
-      }
+      DiscordMember member = await args.Guild.GetMemberAsync(user.Id);
       foreach (DiscordRole role in member.Roles) {
-        if (role.Id == 831050318171078718ul /* Helper */ || role.Id == 830901743624650783ul /* Mod */ || role.Id == 830901562960117780ul /* Owner */) return;
+        if (SetupModule.AdminRoles.Contains(role.Id)) return; // FIXME roles should be per guild
       }
 
       string msg = args.Message.Content.ToLowerInvariant();

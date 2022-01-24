@@ -53,7 +53,7 @@ public static class Utils
     while (client.Guilds == null) Task.Delay(1000);
     while (client.Guilds.Count == 0) Task.Delay(1000);
 
-    guild = client.Guilds[830900174553481236ul];
+    guild = client.Guilds[830900174553481236ul]; // United programming GUID
     return guild;
   }
 
@@ -184,6 +184,19 @@ public static class Utils
   private static DiscordEmoji[] emojis;
   private static ulong[] emojiIDs;
   private static DiscordEmoji thinkingAsError;
+
+  /// <summary>
+  /// This function gets the Emoji object corresponding to the id fromthe server.
+  /// </summary>
+  /// <param name="id">The id of the emoji to get</param>
+  /// <returns>The requested emoji or the Thinking emoji in case something went wrong</returns>
+  public static DiscordEmoji GetEmoji(ulong id) {
+    try {
+      DiscordEmoji emoji = guild.GetEmojiAsync(id).Result;
+      return emoji;
+    } catch (Exception) { }
+    return thinkingAsError;
+  }
 
   /// <summary>
   /// This function gets the Emoji object corresponding to the emojis of the server.
