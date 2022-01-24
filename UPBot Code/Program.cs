@@ -53,6 +53,7 @@ namespace UPBot {
         Database.AddTable<Reputation>();
         Database.AddTable<EmojiForRoleValue>();
         Database.AddTable<CustomCommand>();
+        Database.AddTable<SetupParam>();
         lw?.WriteLine("Added Tables");
         lw.Flush();
 
@@ -72,6 +73,12 @@ namespace UPBot {
         discord.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
         discord.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
         discord.MessageCreated += AppreciationTracking.ThanksAdded;
+        lw?.WriteLine("Tracking");
+        lw.Flush();
+
+        SetupModule.LoadParams();
+        lw?.WriteLine("SetupModule.LoadParams");
+        lw.Flush();
 
         CustomCommandsService.LoadCustomCommands();
         lw?.WriteLine("CustomCommandsService.LoadCustomCommands");
