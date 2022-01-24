@@ -27,7 +27,8 @@ public class SetupModule : BaseCommandModule {
       "**ListAdminRoles** - to list all admin roles.\n" +
       "**AddAdminRole** _<@Role>_ - adds a role to the admins.\n" +
       "**RemoveAdminRole** _<@Role>_ - removes the role to the admins.\n" +
-      "**ServerGuild** - prins the current server guild id.\n" +
+      "**ServerId** - prints the current server guild id.\n" +
+      "**GuildId** - prints the current server guild id.\n" +
       "**BotID** - prints the bot id in the current server guild.\n" +
       "**ListEmojiAppreciation** - to list all emojis for appreciation tracking.\n" +
       "**ListEmojiReputation** - to list all emojis for reputation tracking.\n" +
@@ -53,6 +54,9 @@ public class SetupModule : BaseCommandModule {
     command = command.ToLowerInvariant().Trim();
     switch (command) {
       case "trackingchannel": await TrackingChannel(ctx, null); break;
+      case "botid": await GetIDs(ctx, true); break;
+      case "serverid": await GetIDs(ctx, false); break;
+      case "guildid": await GetIDs(ctx, false); break;
 
       default:
         DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
@@ -102,10 +106,27 @@ public class SetupModule : BaseCommandModule {
     }
   }
 
+  Task GetIDs(CommandContext ctx, bool forBot) {
+    try {
+      string msg;
+      if (forBot) { // Read current value
+        DiscordMember bot = Utils.GetMyself();
+        msg = "Bot ID is: " + bot.Mention + " (" + bot.Id + ")";
+      } else {
+        DiscordGuild guild = Utils.GetGuild();
+        msg = "Server/Guild ID is: " + guild.Name + " (" + guild.Id + ")";
+      }
+      DiscordMessage answer = ctx.RespondAsync(msg).Result;
+      return Utils.DeleteDelayed(30, ctx.Message, answer);
+
+    } catch (Exception ex) {
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.GetIDs", ex));
+    }
+  }
+
   //  public async Task Setup(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
 
   /*
-  !trackChannel
   bot self id: 875701548301299743ul
   roles for commands
   server guild: 830900174553481236ul
