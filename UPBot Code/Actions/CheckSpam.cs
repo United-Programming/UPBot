@@ -151,8 +151,8 @@ public class CheckSpam : BaseCommandModule {
         float riskval = dist / (float)Math.Sqrt(leven);
         if (riskval > 3) {
           Utils.Log("Removed spam link message from " + args.Author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg);
-          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite);
-          await args.Message.DeleteAsync("Spam link from " + args.Author.Username + " @Mod please take care");
+          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + " @Mod please take care");
+          await args.Message.DeleteAsync("Spam link from " + args.Author.Username);
           Utils.DeleteDelayed(10000, warning).Wait();
         }
       }
