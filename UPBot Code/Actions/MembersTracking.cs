@@ -13,14 +13,16 @@ public class MembersTracking {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       if (trackChannel == null) trackChannel = args.Guild.GetChannel(831186370445443104ul);
 
-      if (tracking.ContainsKey(args.Member.Id)) {
+      int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
+
+      if (tracking.ContainsKey(args.Member.Id) || daysJ < 2) {
         tracking.Remove(args.Member.Id);
-        string msg = "User " + args.Member.DisplayName + " did a kiss and go.";
+        string msg = "User " + args.Member.DisplayName + " did a kiss and go. (" + args.Guild.MemberCount + " members total)";
         await trackChannel.SendMessageAsync(msg);
         Utils.Log(msg);
       }
       else {
-        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
+        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
         string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         await trackChannel.SendMessageAsync(msgC);
         Utils.Log(msgL);
@@ -29,7 +31,7 @@ public class MembersTracking {
       Utils.Log("Error in DiscordMemberRemoved: " + ex.Message);
     }
 
-    await Task.Delay(10);
+    await Task.Delay(50);
   }
 
   public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
@@ -52,19 +54,21 @@ public class MembersTracking {
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
       IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
       List<DiscordRole> rolesAdded = new List<DiscordRole>();
-      // Changed role?
+      // Changed role? We can track only additions. Removals are not really sent
+
       foreach (DiscordRole r1 in rolesAfter) {
         bool addedRole = true;
         foreach (DiscordRole r2 in rolesBefore) {
           if (r1.Equals(r2)) {
             addedRole = false;
+            break;
           }
         }
         if (addedRole) rolesAdded.Add(r1);
       }
       string msgC;
       string msgL;
-      if (rolesAdded.Count > 0) {
+      if (rolesBefore.Count > 0 && rolesAdded.Count > 0) {
         msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
         msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
         foreach (DiscordRole r in rolesAdded) {
