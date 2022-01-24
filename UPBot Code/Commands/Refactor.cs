@@ -194,7 +194,18 @@ public class Refactor : BaseCommandModule {
 
       code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + lmd + "\n" + code + "\n```";
 
-      DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
+      // We may need to do some multiple posts in case we have more than 2000 characters.
+      DiscordMessage replacement;
+      while (code.Length > 1995) { // Split in multiple messages
+        int newlinePos = code.LastIndexOf('\n', 1995);
+        string code1 = code.Substring(0, newlinePos).Trim(' ', '\t', '\r', '\n') + "\n```";
+        await ctx.Channel.SendMessageAsync(code1);
+        code = "```" + lmd + "\n" + code.Substring(newlinePos + 1).Trim('\r', '\n');
+      }
+      // Post the last part as is
+      replacement = await ctx.Channel.SendMessageAsync(code);
+
+
       DiscordEmoji autoRefactored = Utils.GetEmoji(EmojiEnum.AutoRefactored);
       DiscordEmoji emoji = Utils.GetEmoji(langEmoji);
       try {
