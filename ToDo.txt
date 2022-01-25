@@ -1,14 +1,11 @@
-﻿Have all settings stored per server/guild
+﻿[in progress] Have all settings stored per server/guild
 Check that all comands work on the current server
-Have a cmd to configure how long messages should stay
 Add wikis for each command on GitHub
 Add timezones
 Add cppref and unityref
 Add ranking?
 Add games with buttons
-Remove Utils.GetGuild(), get the guild always by the context.
 I am not saving the right types for appreciation emojis when they are ids.
-Replace all setup stuff with manu and buttons
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -43,15 +40,15 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 ------------- Setup --------------------
 
 Setup Menus to create:
-- stats
-- appreciation
-- custom commands
-- help pages
-- banned words
-- emoji for role
+- stats (channes, who can use)
+- appreciation (emojis, where is tracked, who can use)
+- custom commands (who can define, who can use)
+- help pages (who can use)
+- banned words (who can define, enabled/disabled)
+- emoji for role (who can use, role/post to use/emoji)
 
 Logic to update:
-- stats
+- stats (channes, who can use)
 - appreciation
 - custom commands
 - help pages
