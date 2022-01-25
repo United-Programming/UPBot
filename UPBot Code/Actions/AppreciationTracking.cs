@@ -93,13 +93,15 @@ public class AppreciationTracking : BaseCommandModule {
   }
 
 
-  private static Dictionary<ulong, LastPosters> LastMemberPerChannels = null;
+  private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = null;
 
   internal static void InitChannelList() {
-    IReadOnlyDictionary<ulong, DiscordChannel> channels = Utils.GetGuild().Channels; // FIXME this should be specific for each server
-    LastMemberPerChannels = new Dictionary<ulong, LastPosters>();
-    foreach (ulong cid in channels.Keys)
-      LastMemberPerChannels[cid] = new LastPosters();
+    Dictionary<ulong, Dictionary<ulong, DiscordChannel>> channels = Utils.GetAllChannelsFromGuilds(); // FIXME this should be specific for each server
+    LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
+    foreach (ulong gid in channels.Keys) {
+      LastMemberPerGuildPerChannels[gid] = new Dictionary<ulong, LastPosters>();
+      foreach (ulong cid in channels[gid].Keys) LastMemberPerGuildPerChannels[gid][cid] = new LastPosters();
+    }
   }
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
@@ -107,8 +109,9 @@ public class AppreciationTracking : BaseCommandModule {
       string msg = args.Message.Content.ToLowerInvariant();
       ulong memberid = args.Message.Author.Id;
       ulong channelid = args.Message.ChannelId;
-      if (LastMemberPerChannels == null) InitChannelList();
-      LastPosters lp = LastMemberPerChannels[channelid];
+      ulong guildid = args.Guild.Id;
+      if (LastMemberPerGuildPerChannels == null) InitChannelList();
+      LastPosters lp = LastMemberPerGuildPerChannels[guildid][channelid];
       lp.Add(memberid);
 
       if (thanks.IsMatch(msg) || thankyou.IsMatch(msg) || thank2you.IsMatch(msg)) { // Add thanks

@@ -146,7 +146,7 @@ public class BannedWords : BaseCommandModule {
       DiscordUser user = args.Author;
       DiscordMember member = await args.Guild.GetMemberAsync(user.Id);
       foreach (DiscordRole role in member.Roles) {
-        if (SetupModule.AdminRoles.Contains(role.Id)) return; // FIXME roles should be per guild
+        if (!SetupModule.IsAdminRole(args.Guild.Id, role.Id)) return;
       }
 
       string msg = args.Message.Content.ToLowerInvariant();

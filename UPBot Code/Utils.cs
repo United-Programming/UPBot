@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
-  public const int vmajor = 0, vminor = 1, vbuild = 5;
+  public const int vmajor = 0, vminor = 1, vbuild = 6;
 
 
   /// <summary>
@@ -28,10 +29,10 @@ public static class Utils
   private static DateTimeFormatInfo sortableDateTimeFormat;
   private static StreamWriter logs;
   private static DiscordMember mySelf;
-  private static DiscordGuild guild;
+  private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + "b - 2022/01/24";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/01/25";
   }
 
   /// <summary>
@@ -43,20 +44,26 @@ public static class Utils
     return mySelf;
   }
 
-  /// <summary>
-  /// Gets the UnitedProgramming Guild
-  /// </summary>
-  /// <returns></returns>
-  public static DiscordGuild GetGuild() {
-    if (guild != null) return guild;
+  public static DiscordClient GetClient() {
+    return client;
+  }
+
+  public static Dictionary<ulong, Dictionary<ulong, DiscordChannel>> GetAllChannelsFromGuilds() {
+    Dictionary<ulong, Dictionary<ulong, DiscordChannel>> res = new Dictionary<ulong, Dictionary<ulong, DiscordChannel>>();
+
     while (client == null) Task.Delay(1000);
     while (client.Guilds == null) Task.Delay(1000);
     while (client.Guilds.Count == 0) Task.Delay(1000);
+    Task.Delay(1000);
 
-    guild = client.Guilds[830900174553481236ul]; // United programming GUID
-    return guild;
+    foreach (var guild in client.Guilds.Values) {
+      Dictionary<ulong, DiscordChannel> gc = new Dictionary<ulong, DiscordChannel>();
+      res[guild.Id] = gc;
+      foreach (var channel in guild.Channels.Values) gc[channel.Id] = channel;
+    }
+
+    return res;
   }
-
 
 
   public static void InitClient(DiscordClient c) {
@@ -192,7 +199,7 @@ public static class Utils
   /// <returns>The requested emoji or the Thinking emoji in case something went wrong</returns>
   public static DiscordEmoji GetEmoji(ulong id) {
     try {
-      DiscordEmoji emoji = guild.GetEmojiAsync(id).Result;
+      DiscordEmoji emoji = guilds[830900174553481236ul].GetEmojiAsync(id).Result;
       return emoji;
     } catch (Exception) { }
     return thinkingAsError;

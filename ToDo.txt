@@ -37,3 +37,48 @@ whois           |         |         |     X     |    X      |    X     |        
 
 
 To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
+
+
+
+------------- Setup --------------------
+Open the setup windows showing the user and server name
+- Exit
+- Set tracking
+- Set Admins
+- Enable features: 
+
+> Set tracking
+- Exit
+- Channel for tracking
+- track/don't track users joins
+- track/don't track users leaving
+- track/don't track roles
+
+
+> Features
+- Exit
+- stats
+- appreciation
+- games
+- reformat code
+- custom commands
+- help pages
+- delete posts
+- banned words
+- emoji for role
+- ping
+- whois
+
+> Stats
+- Exit
+- List Channels for statistics
+- Add Channel for statistics
+- Remove Channel for statistics
+- enable/disable
+- admin/everybody
+
+
+
+
+
+- Set stats Channels

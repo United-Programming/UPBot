@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 public class MembersTracking {
   static Dictionary<ulong, DateTime> tracking = null;
-  static DiscordChannel trackChannel = null;
 
   public static async Task DiscordMemberRemoved(DiscordClient client, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      if (trackChannel == null) trackChannel = args.Guild.GetChannel(SetupModule.trackChannelID);
+      DiscordChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      if (trackChannel == null) return;
 
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
 
@@ -36,10 +36,12 @@ public class MembersTracking {
 
   public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try{
-    if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-    if (trackChannel == null) trackChannel = args.Guild.GetChannel(SetupModule.trackChannelID);
-    tracking[args.Member.Id] = DateTime.Now;
-    _ = SomethingAsync(args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+      DiscordChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      if (trackChannel == null) return;
+
+      tracking[args.Member.Id] = DateTime.Now;
+    _ = SomethingAsync(trackChannel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     } catch (Exception ex) {
       Utils.Log("Error in DiscordMemberAdded: " + ex.Message);
     }
@@ -49,7 +51,8 @@ public class MembersTracking {
   public static async Task DiscordMemberUpdated(DiscordClient client, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      if (trackChannel == null) trackChannel = args.Guild.GetChannel(SetupModule.trackChannelID);
+      DiscordChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      if (trackChannel == null) return;
 
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
       IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
@@ -86,7 +89,7 @@ public class MembersTracking {
   }
 
 
-  static async Task SomethingAsync(ulong id, string name, string mention, int numMembers) {
+  static async Task SomethingAsync(DiscordChannel trackChannel, ulong id, string name, string mention, int numMembers) {
     await Task.Delay(25000);
     if (tracking.ContainsKey(id)) {
       string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";

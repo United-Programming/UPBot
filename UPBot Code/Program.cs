@@ -58,7 +58,7 @@ namespace UPBot {
         Database.AddTable<Reputation>();
         Database.AddTable<EmojiForRoleValue>();
         Database.AddTable<CustomCommand>();
-        Database.AddTable<SetupParam>();
+        Database.AddTable<Config>();
         lw?.WriteLine("Added Tables");
         lw.Flush();
 
