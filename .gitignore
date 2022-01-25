@@ -387,3 +387,4 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+/.debug/Database/BotDb.db

@@ -41,18 +41,6 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 
 
 ------------- Setup --------------------
-Open the setup windows showing the user and server name
-- Exit
-- Set tracking
-- Set Admins
-- Enable features: 
-
-> Set tracking
-- Exit
-- Channel for tracking
-- track/don't track users joins
-- track/don't track users leaving
-- track/don't track roles
 
 
 > Features

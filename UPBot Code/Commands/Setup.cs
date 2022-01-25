@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 
 /// <summary>
 /// This command is used to configure the bot, so roles and messages can be set for other servers.
@@ -14,7 +14,7 @@ using DSharpPlus.Entities;
 public class SetupModule : BaseCommandModule {
   private static Dictionary<ulong, DiscordGuild> Guilds = new Dictionary<ulong, DiscordGuild>();
   private static Dictionary<ulong, List<Config>> Configs = new Dictionary<ulong, List<Config>>();
-  public static Dictionary<ulong, DiscordChannel> TrackChannels = new Dictionary<ulong, DiscordChannel>();
+  public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
   public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
 
   public static List<Stats.StatChannel> StatsChannels; // FIXME
@@ -60,7 +60,14 @@ public class SetupModule : BaseCommandModule {
       if (c.IsParam(Config.ParamType.TrackingChannel)) {
         if (!TrackChannels.ContainsKey(c.Guild)) {
           DiscordChannel ch =  Guilds[c.Guild].GetChannel(c.IdVal);
-          if (ch != null) TrackChannels[c.Guild] = ch;
+          if (ch != null) {
+            if (!TrackChannels.ContainsKey(c.Guild) || TrackChannels[c.Guild] == null) TrackChannels[c.Guild] = new TrackChannel();
+            TrackChannels[c.Guild].channel = ch;
+            TrackChannels[c.Guild].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
+            TrackChannels[c.Guild].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
+            TrackChannels[c.Guild].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
+            TrackChannels[c.Guild].config = c;
+          }
         }
       }
     }
@@ -69,7 +76,7 @@ public class SetupModule : BaseCommandModule {
     Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
   }
 
-  internal static DiscordChannel GetTrackChannel(ulong id) {
+  internal static TrackChannel GetTrackChannel(ulong id) {
     if (TrackChannels.ContainsKey(id)) return TrackChannels[id];
     return null;
   }
@@ -79,45 +86,41 @@ public class SetupModule : BaseCommandModule {
     return AdminRoles[guild].Contains(role);
   }
 
+  private void TryAddRole(ulong gid, ulong rid) {
+    if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
+    if (AdminRoles[gid].Contains(rid)) return;
+    Config c = new Config(gid, Config.ParamType.AdminRole, rid);
+    AdminRoles[gid].Add(rid);
+    if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
+    Configs[gid].Add(c);
+    Database.Add(c);
+  }
+
+  private void TryRemoveRole(ulong gid, ulong rid) {
+    if (!AdminRoles.ContainsKey(gid)) return;
+    if (!AdminRoles[gid].Contains(rid)) return;
+    AdminRoles[gid].Remove(rid);
+    if (!Configs.ContainsKey(gid)) return;
+
+    long key = Config.TheKey(gid, Config.ParamType.AdminRole, rid);
+    foreach (Config c in Configs[gid]) 
+      if (c.ConfigKey == key) {
+        Configs[gid].Remove(c);
+        break;
+      }
+    Database.DeleteByKey<Config>(key);
+  }
+
+  DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
+  DiscordComponentEmoji en = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❎"));
+  DiscordComponentEmoji el = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↖️"));
+  DiscordComponentEmoji er = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↘️"));
+  DiscordComponentEmoji ec = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❌"));
+  DiscordComponentEmoji ok = null;
+  DiscordComponentEmoji ko = null;
+
   /* RECYCLE **************************************************
-static void old() { }
- DiscordGuild guild = Utils.GetGuild();
- Params = Database.GetAll<SetupParam>();
- if (Params == null) Params = new List<SetupParam>();
- trackChannelID = GetIDParam("TrackingChannel"); // 831186370445443104ul
- if (trackChannelID == 0) {
-   trackChannelID = guild.SystemChannel.Id;
-   SetupParam p = new SetupParam("TrackingChannel", trackChannelID);
-   Params.Add(p);
-   Database.Add(p);
-   Utils.Log("Tracking channel set as default system channel: " + guild.SystemChannel.Name);
- }
- // Admin roles
- AdminRoles = new List<ulong>();
- foreach (var param in Params) {
-   if (param.Param == "AdminRole") {
-     try {
-       DiscordRole r = guild.GetRole(param.IdVal);
-       if (r != null) AdminRoles.Add(r.Id);
-     } catch (Exception ex) {
-       Utils.Log("Error in reading roles from Setup: " + param.IdVal + ": " + ex.Message);
-       if (forceCleanBad) {
-         Database.Delete(param);
-       }
-     }
-   }
- }
- if (AdminRoles.Count == 0) {
-   foreach(DiscordRole role in guild.Roles.Values) {
-     if (role.CheckPermission(DSharpPlus.Permissions.Administrator) == DSharpPlus.PermissionLevel.Allowed || role.CheckPermission(DSharpPlus.Permissions.ManageGuild) == DSharpPlus.PermissionLevel.Allowed) {
-       AdminRoles.Add(role.Id);
-       SetupParam p = new SetupParam("AdminRole", role.Id);
-       Database.Add(p);
-       Params.Add(p);
-       Utils.Log("Added role " + role.Name + " as default admin role (no admins were found)");
-     }
-   }
- }
+
  // Stats channels
  StatsChannels = new List<Stats.StatChannel>();
  foreach (var param in Params) {
@@ -593,6 +596,607 @@ static ulong GetIDParam(string param) {
  return 0; // not found
 }
 */
+
+
+  /**************************** Interaction *********************************/
+  [Command("Setup")]
+  [Description("Configration of the bot")]
+  public async Task SetupCommand(CommandContext ctx) {
+    ulong gid = ctx.Guild.Id;
+    var interact = ctx.Client.GetInteractivity();
+    if (ok == null) {
+      ok = new DiscordComponentEmoji(Utils.GetEmoji(EmojiEnum.OK));
+      ko = new DiscordComponentEmoji(Utils.GetEmoji(EmojiEnum.KO));
+    }
+
+    // Basic intro message
+    var msg = CreateMainConfigPage(ctx, null);
+    var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+    var ir = result.Result;
+
+    while (ir != null && ir.Id != "idexitconfig") {
+      ir.Handled = true;
+      
+      if (ir.Id == "idback") { // ******************************************************************** Back *************************************************************************
+        msg = CreateMainConfigPage(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "iddefineadmins") { // ***************************************************** DefAdmins ***********************************************************************************
+        msg = CreateAdminsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idaddrole") { // *********************************************************** AddRole *******************************************************************************
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the role to add");
+        var answer = await interact.WaitForMessageAsync((dm) => {
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && dm.MentionedRoles.Count > 0);
+        }, TimeSpan.FromMinutes(2));
+        if (answer.Result == null || answer.Result.MentionedRoles.Count == 0) {
+          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
+          return;
+        }
+        foreach (DiscordRole r in answer.Result.MentionedRoles) {
+          TryAddRole(gid, r.Id);
+        }
+
+        await ctx.Channel.DeleteMessageAsync(prompt);
+        msg = CreateAdminsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idremrole") { // *********************************************************** RemRole *******************************************************************************
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the role to remove");
+        var answer = await interact.WaitForMessageAsync((dm) => {
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && dm.MentionedRoles.Count > 0);
+        }, TimeSpan.FromMinutes(2));
+        if (answer.Result == null || answer.Result.MentionedRoles.Count == 0) {
+          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
+          return;
+        }
+        foreach (DiscordRole r in answer.Result.MentionedRoles) {
+          TryRemoveRole(gid, r.Id);
+        }
+
+        await ctx.Channel.DeleteMessageAsync(prompt);
+        msg = CreateAdminsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "iddefinetracking") { // ************************************************************ DefTracking **************************************************************************
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idchangetrackch") { // ************************************************************ Change Tracking ************************************************************************
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the channel (_use: **#**_) as tracking channel\nType _remove_ to remove the tracking channel");
+        var answer = await interact.WaitForMessageAsync((dm) => {
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && (dm.MentionedChannels.Count > 0 || dm.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)));
+        }, TimeSpan.FromMinutes(2));
+        if (answer.Result == null || (answer.Result.MentionedChannels.Count == 0 && !answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase))) {
+          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
+          return;
+        }
+
+        if (answer.Result.MentionedChannels.Count > 0) {
+          TryAddChannel(answer.Result.MentionedChannels[0]);
+        } else if (answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)) {
+          TryRemoveChannel(ctx.Guild.Id);
+        }
+
+        await ctx.Channel.DeleteMessageAsync(prompt);
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idremtrackch") { // ************************************************************ Remove Tracking ************************************************************************
+        TryRemoveChannel(ctx.Guild.Id);
+
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idaltertrackjoin") { // ************************************************************ Alter Tracking Join ************************************************************************
+        AlterTracking(ctx.Guild.Id, true, false, false);
+
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idaltertrackleave") { // ************************************************************ Alter Tracking Leave ************************************************************************
+        AlterTracking(ctx.Guild.Id, false, true, false);
+
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idaltertrackroles") { // ************************************************************ Alter Tracking Roles ************************************************************************
+        AlterTracking(ctx.Guild.Id, false, false, true);
+
+        msg = CreateTrackingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idconfigfeats") { // *************************************************************** ConfigFeats ***********************************************************************
+        msg = CreateFeaturesInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+
+      } else if (ir.Id == "idfeatping" || ir.Id == "idfeatping0" || ir.Id == "idfeatping1" || ir.Id == "idfeatping2") { // *********** Config Ping ***********************************************************************
+        if (ir.Id == "idfeatping0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatping1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatping2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.Everybody);
+        msg = CreatePingInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idfeatwhois" || ir.Id == "idfeatwhois0" || ir.Id == "idfeatwhois1" || ir.Id == "idfeatwhois2") { // ********* Config WhoIs ***********************************************************************
+        if (ir.Id == "idfeatwhois0") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatwhois1") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatwhois2") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.Everybody);
+        msg = CreateWhoIsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idfeatmassdel" || ir.Id == "idfeatmassdel0" || ir.Id == "idfeatmassdel1" || ir.Id == "idfeatmassdel2") { // ********* Config MassDel ***********************************************************************
+        if (ir.Id == "idfeatmassdel0") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatmassdel1") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatmassdel2") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.Everybody);
+        msg = CreateMassDelInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idfeatgames" || ir.Id == "idfeatgames0" || ir.Id == "idfeatgames1" || ir.Id == "idfeatgames2") { // ********* Config Games ***********************************************************************
+        if (ir.Id == "idfeatgames0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatgames1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatgames2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.Everybody);
+        msg = CreateGamesInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else {
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+      }
+    }
+    if (ir == null) await ctx.Channel.DeleteMessageAsync(msg); // Expired
+    else await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config completed"));
+  }
+
+  private void AlterTracking(ulong gid, bool j, bool l, bool r) {
+    if (!TrackChannels.ContainsKey(gid)) return;
+    TrackChannel tc = TrackChannels[gid];
+    if (j) tc.trackJoin = !tc.trackJoin;
+    if (l) tc.trackLeave = !tc.trackLeave;
+    if (r) tc.trackRoles = !tc.trackRoles;
+    tc.config.StrVal = (tc.trackJoin ? "1" : "0") + (tc.trackLeave ? "1" : "0") + (tc.trackRoles ? "1" : "0");
+    Database.Update(tc.config);
+  }
+
+  private void TryRemoveChannel(ulong id) {
+    if (TrackChannels.ContainsKey(id)) {
+      Database.DeleteByKey<Config>(Config.TheKey(id, Config.ParamType.TrackingChannel, TrackChannels[id].channel.Id));
+      TrackChannels.Remove(id);
+    }
+  }
+
+  private void TryAddChannel(DiscordChannel ch) {
+    TrackChannel tc;
+    if (!TrackChannels.ContainsKey(ch.Guild.Id)) {
+      tc = new TrackChannel();
+      TrackChannels[ch.Guild.Id] = tc;
+      tc.trackJoin = true;
+      tc.trackLeave = true;
+      tc.trackRoles = true;
+    } else {
+      Database.DeleteByKey<Config>(Config.TheKey(ch.Guild.Id, Config.ParamType.TrackingChannel, TrackChannels[ch.Guild.Id].channel.Id));
+    }
+    tc = TrackChannels[ch.Guild.Id];
+    tc.channel = ch;
+    Config c = new Config(ch.Guild.Id, Config.ParamType.TrackingChannel, ch.Id);
+    c.StrVal = (tc.trackJoin ? "1" : "0") + (tc.trackLeave ? "1" : "0") + (tc.trackRoles ? "1" : "0");
+    Database.Add(c);
+  }
+
+
+  private DiscordMessage CreateMainConfigPage(CommandContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    //- Set tracking
+    //- Set Admins
+    //- Enable features:
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idconfigfeats", "Configure features", false, er));
+    builder.AddComponents(actions);
+
+    //-Exit
+    builder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateAdminsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Admin roles"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    string desc = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n\n" +
+      "Current server roles that are considered bot administrators:\n";
+
+    // List admin roles
+    if (!AdminRoles.ContainsKey(ctx.Guild.Id)) desc += "_**No admin roles defined.** Owner and server Admins will be used_";
+    else {
+      List<ulong> roles = AdminRoles[ctx.Guild.Id];
+      bool one = false;
+      foreach (ulong role in roles) {
+        DiscordRole dr = ctx.Guild.GetRole(role);
+        if (dr != null) {
+          desc += dr.Mention + ", ";
+          one = true;
+        }
+      }
+      if (one) desc = desc[0..^2];
+      else desc += "_**No admin roles defined.** Owner and server Admins will be used_";
+    }
+    eb.Description = desc;
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+    
+
+    // - Add role
+    // - Remove role
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idaddrole", "Add role", false, ok));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idremrole", "Remove role", false, ko));
+    builder.AddComponents(actions);
+    // - Exit
+    // - Back
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateTrackingInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    TrackChannel tc = TrackChannels.ContainsKey(ctx.Guild.Id) ? TrackChannels[ctx.Guild.Id] : null;
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Tracking channel"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    string desc = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n\n";
+    if (tc == null) desc += "_**No tracking channel defined.**_";
+    else {
+      if (tc.channel == null) desc += "_**No tracking channel defined.**_";
+      else desc += "_**Tracking channel:** " + tc.channel.Mention + "_";
+    }
+    eb.Description = desc;
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+
+    // - Change channel
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idchangetrackch", "Change channel", false, ok));
+    if (TrackChannels.ContainsKey(ctx.Guild.Id))
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idremtrackch", "Remove channel", false, ko));
+    builder.AddComponents(actions);
+
+    // - Actions to track
+    if (tc != null) {
+      actions = new List<DiscordButtonComponent>();
+      if (tc.trackJoin) actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idaltertrackjoin", "Track Joint", false, ey));
+      else actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idaltertrackjoin", "Track Joint", false, en));
+      if (tc.trackLeave) actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idaltertrackleave", "Track Leave", false, ey));
+      else actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idaltertrackleave", "Track Leave", false, en));
+      if (tc.trackRoles) actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idaltertrackroles", "Track Roles", false, ey));
+      else actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idaltertrackroles", "Track Roles", false, en));
+      builder.AddComponents(actions);
+    }
+
+    // - Exit
+    // - Back
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateFeaturesInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Features"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n\n" +
+      "Select the feature to configure _(red ones are disabled, blue ones are enabled)_";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+
+    // ping
+    // whois
+    // mass delete
+    // games
+    // reformat code
+    actions = new List<DiscordButtonComponent>();
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Ping);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatping", "Ping", false, er));
+
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatwhois", "WhoIs", false, er));
+
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatmassdel", "Mass Delete", false, er));
+
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Games);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatgames", "Games", false, er));
+
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Reformat);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreformat", "Reformat Code", false, er));
+
+    builder.AddComponents(actions);
+
+
+    // - Exit
+    // - Back
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+  private DiscordMessage CreatePingInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Ping"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Ping);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **ping** command will just make the bot to asnwer when it is alive.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Ping** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Ping** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**Ping** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatping0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatping1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatping2", "Everybody", false,   GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateWhoIsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - WhoIs"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **whois** command allows to see who an user is with some statistics.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**WhoIs** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**WhoIs** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**WhoIs** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatwhois0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatwhois1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatwhois2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateMassDelInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Mass Delete"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **delete** command can mass remove a set of messages from a channel. It is recommended to limit it to admins.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Mass Delete** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Mass Delete** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**Mass Delete** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatmassdel0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatmassdel1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatmassdel2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateGamesInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Games"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Games);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The bot has some simple games that can be played. Games are _RPS_ (Rock,Paper, Scissors) and _bool_ that will just return randomly true or false.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Games** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Games** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**Games** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatgames0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatgames1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+  private Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
+    if (!Configs.ContainsKey(gid)) return Config.ConfVal.NotAllowed;
+    List<Config> cs = Configs[gid];
+    foreach (var c in cs) {
+      if (c.IsParam(t)) return (Config.ConfVal)c.IdVal;
+    }
+    return Config.ConfVal.NotAllowed;
+  }
+  private void SetConfigValue(ulong gid, Config.ParamType t, Config.ConfVal v) {
+    if (!Configs.ContainsKey(gid)) {
+      Configs[gid] = new List<Config>();
+    }
+    List<Config> cs = Configs[gid];
+    Config tc = null;
+    foreach (var c in cs) {
+      if (c.IsParam(t)) {
+        tc = c;
+        break;
+      }
+    }
+    if (tc == null) {
+      tc = new Config(gid, t, (ulong)v);
+      Configs[gid].Add(tc);
+    } else {
+      Database.Delete(tc);
+      tc.SetVal(v); 
+    }
+    Database.Add(tc);
+  }
+
+  private DiscordComponentEmoji GetYN(Config.ConfVal cv) {
+    if (cv == Config.ConfVal.NotAllowed) return en;
+    return ey;
+  }
+
+  private DiscordComponentEmoji GetYN(Config.ConfVal cv, Config.ConfVal what) {
+    if (cv == what) return ey;
+    return en;
+  }
+
+  private DSharpPlus.ButtonStyle GetStyle(Config.ConfVal cv) {
+    switch (cv) {
+      case Config.ConfVal.NotAllowed: return DSharpPlus.ButtonStyle.Secondary;
+      case Config.ConfVal.OnlyAdmins: return DSharpPlus.ButtonStyle.Danger;
+      default: return DSharpPlus.ButtonStyle.Primary;
+    }
+  }
+
+  private DSharpPlus.ButtonStyle GetIsStyle(Config.ConfVal cv, Config.ConfVal what) {
+    if (cv == what) return DSharpPlus.ButtonStyle.Secondary;
+    return DSharpPlus.ButtonStyle.Primary;
+  }
+
+
+
 }
 
-
+public class TrackChannel {
+  public DiscordChannel channel;
+  public bool trackJoin;
+  public bool trackLeave;
+  public bool trackRoles;
+  public Config config;
+}

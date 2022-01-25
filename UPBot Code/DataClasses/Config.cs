@@ -33,10 +33,30 @@ public class Config : Entity {
     else return (long)Guild ^ Param ^ (long)IdVal;
   }
 
+  public static long TheKey(ulong g, ParamType p, ulong v) {
+    return (long)g ^ (int)p ^ (long)v;
+  }
+  public static long TheKey(ulong g, ParamType p, string v) {
+    return (long)g ^ (int)p ^ v.GetHashCode();
+  }
+
   public enum ParamType {
     AdminRole,
-    TrackingChannel
+    TrackingChannel,
+    Ping,
+    WhoIs,
+    MassDel,
+    Games,
+    Reformat
   }
+
+  public enum ConfVal {
+    NotAllowed=0,
+    OnlyAdmins=1,
+    Everybody=2
+  }
+
+
 
   public override string ToString() {
     if (IdVal == 0) return (ParamType)Param + "\t " + Param + "\t " + StrVal + "\n ";
@@ -45,5 +65,9 @@ public class Config : Entity {
 
   internal bool IsParam(ParamType t) {
     return (ParamType)Param == t;
+  }
+
+  internal void SetVal(ConfVal v) {
+    IdVal = (ulong)v;
   }
 }
