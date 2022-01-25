@@ -46,24 +46,28 @@ public class Refactor : BaseCommandModule {
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
   }
 
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace a specified post with a reformatted code block using the specified language or the best language")]
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     await RefactorCode(ctx, null, Action.Keep, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
   public async Task ReformatCommand(CommandContext ctx, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post (only your own posts or if you are an admin), specify a **language** if you want to force one.")] string what) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     if (IsBest(what)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
     else if (IsReplace(what)) await RefactorCode(ctx, null, Action.Replace, Langs.NONE);
     else await RefactorCode(ctx, null, Action.Keep, NormalizeLanguage(what));
@@ -72,6 +76,7 @@ public class Refactor : BaseCommandModule {
   [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
   public async Task ReformatCommand(CommandContext ctx, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
     else if (IsReplace(cmd1)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd2));
     else if (IsReplace(cmd2)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd1));
@@ -84,11 +89,13 @@ public class Refactor : BaseCommandModule {
 
   [Command("reformat")]
   public async Task ReformatCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     await RefactorCode(ctx, member, Action.Keep, Langs.NONE);
   }
 
   [Command("reformat")]
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post, specify a **language** if you want to force one.")] string what) { // Refactor the last post of the specified user in the channel
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     if (IsBest(what)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(what)) await RefactorCode(ctx, member, Action.Replace, Langs.NONE);
     else await RefactorCode(ctx, member, Action.Keep, NormalizeLanguage(what));
@@ -96,6 +103,7 @@ public class Refactor : BaseCommandModule {
 
   [Command("reformat")]
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
     if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(cmd1)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd2));
     else if (IsReplace(cmd2)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd1));
@@ -122,8 +130,7 @@ public class Refactor : BaseCommandModule {
             break;
           }
         }
-      }
-      else { // Get last post that looks like code
+      } else { // Get last post that looks like code
         IReadOnlyList<DiscordMessage> msgs = await ctx.Channel.GetMessagesAsync(50);
         for (int i = 1; i < msgs.Count; i++) {
           string content = msgs[i].Content;
@@ -141,7 +148,7 @@ public class Refactor : BaseCommandModule {
 
       // Is the message some code, or at least somethign we recognize?
       string code = toRefactor.Content;
-      if (msgLang==Langs.NONE)
+      if (msgLang == Langs.NONE)
         msgLang = GetBestMatch(code);
 
       if (action == Action.Analyze) {
@@ -190,7 +197,7 @@ public class Refactor : BaseCommandModule {
         case Langs.python: langEmoji = EmojiEnum.Python; lmd = "python"; break;
       }
 
-      if ( langEmoji != EmojiEnum.None && langEmoji != EmojiEnum.Python) code = FixIndentation(code);
+      if (langEmoji != EmojiEnum.None && langEmoji != EmojiEnum.Python) code = FixIndentation(code);
 
       code = "Reformatted " + toRefactor.Author.Mention + " code\n" + "```" + lmd + "\n" + code + "\n```";
 
@@ -221,8 +228,7 @@ public class Refactor : BaseCommandModule {
           await Task.Delay(120);
           List<DiscordMessage> toDelete = new List<DiscordMessage> { toRefactor, ctx.Message };
           await ctx.Channel.DeleteMessagesAsync(toDelete);
-        }
-        else {
+        } else {
           await Task.Delay(120);
           await ctx.Message.DeleteAsync();
         }
@@ -255,8 +261,7 @@ public class Refactor : BaseCommandModule {
       if (lineOpenBlock.IsMatch(lines[i])) {
         lines[i - 1] += " " + lines[i];
         lines[i] = null;
-      }
-      else {
+      } else {
         Match afterOpen = afterOpenBlock.Match(lines[i]);
         if (afterOpen.Success) {
           lines[i - 1] += " { ";
@@ -273,7 +278,7 @@ public class Refactor : BaseCommandModule {
       if (line == null) continue;
       if (line.IndexOf('}') != -1 && line.IndexOf('{') == -1) indent--;
       if (cppModifiers.IsMatch(line) || switchModifiers.IsMatch(line)) tempRemoveIndent = true;
-      
+
       string tabs = "";
       for (int j = tempRemoveIndent ? 1 : 0; j < (nextLineIndent ? indent + 1 : indent); j++) tabs += "  ";
       if (operatorsStart.IsMatch(line)) tabs += "  ";

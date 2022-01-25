@@ -47,7 +47,7 @@ public class Config : Entity {
     WhoIs,
     MassDel,
     Games,
-    Reformat
+    Refactor
   }
 
   public enum ConfVal {

@@ -17,6 +17,7 @@ public class PingModule : BaseCommandModule {
   [Aliases("upbot")]
   [Description("Checks if the bot is alive")]
   public async Task PongCommand(CommandContext ctx) {
+    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Ping, ctx.Member.Roles)) return;
     await GeneratePong(ctx);
   }
 

@@ -42,20 +42,21 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 
 ------------- Setup --------------------
 
-
-> Features
-- Exit
+Setup Menus to create:
 - stats
 - appreciation
-- games
-- reformat code
 - custom commands
 - help pages
-- delete posts
 - banned words
 - emoji for role
-- ping
-- whois
+
+Logic to update:
+- stats
+- appreciation
+- custom commands
+- help pages
+- banned words
+- emoji for role
 
 > Stats
 - Exit

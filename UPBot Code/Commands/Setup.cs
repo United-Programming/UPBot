@@ -39,6 +39,23 @@ public class SetupModule : BaseCommandModule {
     return null;
   }
 
+  internal static bool Permitted(ulong guild, Config.ParamType t, IEnumerable<DiscordRole> roles) {
+    if (!Configs.ContainsKey(guild)) return t == Config.ParamType.Ping; // Only ping is available by default
+    List<Config> cfgs = Configs[guild];
+    Config.ConfVal cv = GetConfigValue(guild, t);
+    switch (cv) {
+      case Config.ConfVal.NotAllowed: return false;
+      case Config.ConfVal.Everybody: return true;
+      case Config.ConfVal.OnlyAdmins:
+        foreach (var role in roles) {
+          if (IsAdminRole(guild, role.Id)) return true;
+        }
+        break;
+    }
+    return t == Config.ParamType.Ping; // Only ping is available by default
+  }
+
+
   internal static void LoadParams(bool forceCleanBad = false) { // FIXME this ahs to be server specific
     List<Config> dbconfig = Database.GetAll<Config>();
     foreach (var c in dbconfig) {
@@ -111,11 +128,11 @@ public class SetupModule : BaseCommandModule {
     Database.DeleteByKey<Config>(key);
   }
 
-  DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
-  DiscordComponentEmoji en = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❎"));
-  DiscordComponentEmoji el = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↖️"));
-  DiscordComponentEmoji er = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↘️"));
-  DiscordComponentEmoji ec = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❌"));
+  readonly DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
+  readonly DiscordComponentEmoji en = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❎"));
+  readonly DiscordComponentEmoji el = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↖️"));
+  readonly DiscordComponentEmoji er = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↘️"));
+  readonly DiscordComponentEmoji ec = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❌"));
   DiscordComponentEmoji ok = null;
   DiscordComponentEmoji ko = null;
 
@@ -628,38 +645,36 @@ static ulong GetIDParam(string param) {
         ir = result.Result;
 
       } else if (ir.Id == "idaddrole") { // *********************************************************** AddRole *******************************************************************************
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the role to add");
+        await ctx.Channel.DeleteMessageAsync(msg);
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the role to add (_type anything else to close_)");
         var answer = await interact.WaitForMessageAsync((dm) => {
-          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && dm.MentionedRoles.Count > 0);
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
-        if (answer.Result == null || answer.Result.MentionedRoles.Count == 0) {
-          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
-          return;
-        }
-        foreach (DiscordRole r in answer.Result.MentionedRoles) {
-          TryAddRole(gid, r.Id);
+        if (answer.Result != null && answer.Result.MentionedRoles.Count > 0) {
+          foreach (DiscordRole r in answer.Result.MentionedRoles) {
+            TryAddRole(gid, r.Id);
+          }
         }
 
         await ctx.Channel.DeleteMessageAsync(prompt);
-        msg = CreateAdminsInteraction(ctx, msg);
+        msg = CreateAdminsInteraction(ctx, null);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idremrole") { // *********************************************************** RemRole *******************************************************************************
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the role to remove");
+        await ctx.Channel.DeleteMessageAsync(msg);
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the role to remove (_type anything else to close_)");
         var answer = await interact.WaitForMessageAsync((dm) => {
-          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && dm.MentionedRoles.Count > 0);
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
-        if (answer.Result == null || answer.Result.MentionedRoles.Count == 0) {
-          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
-          return;
-        }
-        foreach (DiscordRole r in answer.Result.MentionedRoles) {
-          TryRemoveRole(gid, r.Id);
+        if (answer.Result != null && answer.Result.MentionedRoles.Count > 0) {
+          foreach (DiscordRole r in answer.Result.MentionedRoles) {
+            TryRemoveRole(gid, r.Id);
+          }
         }
 
         await ctx.Channel.DeleteMessageAsync(prompt);
-        msg = CreateAdminsInteraction(ctx, msg);
+        msg = CreateAdminsInteraction(ctx, null);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
@@ -669,7 +684,8 @@ static ulong GetIDParam(string param) {
         ir = result.Result;
 
       } else if (ir.Id == "idchangetrackch") { // ************************************************************ Change Tracking ************************************************************************
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync("Mention the channel (_use: **#**_) as tracking channel\nType _remove_ to remove the tracking channel");
+        await ctx.Channel.DeleteMessageAsync(msg);
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the channel (_use: **#**_) as tracking channel\nType _remove_ to remove the tracking channel");
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && (dm.MentionedChannels.Count > 0 || dm.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)));
         }, TimeSpan.FromMinutes(2));
@@ -685,7 +701,7 @@ static ulong GetIDParam(string param) {
         }
 
         await ctx.Channel.DeleteMessageAsync(prompt);
-        msg = CreateTrackingInteraction(ctx, msg);
+        msg = CreateTrackingInteraction(ctx, null);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
@@ -752,6 +768,14 @@ static ulong GetIDParam(string param) {
         if (ir.Id == "idfeatgames1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
         if (ir.Id == "idfeatgames2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.Everybody);
         msg = CreateGamesInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idfeatrefactor" || ir.Id == "idfeatrefactor0" || ir.Id == "idfeatrefactor1" || ir.Id == "idfeatrefactor2") { // ********* Config Refactor ***********************************************************************
+        if (ir.Id == "idfeatrefactor0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatrefactor1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatrefactor2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.Everybody);
+        msg = CreateRefactorInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
@@ -830,7 +854,7 @@ static ulong GetIDParam(string param) {
   }
 
   private DiscordMessage CreateAdminsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Admin roles"
@@ -879,7 +903,7 @@ static ulong GetIDParam(string param) {
   }
 
   private DiscordMessage CreateTrackingInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     TrackChannel tc = TrackChannels.ContainsKey(ctx.Guild.Id) ? TrackChannels[ctx.Guild.Id] : null;
 
@@ -952,7 +976,7 @@ static ulong GetIDParam(string param) {
     // whois
     // mass delete
     // games
-    // reformat code
+    // refactor code
     actions = new List<DiscordButtonComponent>();
     Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Ping);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatping", "Ping", false, er));
@@ -966,8 +990,8 @@ static ulong GetIDParam(string param) {
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Games);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatgames", "Games", false, er));
 
-    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Reformat);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreformat", "Reformat Code", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatrefactor", "Refactor Code", false, er));
 
     builder.AddComponents(actions);
 
@@ -1120,7 +1144,47 @@ static ulong GetIDParam(string param) {
     actions = new List<DiscordButtonComponent>();
     actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatgames0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatgames1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateRefactorInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Refactor"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **refactor** command allows to convert some random code posted in a compact code block.\nIt works with C++, C#, Java, Javascript, and Python\n" +
+      "You can reformat last posted code or you can mention the post to reformat. You can also _analyze_ the code to find the probable language.\n" +
+      "And you can delete the original code post, in case was done by you. (_Admins_ can force the delete of the reformatted code)\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Refactor** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Refactor** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**Refactor** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatrefactor0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatrefactor1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatrefactor2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
     builder.AddComponents(actions);
 
     // - Exit
@@ -1136,7 +1200,7 @@ static ulong GetIDParam(string param) {
   }
 
 
-  private Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
+  private static Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
     if (!Configs.ContainsKey(gid)) return Config.ConfVal.NotAllowed;
     List<Config> cs = Configs[gid];
     foreach (var c in cs) {
