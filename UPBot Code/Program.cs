@@ -59,6 +59,7 @@ namespace UPBot {
         Database.AddTable<EmojiForRoleValue>();
         Database.AddTable<CustomCommand>();
         Database.AddTable<Config>();
+        Database.AddTable<Timezone>();
         lw?.WriteLine("Added Tables");
         lw.Flush();
 

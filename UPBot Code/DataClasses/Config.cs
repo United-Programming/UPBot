@@ -47,7 +47,9 @@ public class Config : Entity {
     WhoIs,
     MassDel,
     Games,
-    Refactor
+    Refactor,
+    TimezoneS,
+    TimezoneG,
   }
 
   public enum ConfVal {

@@ -1,7 +1,6 @@
 ﻿[in progress] Have all settings stored per server/guild
 Check that all comands work on the current server
 Add wikis for each command on GitHub
-Add timezones
 Add cppref and unityref
 Add ranking?
 Add games with buttons
@@ -28,6 +27,7 @@ checklanguage   |         |         |           |    X      |    X     |        
 reformat        |         |         |           |    X      |    X     |          |
 stats           |         |         |     X     |    X      |    X     |          |
 whois           |         |         |     X     |    X      |    X     |          |
+timezone        |         |    X    |           |    X      |          |    X     |
 
 
 

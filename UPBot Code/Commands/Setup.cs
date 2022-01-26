@@ -779,6 +779,17 @@ static ulong GetIDParam(string param) {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { // ********* Config Timezones ***********************************************************************
+        if (ir.Id == "idfeattzs0") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeattzs1") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattzs2") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeattzg0") { SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.NotAllowed); SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed); }
+        if (ir.Id == "idfeattzg1") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattzg2") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
+        msg = CreateTimezoneInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
@@ -995,6 +1006,13 @@ static ulong GetIDParam(string param) {
 
     builder.AddComponents(actions);
 
+    // timezones
+    actions = new List<DiscordButtonComponent>();
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
+
+    builder.AddComponents(actions);
+
 
     // - Exit
     // - Back
@@ -1199,6 +1217,60 @@ static ulong GetIDParam(string param) {
     return builder.SendAsync(ctx.Channel).Result;
   }
 
+
+  private DiscordMessage CreateTimezoneInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Timezone"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cvs = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS);
+    Config.ConfVal cvg = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **timezone** command allows to specify timezones for the users and check the local time.\n" +
+      "You can use `list` to have a list to all known timezones.\n" +
+      "You can mention a user to see its time zone or mention a user with a timezone to define the timezone for the users (_recommended_ only for admins)\n" +
+      "You can also just specify the timezone and it will be applied to yourself\n\n";
+    if (cvs == Config.ConfVal.NotAllowed) eb.Description += "**Set Timezone** is _Disabled_";
+    if (cvs == Config.ConfVal.OnlyAdmins) eb.Description += "**Set Timezone** is _Enabled_ for Admins";
+    if (cvs == Config.ConfVal.Everybody) eb.Description += "**Set Timezone** is _Enabled_ for Everybody";
+    if (cvg == Config.ConfVal.NotAllowed) eb.Description += "**Get Timezone** is _Disabled_";
+    if (cvg == Config.ConfVal.OnlyAdmins) eb.Description += "**Get Timezone** is _Enabled_ for Admins";
+    if (cvg == Config.ConfVal.Everybody) eb.Description += "**Get Timezone** is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattzs0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattzs1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattzs2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattzg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattzg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattzg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+  
 
   private static Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
     if (!Configs.ContainsKey(gid)) return Config.ConfVal.NotAllowed;
