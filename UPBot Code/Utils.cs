@@ -329,6 +329,15 @@ public static class Utils
   /// <summary>
   /// Used to delete some messages after a while
   /// </summary>
+  /// <param name="tmsg"></param>
+  public static Task DeleteDelayed(int seconds, Task<DiscordMessage> tmsg) {
+    Task.Run(() => DelayAfterAWhile(tmsg.Result, seconds * 1000));
+    return Task.FromResult(0);
+  }
+
+  /// <summary>
+  /// Used to delete some messages after a while
+  /// </summary>
   /// <param name="msg1"></param>
   /// <param name="msg2"></param>
   public static Task DeleteDelayed(int seconds, DiscordMessage msg1, DiscordMessage msg2) {

@@ -27,9 +27,14 @@ public class SetupModule : BaseCommandModule {
   public static DiscordGuild TryGetGuild(ulong id) {
     if (Guilds.ContainsKey(id)) return Guilds[id];
 
-    while (Utils.GetClient() == null) Task.Delay(1000);
-    while (Utils.GetClient().Guilds == null) Task.Delay(1000);
-    while (Utils.GetClient().Guilds.Count == 0) Task.Delay(1000);
+    Task.Delay(1000);
+    int t = 0;
+    while (Utils.GetClient() == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no client)"); }
+    t = 0;
+    while (Utils.GetClient().Guilds == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no guilds)"); }
+
+    while (Utils.GetClient().Guilds.Count == 0) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (guilds count is zero"); }
+
     IReadOnlyDictionary<ulong, DiscordGuild> cguilds = Utils.GetClient().Guilds;
     foreach (var guildId in cguilds.Keys) {
       if (!Guilds.ContainsKey(guildId)) Guilds[guildId] = cguilds[guildId];
@@ -619,6 +624,7 @@ static ulong GetIDParam(string param) {
   [Command("Setup")]
   [Description("Configration of the bot")]
   public async Task SetupCommand(CommandContext ctx) {
+    Utils.LogUserCommand(ctx);
     ulong gid = ctx.Guild.Id;
     var interact = ctx.Client.GetInteractivity();
     if (ok == null) {
@@ -779,6 +785,14 @@ static ulong GetIDParam(string param) {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id == "idfeatreunitydocs" || ir.Id == "idfeatreunitydocs0" || ir.Id == "idfeatreunitydocs1" || ir.Id == "idfeatreunitydocs2") { // ********* Config unityDocs ***********************************************************************
+        if (ir.Id == "idfeatreunitydocs0") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatreunitydocs1") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatreunitydocs2") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.Everybody);
+        msg = CreateUnityDocsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { // ********* Config Timezones ***********************************************************************
         if (ir.Id == "idfeattzs0") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
         if (ir.Id == "idfeattzs1") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
@@ -797,6 +811,172 @@ static ulong GetIDParam(string param) {
     }
     if (ir == null) await ctx.Channel.DeleteMessageAsync(msg); // Expired
     else await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config completed"));
+  }
+
+
+  [Command("Setup")]
+  [Description("Configration of the bot")]
+  public async Task SetupCommand(CommandContext ctx, [RemainingText] [Description("The setup command to execute")]string command) {
+    Utils.LogUserCommand(ctx);
+    DiscordGuild g = ctx.Guild;
+    ulong gid = g.Id;
+    string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
+
+    if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
+      // list
+
+      string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
+      string part = "";
+      // Admins ******************************************************
+      if(!AdminRoles.ContainsKey(gid)) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+      else {
+        foreach (var rid in AdminRoles[gid]) {
+          DiscordRole r = g.GetRole(rid);
+          if (r != null) part += r.Name + ", ";
+        }
+        if (part.Length == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+        else msg += "**AdminRoles**: " + part[0..^2] + "\n";
+      }
+
+      // TrackingChannel ******************************************************
+      if(!TrackChannels.ContainsKey(gid)) msg += "**TrackingChannel**: _no rtracking channel defined_\n";
+      else {
+        msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Name + " for ";
+        if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
+          if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
+          if (TrackChannels[gid].trackLeave) msg += "_leave_ ";
+          if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
+        } else msg += "nothing";
+        msg += "\n";
+      }
+
+      // Ping ******************************************************
+      Config cfg = GetConfig(gid, Config.ParamType.Ping);
+      if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
+      else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // WhoIs ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.WhoIs);
+      if (cfg == null) msg += "**WhoIs**: _not defined (disabled by default)_\n";
+      else msg += "**WhoIs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // MassDel ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.MassDel);
+      if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
+      else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // Games ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.Games);
+      if (cfg == null) msg += "**Games**: _not defined (disabled by default)_\n";
+      else msg += "**Games**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // Refactor ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.Refactor);
+      if (cfg == null) msg += "**Code Refactor**: _not defined (disabled by default)_\n";
+      else msg += "**Code Refactor**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // Timezones ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.TimezoneS);
+      Config cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
+      if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
+      else msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + " Read = " + (Config.ConfVal)cfg2.IdVal + "\n";
+
+      // UnityDocs ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.UnityDocs);
+      if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
+      else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
+    }
+
+    if (cmds[0].Equals("ping") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.Ping);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.Ping, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    if (cmds[0].Equals("whois") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.WhoIs);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.WhoIs, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    if (cmds[0].Equals("massdel") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.MassDel);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.MassDel, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    if (cmds[0].Equals("games") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.Games);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.Games, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    if (cmds[0].Equals("refactor") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.Refactor);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.Refactor, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    if (cmds[0].Equals("unitydocs") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.UnityDocs);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.UnityDocs, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+    // FIXME timezones
+    // FIXME adminroled
+    // FIXME trackingchannel
+
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
@@ -1007,9 +1187,12 @@ static ulong GetIDParam(string param) {
     builder.AddComponents(actions);
 
     // timezones
+    // unitydocs
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreunitydocs", "UnityDocs", false, er));
 
     builder.AddComponents(actions);
 
@@ -1177,6 +1360,45 @@ static ulong GetIDParam(string param) {
     return builder.SendAsync(ctx.Channel).Result;
   }
 
+  private DiscordMessage CreateUnityDocsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - UnityDocs"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **unitydocs** command allows to find the **Unity** online documentation (last LTS version.)\n" +
+      "The best 3 links are proposed.\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**UnityDocs** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**UnityDocs** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**UnityDocs** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatreunitydocs0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatreunitydocs1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatreunitydocs2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
   private DiscordMessage CreateRefactorInteraction(CommandContext ctx, DiscordMessage prevMsg) {
     ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
@@ -1246,12 +1468,14 @@ static ulong GetIDParam(string param) {
     builder.AddEmbed(eb.Build());
 
     actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabs", "Set values", true));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattzs0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattzs1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattzs2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody)));
     builder.AddComponents(actions);
 
     actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabg", "Read values", true));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattzg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattzg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattzg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
@@ -1272,6 +1496,14 @@ static ulong GetIDParam(string param) {
 
   
 
+  private static Config GetConfig(ulong gid, Config.ParamType t) {
+    if (!Configs.ContainsKey(gid)) return null;
+    List<Config> cs = Configs[gid];
+    foreach (var c in cs) {
+      if (c.IsParam(t)) return c;
+    }
+    return null;
+  }
   private static Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
     if (!Configs.ContainsKey(gid)) return Config.ConfVal.NotAllowed;
     List<Config> cs = Configs[gid];

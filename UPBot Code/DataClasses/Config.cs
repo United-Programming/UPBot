@@ -50,6 +50,7 @@ public class Config : Entity {
     Refactor,
     TimezoneS,
     TimezoneG,
+    UnityDocs,
   }
 
   public enum ConfVal {

@@ -100,7 +100,7 @@ public class TimezoneCmd : BaseCommandModule {
       
       Timezone tz = new Timezone(m.Id, offset, name);
       Database.Add(tz);
-      return Utils.DeleteDelayed(10, ctx.RespondAsync("ZimeZone for user " + m.Mention + " set to " + name).Result);
+      return Utils.DeleteDelayed(10, ctx.RespondAsync("TimeZone for user " + m.Mention + " set to " + name).Result);
 
     } catch (Exception ex) {
       return ctx.RespondAsync(Utils.GenerateErrorAnswer("SetTimezone", ex));
@@ -108,7 +108,7 @@ public class TimezoneCmd : BaseCommandModule {
   }
 
   string CalculateLocalTime(float offset) { // Calculate the hour in local time
-    return DateTime.UtcNow.AddHours(offset).ToString("HH:mm:ss");
+    return DateTime.UtcNow.AddHours(offset).ToString("HH:mm");
   }
 
 }

@@ -213,6 +213,7 @@ public class AppreciationTracking : BaseCommandModule {
   }
 
   static Task HandleReactions(ulong emojiId, string emojiName, ulong authorId, bool added) {
+    if (SetupModule.FunIEmojis == null) return Task.Delay(10);
     // check if emoji is :smile: :rolf: :strongsmil: (find valid emojis -> increase fun level of user
     if ((emojiId != 0 && SetupModule.FunIEmojis.Contains(emojiId)) || (!string.IsNullOrEmpty(emojiName) && SetupModule.FunSEmojis.Contains(emojiName))) {
       if (GetTracking()) return Task.FromResult(0);

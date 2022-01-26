@@ -89,32 +89,15 @@ namespace UPBot {
         CustomCommandsService.LoadCustomCommands();
         lw?.WriteLine("CustomCommandsService.LoadCustomCommands");
         lw.Flush();
+
+        lw?.WriteLine("connecting to discord...");
+        lw.Flush();
+        discord.Ready += Discord_Ready;
+
+        var connections = await discord.GetConnectionsAsync();
+        foreach (var connection in connections) await discord.DisconnectAsync();
+
         await discord.ConnectAsync(); // Connects and wait forever
-
-        lw?.WriteLine("connecting to discord");
-        lw.Flush();
-        Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
-
-        discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
-        discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
-        discord.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
-        discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
-        discord.MessageReactionAdded += EmojisForRole.ReacionAdded;
-        discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
-        discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
-        lw?.WriteLine("Adding action events");
-        lw.Flush();
-
-        // Wait a few seconds and re-load some parameters (they will arrive only after a while)
-        await Task.Delay(2000); // 2 secs
-        lw?.WriteLine("LoadParams");
-        SetupModule.LoadParams();
-        lw?.WriteLine("done");
-        lw.Flush();
-        Utils.Log("--->>> Bot ready <<<---");
-
-        foreach(var g in discord.Guilds.Values)
-          Utils.Log(">>" + g.Name);
 
       } catch (Exception ex) {
         lw?.WriteLine("with exception: " + ex.Message);
@@ -123,8 +106,35 @@ namespace UPBot {
       await Task.Delay(-1);
     }
 
+    private static async Task Discord_Ready(DiscordClient discord, DSharpPlus.EventArgs.ReadyEventArgs e) {
+      lw?.WriteLine("connected");
+      lw.Flush();
+      await Task.Delay(2000); // 2 secs
 
+      Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
 
+      discord.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
+      discord.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
+      discord.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
+      discord.MessageReactionAdded += AppreciationTracking.ReacionAdded;
+      discord.MessageReactionAdded += EmojisForRole.ReacionAdded;
+      discord.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
+      discord.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
+      lw?.WriteLine("Adding action events");
+      lw.Flush();
+
+      // Wait a few seconds and re-load some parameters (they will arrive only after a while)
+      await Task.Delay(2000); // 2 secs
+      lw.Flush();
+      lw?.WriteLine("LoadParams");
+      SetupModule.LoadParams();
+      lw?.WriteLine("done");
+      lw.Flush();
+      Utils.Log("--->>> Bot ready <<<---");
+
+      foreach (var g in discord.Guilds.Values)
+        Utils.Log(">>" + g.Name);
+    }
   }
 
 }
