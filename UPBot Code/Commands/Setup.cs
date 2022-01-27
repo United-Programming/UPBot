@@ -802,7 +802,7 @@ static ulong GetIDParam(string param) {
         ir = result.Result;
 
       } else if (ir.Id == "idfeatrespamprotect" || // ********* Config Spam Protection ***********************************************************************
-        ir.Id == "idfeatrespamprotect0" || ir.Id == "idfeatrespamprotect1" || ir.Id == "idfeatrespamprotects2") {
+        ir.Id == "idfeatrespamprotect0" || ir.Id == "idfeatrespamprotect1" || ir.Id == "idfeatrespamprotect2") {
         Config c = GetConfig(gid, Config.ParamType.SpamProtection);
         ulong val = 0;
         if (c != null) val = c.IdVal;
@@ -811,7 +811,11 @@ static ulong GetIDParam(string param) {
         if (ir.Id == "idfeatrespamprotect1") val ^= 2ul;
         if (ir.Id == "idfeatrespamprotect2") val ^= 4ul;
         if (val != old) {
-          c.IdVal = val;
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.SpamProtection, val);
+            if (!Configs.ContainsKey(gid)) Configs[gid]=new List<Config>();
+            Configs[gid].Add(c);
+          } else c.IdVal = val;
           Database.Add(c);
           SpamProtection[gid] = val;
         }
@@ -912,6 +916,16 @@ static ulong GetIDParam(string param) {
       cfg = GetConfig(gid, Config.ParamType.UnityDocs);
       if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
       else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // SpamProtection ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.SpamProtection);
+      if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
+      else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
+      else msg += "**Spam Protection**: enabled for" +
+          ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
+          ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+          ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
+          "\n";
 
       await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
     }
@@ -1201,6 +1215,37 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
     }
 
+    // ****************** SPAMPROTECTION *********************************************************************************************************************************************
+    if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection")) && cmds.Length > 1) {
+      bool edisc = false, esteam = false, eepic = false;
+      for (int i = 1; i < cmds.Length; i++) {
+        char mode = cmds[1][0];
+        if (mode == 'd') edisc = true;
+        if (mode == 's') esteam = true;
+        if (mode == 'e') eepic = true;
+      }
+      ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
+      Config c = GetConfig(gid, Config.ParamType.SpamProtection);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.SpamProtection, val);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
+        Configs[gid].Add(c);
+      } else c.IdVal = val;
+      Database.Add(c);
+      SpamProtection[gid] = val;
+
+      string msg = "SpamProtection command changed to ";
+      if (val == 0) msg += "_disabled_\n";
+      else msg += "enabled for" +
+          ((val & 1ul) == 1 ? " _Discord_" : "") +
+          ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+          ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
+
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+    }
+
+
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
@@ -1412,13 +1457,14 @@ static ulong GetIDParam(string param) {
 
     // timezones
     // unitydocs
+    // Spam protection
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreunitydocs", "Unity Docs", false, er));
-    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.SpamProtection);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatrespamprotect", "Spam Protection", false, er));
+    Config sc = GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
+    actions.Add(new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er));
 
     builder.AddComponents(actions);
 
@@ -1732,10 +1778,10 @@ static ulong GetIDParam(string param) {
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "The **Spam Protection** is a feature of the bot used to watch all posts contain links.\n" +
       "If the link is a counterfait Discord (or Steam, or Epic) link (usually a false free nitro,\n" +
-      "then the link will be immediately removed.\n\n";
-    eb.Description += "**Spam Protection** for **Discord Nitro** feature is " + (edisc ? "_Enabled_" : "_Disabled_") + " _recommended!_\n";
-    eb.Description += "**Spam Protection** for **Steam** feature is " + (esteam ? "_Enabled_" : "_Disabled_") + "\n";
-    eb.Description += "**Spam Protection** for **Epic Game Store** feature is " + (eepic ? "_Enabled_" : "_Disabled_") + "\n";
+      "then the link will be immediately removed.\n\n**Spam Protection** for\n";
+    eb.Description += "**Discord Nitro** feature is " + (edisc ? "_Enabled_" : "_Disabled_") + " _recommended!_\n";
+    eb.Description += "**Steam** feature is " + (esteam ? "_Enabled_" : "_Disabled_") + "\n";
+    eb.Description += "**Epic Game Store** feature is " + (eepic ? "_Enabled_" : "_Disabled_") + "\n";
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
@@ -1745,8 +1791,8 @@ static ulong GetIDParam(string param) {
 
     actions = new List<DiscordButtonComponent>();
     actions.Add(new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en));
-    actions.Add(new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Discord Nitro", false, esteam ? ey : en));
-    actions.Add(new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Discord Nitro", false, eepic ? ey : en));
+    actions.Add(new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Steam", false, esteam ? ey : en));
+    actions.Add(new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en));
     builder.AddComponents(actions);
 
     // - Exit
