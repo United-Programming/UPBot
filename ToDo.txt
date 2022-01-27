@@ -5,8 +5,8 @@ Add cppref
 Add ranking?
 Add games with buttons
 I am not saving the right types for appreciation emojis when they are ids.
-Show full config as text file
-Allow to alter the config by command line
+[in progress] Show full config as text file
+[in progress] Allow to alter the config by command line
 Allow config only by admins (but give a way to make it possible on new servers)
 
 

@@ -822,6 +822,7 @@ static ulong GetIDParam(string param) {
     ulong gid = g.Id;
     string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
 
+    // ****************** LIST *********************************************************************************************************************************************
     if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
       // list
 
@@ -844,7 +845,7 @@ static ulong GetIDParam(string param) {
         msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Name + " for ";
         if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
           if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
-          if (TrackChannels[gid].trackLeave) msg += "_leave_ ";
+          if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
           if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
         } else msg += "nothing";
         msg += "\n";
@@ -889,6 +890,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
     }
 
+    // ****************** PING *********************************************************************************************************************************************
     if (cmds[0].Equals("ping") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.Ping);
@@ -903,6 +905,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** WHOIS *********************************************************************************************************************************************
     if (cmds[0].Equals("whois") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.WhoIs);
@@ -917,6 +920,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** MASSDEL *********************************************************************************************************************************************
     if (cmds[0].Equals("massdel") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.MassDel);
@@ -931,6 +935,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** GAMES *********************************************************************************************************************************************
     if (cmds[0].Equals("games") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.Games);
@@ -945,6 +950,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** REFACTOR *********************************************************************************************************************************************
     if (cmds[0].Equals("refactor") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.Refactor);
@@ -959,6 +965,7 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** UNITYDOCS *********************************************************************************************************************************************
     if (cmds[0].Equals("unitydocs") && cmds.Length > 1) {
       char mode = cmds[1][0];
       Config c = GetConfig(gid, Config.ParamType.UnityDocs);
@@ -973,10 +980,119 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
     }
 
-    // FIXME timezones
-    // FIXME adminroled
-    // FIXME trackingchannel
+    // ****************** TIMEZONES *********************************************************************************************************************************************
+    if (cmds[0].Equals("timezones") && cmds.Length > 2) {
+      // get|set who
+      // who who
+      char who = cmds[2][0];
+      Config cg = GetConfig(gid, Config.ParamType.TimezoneG);
+      Config cs = GetConfig(gid, Config.ParamType.TimezoneS);
+      if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
+        if (cg == null) {
+          cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cg };
+        }
+        if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
 
+      } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
+        if (cs == null) {
+          cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cs };
+        }
+        if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (who == 'e' || who == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
+
+      } else {
+        char whos = cmds[1][0];
+        if (cg == null) {
+          cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cg };
+        }
+        if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
+
+        if (cs == null) {
+          cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cs };
+        }
+        if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
+      }
+
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
+    }
+
+    // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
+    if (cmds[0].Equals("trackingchannel") && cmds.Length > 1) {
+      Config c = GetConfig(gid, Config.ParamType.TrackingChannel);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.TrackingChannel, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { c };
+      }
+
+      // [channel]|remove j l r
+      bool j = false;
+      bool l = false;
+      bool r = false;
+      DiscordChannel forLater = null;
+      for (int i = 1; i < cmds.Length; i++) {
+        string part = cmds[i].ToLowerInvariant();
+        if (part[0] == '#') part = part[1..];
+        // Is it a channel?
+        foreach (DiscordChannel ch in g.Channels.Values) {
+          if (ch.Name.Equals(part, StringComparison.InvariantCultureIgnoreCase)) {
+            c.IdVal = ch.Id;
+            forLater = ch;
+            break;
+          }
+        }
+        if (part.Length > 2 && part[0..3] == "rem") { // remove
+          c.IdVal = 0;
+          c.StrVal = null;
+          forLater = null;
+          break;
+        }
+        if (part[0] == 'j' && c.IdVal != 0) j = true; // join
+        if (part[0] == 'l' && c.IdVal != 0) l = true; // leave
+        if (part[0] == 'r' && c.IdVal != 0) r = true; // roles
+      }
+      if (c.IdVal != 0) {
+        c.StrVal = (j ? "1" : "0") + (l ? "1" : "0") + (r ? "1" : "0");
+      }
+      // Update the cache
+      if (!TrackChannels.ContainsKey(gid)) {
+        TrackChannels[gid] = new TrackChannel() { channel = forLater, config = c, trackJoin = j, trackLeave = l, trackRoles = r };
+      } else {
+        if (c.IdVal != 0 && forLater != null) TrackChannels[gid].channel = forLater;
+        else if (c.IdVal == 0) TrackChannels[gid].channel = null;
+        TrackChannels[gid].config = c;
+        TrackChannels[gid].trackJoin = j;
+        TrackChannels[gid].trackLeave = l;
+        TrackChannels[gid].trackRoles = r;
+      }
+
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      string msg;
+      if (c.IdVal == 0) msg = "TrackingChannel command changed to _tracking channel removed_";
+      else {
+        msg = "TrackingChannel command changed to " + g.GetChannel(c.IdVal).Mention + " for ";
+        if (!j && !l && !r) {
+          msg += "_nothing_";
+        }
+        if (j) msg += "_Join_ ";
+        if (l) msg += "_Leave_ ";
+        if (r) msg += "_Roles_ ";
+      }
+      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+    }
+
+    // FIXME adminroles
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
