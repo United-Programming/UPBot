@@ -94,6 +94,8 @@ namespace UPBot {
         lw.Flush();
         discord.Ready += Discord_Ready;
 
+        await Task.Delay(1000); // 1 sec
+
         var connections = await discord.GetConnectionsAsync();
         foreach (var connection in connections) await discord.DisconnectAsync();
 
@@ -109,7 +111,6 @@ namespace UPBot {
     private static async Task Discord_Ready(DiscordClient discord, DSharpPlus.EventArgs.ReadyEventArgs e) {
       lw?.WriteLine("connected");
       lw.Flush();
-      await Task.Delay(2000); // 2 secs
 
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
 
@@ -123,8 +124,8 @@ namespace UPBot {
       lw?.WriteLine("Adding action events");
       lw.Flush();
 
-      // Wait a few seconds and re-load some parameters (they will arrive only after a while)
-      await Task.Delay(2000); // 2 secs
+      // Wait a second and re-load some parameters (they will arrive only after a while)
+      await Task.Delay(50); // 50 msec
       lw.Flush();
       lw?.WriteLine("LoadParams");
       SetupModule.LoadParams();

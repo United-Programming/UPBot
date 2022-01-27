@@ -839,7 +839,7 @@ static ulong GetIDParam(string param) {
       }
 
       // TrackingChannel ******************************************************
-      if(!TrackChannels.ContainsKey(gid)) msg += "**TrackingChannel**: _no rtracking channel defined_\n";
+      if(!TrackChannels.ContainsKey(gid)) msg += "**TrackingChannel**: _no tracking channel defined_\n";
       else {
         msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Name + " for ";
         if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
