@@ -17,6 +17,7 @@ public class SetupModule : BaseCommandModule {
   private static Dictionary<ulong, List<Config>> Configs = new Dictionary<ulong, List<Config>>();
   public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
   public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
+  public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
 
   public static List<Stats.StatChannel> StatsChannels; // FIXME
   public static HashSet<string> RepSEmojis; // FIXME
@@ -93,6 +94,11 @@ public class SetupModule : BaseCommandModule {
             TrackChannels[c.Guild].config = c;
           }
         }
+      }
+
+      // Spam Protection
+      if (c.IsParam(Config.ParamType.SpamProtection)) {
+        SpamProtection[c.Guild] = c.IdVal;
       }
     }
 
@@ -624,7 +630,7 @@ static ulong GetIDParam(string param) {
 
   /**************************** Interaction *********************************/
   [Command("Setup")]
-  [Description("Configration of the bot")]
+  [Description("Configration of the bot (interactive if without parameters)")]
   public async Task SetupCommand(CommandContext ctx) {
     Utils.LogUserCommand(ctx);
     ulong gid = ctx.Guild.Id;
@@ -705,7 +711,7 @@ static ulong GetIDParam(string param) {
         if (answer.Result.MentionedChannels.Count > 0) {
           TryAddChannel(answer.Result.MentionedChannels[0]);
         } else if (answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)) {
-          TryRemoveChannel(ctx.Guild.Id);
+          TryRemoveChannel(gid);
         }
 
         await ctx.Channel.DeleteMessageAsync(prompt);
@@ -714,28 +720,28 @@ static ulong GetIDParam(string param) {
         ir = result.Result;
 
       } else if (ir.Id == "idremtrackch") { // ************************************************************ Remove Tracking ************************************************************************
-        TryRemoveChannel(ctx.Guild.Id);
+        TryRemoveChannel(gid);
 
         msg = CreateTrackingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idaltertrackjoin") { // ************************************************************ Alter Tracking Join ************************************************************************
-        AlterTracking(ctx.Guild.Id, true, false, false);
+        AlterTracking(gid, true, false, false);
 
         msg = CreateTrackingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idaltertrackleave") { // ************************************************************ Alter Tracking Leave ************************************************************************
-        AlterTracking(ctx.Guild.Id, false, true, false);
+        AlterTracking(gid, false, true, false);
 
         msg = CreateTrackingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idaltertrackroles") { // ************************************************************ Alter Tracking Roles ************************************************************************
-        AlterTracking(ctx.Guild.Id, false, false, true);
+        AlterTracking(gid, false, false, true);
 
         msg = CreateTrackingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
@@ -748,60 +754,78 @@ static ulong GetIDParam(string param) {
 
 
       } else if (ir.Id == "idfeatping" || ir.Id == "idfeatping0" || ir.Id == "idfeatping1" || ir.Id == "idfeatping2") { // *********** Config Ping ***********************************************************************
-        if (ir.Id == "idfeatping0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatping1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatping2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Ping, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeatping0") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatping1") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatping2") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.Everybody);
         msg = CreatePingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idfeatwhois" || ir.Id == "idfeatwhois0" || ir.Id == "idfeatwhois1" || ir.Id == "idfeatwhois2") { // ********* Config WhoIs ***********************************************************************
-        if (ir.Id == "idfeatwhois0") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatwhois1") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatwhois2") SetConfigValue(ctx.Guild.Id, Config.ParamType.WhoIs, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeatwhois0") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatwhois1") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatwhois2") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.Everybody);
         msg = CreateWhoIsInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idfeatmassdel" || ir.Id == "idfeatmassdel0" || ir.Id == "idfeatmassdel1" || ir.Id == "idfeatmassdel2") { // ********* Config MassDel ***********************************************************************
-        if (ir.Id == "idfeatmassdel0") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatmassdel1") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatmassdel2") SetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeatmassdel0") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatmassdel1") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatmassdel2") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.Everybody);
         msg = CreateMassDelInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idfeatgames" || ir.Id == "idfeatgames0" || ir.Id == "idfeatgames1" || ir.Id == "idfeatgames2") { // ********* Config Games ***********************************************************************
-        if (ir.Id == "idfeatgames0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatgames1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatgames2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Games, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeatgames0") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatgames1") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatgames2") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.Everybody);
         msg = CreateGamesInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
       } else if (ir.Id == "idfeatrefactor" || ir.Id == "idfeatrefactor0" || ir.Id == "idfeatrefactor1" || ir.Id == "idfeatrefactor2") { // ********* Config Refactor ***********************************************************************
-        if (ir.Id == "idfeatrefactor0") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatrefactor1") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatrefactor2") SetConfigValue(ctx.Guild.Id, Config.ParamType.Refactor, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeatrefactor0") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatrefactor1") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatrefactor2") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.Everybody);
         msg = CreateRefactorInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
-      } else if (ir.Id == "idfeatreunitydocs" || ir.Id == "idfeatreunitydocs0" || ir.Id == "idfeatreunitydocs1" || ir.Id == "idfeatreunitydocs2") { // ********* Config unityDocs ***********************************************************************
-        if (ir.Id == "idfeatreunitydocs0") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatreunitydocs1") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatreunitydocs2") SetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs, Config.ConfVal.Everybody);
+      } else if (ir.Id == "idfeatreunitydocs" || ir.Id == "idfeatreunitydocs0" || ir.Id == "idfeatreunitydocs1" || ir.Id == "idfeatreunitydocs2") { // ********* Config Unity Docs ***********************************************************************
+        if (ir.Id == "idfeatreunitydocs0") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatreunitydocs1") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatreunitydocs2") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.Everybody);
         msg = CreateUnityDocsInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id == "idfeatrespamprotect" || // ********* Config Spam Protection ***********************************************************************
+        ir.Id == "idfeatrespamprotect0" || ir.Id == "idfeatrespamprotect1" || ir.Id == "idfeatrespamprotects2") {
+        Config c = GetConfig(gid, Config.ParamType.SpamProtection);
+        ulong val = 0;
+        if (c != null) val = c.IdVal;
+        ulong old = val;
+        if (ir.Id == "idfeatrespamprotect0") val ^= 1ul;
+        if (ir.Id == "idfeatrespamprotect1") val ^= 2ul;
+        if (ir.Id == "idfeatrespamprotect2") val ^= 4ul;
+        if (val != old) {
+          c.IdVal = val;
+          Database.Add(c);
+          SpamProtection[gid] = val;
+        }
+        msg = CreateSpamProtectInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { // ********* Config Timezones ***********************************************************************
-        if (ir.Id == "idfeattzs0") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeattzs1") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattzs2") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
-        if (ir.Id == "idfeattzg0") { SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.NotAllowed); SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed); }
-        if (ir.Id == "idfeattzg1") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattzg2") SetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeattzs0") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeattzs1") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattzs2") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeattzg0") { SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed); }
+        if (ir.Id == "idfeattzg1") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattzg2") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
         msg = CreateTimezoneInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
@@ -817,7 +841,7 @@ static ulong GetIDParam(string param) {
 
 
   [Command("Setup")]
-  [Description("Configration of the bot")]
+  [Description("Configration of the bot (interactive if without parameters)")]
   public async Task SetupCommand(CommandContext ctx, [RemainingText] [Description("The setup command to execute")]string command) {
     Utils.LogUserCommand(ctx);
     DiscordGuild g = ctx.Guild;
@@ -1392,7 +1416,9 @@ static ulong GetIDParam(string param) {
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.UnityDocs);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreunitydocs", "UnityDocs", false, er));
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreunitydocs", "Unity Docs", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.SpamProtection);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatrespamprotect", "Spam Protection", false, er));
 
     builder.AddComponents(actions);
 
@@ -1639,7 +1665,6 @@ static ulong GetIDParam(string param) {
     return builder.SendAsync(ctx.Channel).Result;
   }
 
-
   private DiscordMessage CreateTimezoneInteraction(CommandContext ctx, DiscordMessage prevMsg) {
     ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
@@ -1679,6 +1704,49 @@ static ulong GetIDParam(string param) {
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattzg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattzg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattzg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateSpamProtectInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Spam Protection"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config c = GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
+    bool edisc = c != null && (c.IdVal & 1) == 1;
+    bool esteam = c != null && (c.IdVal & 2) == 2;
+    bool eepic = c != null && (c.IdVal & 4) == 4;
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **Spam Protection** is a feature of the bot used to watch all posts contain links.\n" +
+      "If the link is a counterfait Discord (or Steam, or Epic) link (usually a false free nitro,\n" +
+      "then the link will be immediately removed.\n\n";
+    eb.Description += "**Spam Protection** for **Discord Nitro** feature is " + (edisc ? "_Enabled_" : "_Disabled_") + " _recommended!_\n";
+    eb.Description += "**Spam Protection** for **Steam** feature is " + (esteam ? "_Enabled_" : "_Disabled_") + "\n";
+    eb.Description += "**Spam Protection** for **Epic Game Store** feature is " + (eepic ? "_Enabled_" : "_Disabled_") + "\n";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en));
+    actions.Add(new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Discord Nitro", false, esteam ? ey : en));
+    actions.Add(new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Discord Nitro", false, eepic ? ey : en));
     builder.AddComponents(actions);
 
     // - Exit

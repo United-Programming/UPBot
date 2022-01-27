@@ -70,5 +70,13 @@ Logic to update:
 
 
 
+Stats
+- global server stats
+- roles to check
+- mentioned people
+- used emojis
+- number of roles with numebr of people for each role
+- default channels to collect stats
+
 
 - Set stats Channels

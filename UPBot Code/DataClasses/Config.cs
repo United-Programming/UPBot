@@ -51,6 +51,13 @@ public class Config : Entity {
     TimezoneS,
     TimezoneG,
     UnityDocs,
+    CppDocs,
+    CSharpDocs,
+    PhytonDocs,
+    JavaDocs,
+    JScriptDocs,
+    SpamProtection,
+    //VideosAbout
   }
 
   public enum ConfVal {

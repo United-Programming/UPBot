@@ -39,7 +39,7 @@ public class CheckSpam : BaseCommandModule {
 
   public void Test() {
     for (int i = 0; i < testLinks.Length; i++) {
-      float dist = CalculateDistance(testLinks[i], out string probableSite);
+      float dist = CalculateDistance(testLinks[i], true, true, true, out string probableSite);
       bool risk = false;
       int leven = 1;
       float riskval = 0;
@@ -57,7 +57,7 @@ public class CheckSpam : BaseCommandModule {
 
   }
 
-  public static int CalculateDistance(string s, out string siteToCheck) {
+  public static int CalculateDistance(string s, bool cdisc, bool csteam, bool cepic, out string siteToCheck) {
     siteToCheck = "";
     // Remove the leading www and similar (they cannot be invalid if the rest of the url is valid)
     s = wwwRE.Replace(s, "");
@@ -77,27 +77,33 @@ public class CheckSpam : BaseCommandModule {
 
     // Check how many substrings of discord.com we have in the string
     int valDiscord = 0;
-    for (int j = 0; j < 7; j++) {
-      for (int k = 1; k < 7 - j; k++) {
-        if (s.IndexOf("discord".Substring(j, k)) != -1) valDiscord += k;
+    if (cdisc) {
+      for (int j = 0; j < 7; j++) {
+        for (int k = 1; k < 7 - j; k++) {
+          if (s.IndexOf("discord".Substring(j, k)) != -1) valDiscord += k;
+        }
       }
     }
     int valSteam1 = 0;
-    for (int j = 0; j < 7; j++) {
-      for (int k = 1; k < 7 - j; k++) {
-        if (s.IndexOf("steamcommunity".Substring(j, k)) != -1) valSteam1 += k;
-      }
-    }
     int valSteam2 = 0;
-    for (int j = 0; j < 7; j++) {
-      for (int k = 1; k < 7 - j; k++) {
-        if (s.IndexOf("steampowered".Substring(j, k)) != -1) valSteam2 += k;
+    if (csteam) {
+      for (int j = 0; j < 7; j++) {
+        for (int k = 1; k < 7 - j; k++) {
+          if (s.IndexOf("steamcommunity".Substring(j, k)) != -1) valSteam1 += k;
+        }
+      }
+      for (int j = 0; j < 7; j++) {
+        for (int k = 1; k < 7 - j; k++) {
+          if (s.IndexOf("steampowered".Substring(j, k)) != -1) valSteam2 += k;
+        }
       }
     }
     int valEpic = 0;
-    for (int j = 0; j < 7; j++) {
-      for (int k = 1; k < 7 - j; k++) {
-        if (s.IndexOf("epicgames".Substring(j, k)) != -1) valEpic += k;
+    if (cepic) {
+      for (int j = 0; j < 7; j++) {
+        for (int k = 1; k < 7 - j; k++) {
+          if (s.IndexOf("epicgames".Substring(j, k)) != -1) valEpic += k;
+        }
       }
     }
     int max = valDiscord; siteToCheck = "discord.com";
@@ -112,12 +118,19 @@ public class CheckSpam : BaseCommandModule {
 
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
     try {
+      if (!SetupModule.SpamProtection.ContainsKey(args.Guild.Id)) return;
+      ulong spam = SetupModule.SpamProtection[args.Guild.Id];
+      if (spam == 0) return;
+      bool edisc = (spam & 1) == 1;
+      bool esteam = (spam & 2) == 2;
+      bool eepic = (spam & 4) == 4;
+
       string msg = args.Message.Content.ToLowerInvariant();
       Match m = linkRE.Match(msg);
       if (!m.Success) return;
       string link = m.Groups[1].Value;
 
-      float dist = CalculateDistance(link, out string probableSite);
+      float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
       if (dist != 0) {
         link = link.Replace("app", "");
 
