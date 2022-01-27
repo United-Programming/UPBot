@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Core.Metadata.Edm;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -22,7 +23,8 @@ public class SetupModule : BaseCommandModule {
   public static HashSet<ulong> RepIEmojis; // FIXME
   public static HashSet<string> FunSEmojis; // FIXME
   public static HashSet<ulong> FunIEmojis; // FIXME
-  private readonly static Regex emjSnowflakeER = new Regex(@"(<:[a-z0-9_]+:[0-9]+>)", RegexOptions.IgnoreCase);
+  private readonly static Regex emjSnowflakeER = new Regex(@"(<:[a-z0-9_]+:[0-9]+>)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+  private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
 
   public static DiscordGuild TryGetGuild(ulong id) {
     if (Guilds.ContainsKey(id)) return Guilds[id];
@@ -842,7 +844,7 @@ static ulong GetIDParam(string param) {
       // TrackingChannel ******************************************************
       if(!TrackChannels.ContainsKey(gid)) msg += "**TrackingChannel**: _no tracking channel defined_\n";
       else {
-        msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Name + " for ";
+        msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
         if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
           if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
           if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
@@ -1092,7 +1094,89 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
     }
 
-    // FIXME adminroles
+    // ****************** ADMINROLES *********************************************************************************************************************************************
+    if (cmds[0].Equals("adminroles") && cmds.Length > 1) {
+      var errs = "";
+      // set them, or remove
+      if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
+        Config c = GetConfig(gid, Config.ParamType.AdminRole);
+        while (c != null) {
+          Configs[gid].Remove(c);
+          Database.Delete(c);
+          AdminRoles[gid].Remove(c.IdVal);
+          c = GetConfig(gid, Config.ParamType.AdminRole);
+        }
+      } else {
+        var guildRoles = g.Roles.Values;
+        List<Config> confRoles = new List<Config>();
+        foreach (var c in Configs[gid])
+          if (c.IsParam(Config.ParamType.AdminRole)) {
+            confRoles.Add(c);
+            c.StrVal = "*";
+          }
+        for (int i = 1; i < cmds.Length; i++) {
+          // Find if we have it (and the id)
+          ulong id = 0;
+          Match rm = roleParser.Match(cmds[i]);
+          if (rm.Success)
+            ulong.TryParse(rm.Groups[1].Value, out id);
+          else {
+            foreach (var r in guildRoles)
+              if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
+                id = r.Id;
+                break;
+              }
+          }
+          if (id == 0) {
+            errs += cmds[i] + " ";
+            continue;
+          }
+          // Do we have it in the Configs?
+          bool notfound = true;
+          foreach (var c in confRoles) {
+            if (c.IdVal == id) {
+              c.StrVal = null;
+              notfound = false;
+              break;
+            }
+          }
+          if (notfound) { // Add it
+            Config c = new Config(gid, Config.ParamType.AdminRole, id);
+            confRoles.Add(c);
+            Configs[gid].Add(c);
+            Database.Add(c);
+            AdminRoles[gid].Add(id);
+          }
+        }
+        // Remove all configs that are not required
+        for (int i = confRoles.Count - 1; i >= 0; i--) {
+          if (confRoles[i].StrVal != null) {
+            Config c = confRoles[i];
+            confRoles.RemoveAt(i);
+            Configs[gid].Remove(c);
+            AdminRoles[gid].Remove(c.IdVal);
+            Database.Delete(c);
+          }
+        }
+      }
+      // And show the result
+      string msg;
+
+      if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
+      else {
+        msg = "**AdminRoles** are: ";
+        foreach (var rid in AdminRoles[gid]) {
+          DiscordRole r = g.GetRole(rid);
+          if (r != null) msg += r.Mention + ", ";
+        }
+        msg = msg[0..^2];
+      }
+      if (errs.Length > 0) msg += " _Errors:_ " + errs;
+
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+    }
+
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {

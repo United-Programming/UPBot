@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,8 @@ public class UnityDocs : BaseCommandModule {
     await GenerateDocLink(ctx, what);
   }
 
+  const int numResults = 20;
+
   private Task GenerateDocLink(CommandContext ctx, string what) {
     if (string.IsNullOrWhiteSpace(what)) return Task.FromResult(0);
     Utils.LogUserCommand(ctx);
@@ -28,16 +31,20 @@ public class UnityDocs : BaseCommandModule {
         }
       }
       // Try to find something similar
-      int[] mins = new int[] { int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue };
-      string[] bests = new string[] { null, null, null, null, null, null, null, null, null, null };
+      int[] mins = new int[numResults];
+      string[] bests = new string[numResults];
+      for (int i = 0; i < numResults; i++) {
+        mins[i] = int.MaxValue;
+        bests[i] = null;
+      }
 
       foreach (string item in UnityDocItems) {
         string key = item.ToLowerInvariant();
         int dist = Distance(what, key);
         if (key.IndexOf(what) != -1) dist /= 2;
-        for (int i = 0; i < mins.Length; i++) {
+        for (int i = 0; i < numResults; i++) {
           if (dist < mins[i] && !bests.Contains(item)) {
-            for (int j = mins.Length - 1; j > i; j--) {
+            for (int j = numResults - 1; j > i; j--) {
               mins[j] = mins[j - 1];
               bests[j] = bests[j - 1];
             }
@@ -51,9 +58,9 @@ public class UnityDocs : BaseCommandModule {
           string last = what.Substring(lastdot + 1);
           dist = Distance(last, key);
           if (key.IndexOf(last) != -1) dist /= 4;
-          for (int i = 0; i < mins.Length; i++) {
+          for (int i = 0; i < numResults; i++) {
             if (dist < mins[i] && !bests.Contains(item)) {
-              for (int j = mins.Length - 1; j > i; j--) {
+              for (int j = numResults - 1; j > i; j--) {
                 mins[j] = mins[j - 1];
                 bests[j] = bests[j - 1];
               }
@@ -67,41 +74,32 @@ public class UnityDocs : BaseCommandModule {
 
       if (mins[0] > 400) return Utils.DeleteDelayed(30, ctx.RespondAsync("I cannot find anything related to `" + what + "` in Unity documentation").Result);
 
-      int numok = 5;
+      int numok = numResults;
       float average = 0;
-      for (int i = 0; i < mins.Length; i++) average += mins[i];
-      average /= mins.Length;
+      for (int i = 0; i < numResults; i++) average += mins[i];
+      average /= numResults;
       double standardDeviation = 0;
-      for (int i = 0; i< mins.Length; i++) standardDeviation += (mins[i] - average) * (mins[i] - average);
-      standardDeviation = Math.Sqrt(standardDeviation) / (mins.Length - 1);
-      for (int i = 1; i < mins.Length; i++) {
+      for (int i = 0; i< numResults; i++) standardDeviation += (mins[i] - average) * (mins[i] - average);
+      standardDeviation = Math.Sqrt(standardDeviation) / numResults;
+      for (int i = 1; i < numResults; i++) {
         if (Math.Abs(mins[i] - average) > 10 && mins[i] > average + standardDeviation) {
           numok = i;
           break;
         }
       }
 
-      switch (numok) {
-        case 1:
-          return ctx.RespondAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
-
-        case 2:
-          return ctx.RespondAsync("Best things I can find in Unity documentation for _**" + what + "**_ are `" + bests[0] + "` and `" + bests[1] + "`: " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[1] + ".html");
-
-        case 3:
-          return ctx.RespondAsync("Best things I can find in Unity documentation for _**" + what + "**_ are `" + bests[0] + "`, `" + bests[1] + "`, and `" + bests[2] + "`: " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[1] + ".html " +
-            " https://docs.unity3d.com/ScriptReference/" + bests[2] + ".html");
-
-        default:
-          string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are ";
-          for (int i = 0; i < numok - 1; i++) msg += "`" + bests[i] + "`, ";
-          msg += "and `" + bests[numok - 1] + "`. Try one of them.";
-          return ctx.RespondAsync(msg);
+      if (numok == 1) {
+        return ctx.RespondAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
+          " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
+      } else {
+        string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
+        for (int i = 0; i < numok - 1; i++) msg += "[" + bests[i] + "](https://docs.unity3d.com/ScriptReference/" + bests[i] + ".html), ";
+        msg += "and [" + bests[numok - 1] + "](https://docs.unity3d.com/ScriptReference/" + bests[numok - 1] + ".html).\nTry one of them.";
+        DiscordEmbedBuilder e = new DiscordEmbedBuilder()
+        .WithTitle("Possible documents for " + what)
+        .WithDescription(msg)
+        .WithThumbnail(Utils.GetEmoji(EmojiEnum.Unity).Url, 32, 32);
+        return ctx.RespondAsync(e.Build());
       }
     } catch (Exception ex) {
       return ctx.RespondAsync(Utils.GenerateErrorAnswer("UnityDocs", ex));
