@@ -29,15 +29,11 @@ public class Config : Entity {
   }
 
   public long TheKey() {
-    if (IdVal == 0) return (long)Guild ^ Param ^ StrVal.GetHashCode();
-    else return (long)Guild ^ Param ^ (long)IdVal;
+    return (long)Guild ^ Param ^ (long)IdVal;
   }
 
   public static long TheKey(ulong g, ParamType p, ulong v) {
     return (long)g ^ (int)p ^ (long)v;
-  }
-  public static long TheKey(ulong g, ParamType p, string v) {
-    return (long)g ^ (int)p ^ v.GetHashCode();
   }
 
   public enum ParamType {
@@ -57,6 +53,7 @@ public class Config : Entity {
     JavaDocs,
     JScriptDocs,
     SpamProtection,
+    Stats,
     //VideosAbout
   }
 

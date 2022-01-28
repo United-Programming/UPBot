@@ -32,7 +32,7 @@ public static class Utils
   private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/01/25";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/01/28";
   }
 
   /// <summary>

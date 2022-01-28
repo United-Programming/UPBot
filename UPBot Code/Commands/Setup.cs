@@ -19,7 +19,6 @@ public class SetupModule : BaseCommandModule {
   public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
   public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
 
-  public static List<Stats.StatChannel> StatsChannels; // FIXME
   public static HashSet<string> RepSEmojis; // FIXME
   public static HashSet<ulong> RepIEmojis; // FIXME
   public static HashSet<string> FunSEmojis; // FIXME
@@ -56,7 +55,7 @@ public class SetupModule : BaseCommandModule {
       case Config.ConfVal.Everybody: return true;
       case Config.ConfVal.OnlyAdmins:
         foreach (var role in roles) {
-          if (IsAdminRole(guild, role.Id)) return true;
+          if (IsAdminRole(guild, role)) return true;
         }
         break;
     }
@@ -111,9 +110,10 @@ public class SetupModule : BaseCommandModule {
     return null;
   }
 
-  internal static bool IsAdminRole(ulong guild, ulong role) {
+  internal static bool IsAdminRole(ulong guild, DiscordRole role) {
+    if (role.Position == 0 || role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)) return true;
     if(!AdminRoles.ContainsKey(guild)) return false;
-    return AdminRoles[guild].Contains(role);
+    return AdminRoles[guild].Contains(role.Id);
   }
 
   private void TryAddRole(ulong gid, ulong rid) {
@@ -823,7 +823,8 @@ static ulong GetIDParam(string param) {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
-      } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { // ********* Config Timezones ***********************************************************************
+      } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { 
+        // ********* Config Timezones ***********************************************************************
         if (ir.Id == "idfeattzs0") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
         if (ir.Id == "idfeattzs1") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
         if (ir.Id == "idfeattzs2") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
@@ -831,6 +832,14 @@ static ulong GetIDParam(string param) {
         if (ir.Id == "idfeattzg1") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
         if (ir.Id == "idfeattzg2") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
         msg = CreateTimezoneInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
+      } else if (ir.Id == "idfeatstats" || ir.Id == "idfeatstats0" || ir.Id == "idfeatstats1" || ir.Id == "idfeatstats2") { // ********* Config Stats ***********************************************************************
+        if (ir.Id == "idfeatstats0") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeatstats1") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeatstats2") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
+        msg = CreateStatsInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
@@ -926,6 +935,12 @@ static ulong GetIDParam(string param) {
           ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
           ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
           "\n";
+
+      // Stats ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.Stats);
+      if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
+      else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
 
       await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
     }
@@ -1245,6 +1260,22 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
     }
 
+    // ****************** STATS *********************************************************************************************************************************************
+    if (cmds[0].Equals("stats") && cmds.Length > 1) {
+      char mode = cmds[1][0];
+      Config c = GetConfig(gid, Config.ParamType.Stats);
+      if (c == null) {
+        c = new Config(gid, Config.ParamType.Stats, 1);
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { c };
+      }
+      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+      _ = Utils.DeleteDelayed(15, ctx.Message);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
+    }
+
+
 
   }
 
@@ -1465,6 +1496,8 @@ static ulong GetIDParam(string param) {
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatreunitydocs", "Unity Docs", false, er));
     Config sc = GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
     actions.Add(new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Stats);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatstats0", "Stats", false, er));
 
     builder.AddComponents(actions);
 
@@ -1618,6 +1651,44 @@ static ulong GetIDParam(string param) {
     actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatgames0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatgames1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
     actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateStatsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Stats"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Stats);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The bot can produce some stats for the server.\n Stats can be gloabl or even checkign specific things in a channel, like used emojis, mentioned people, mentioned roles.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Stats** feature is _Disabled_";
+    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Stats** feature is _Enabled_ for Admins";
+    if (cv == Config.ConfVal.Everybody) eb.Description += "**Stats** feature is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatstats0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatstats1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatstats2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
     builder.AddComponents(actions);
 
     // - Exit

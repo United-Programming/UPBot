@@ -44,7 +44,6 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 ------------- Setup --------------------
 
 Setup Menus to create:
-- stats (channes, who can use)
 - appreciation (emojis, where is tracked, who can use)
 - custom commands (who can define, who can use)
 - help pages (who can use)
@@ -52,31 +51,9 @@ Setup Menus to create:
 - emoji for role (who can use, role/post to use/emoji)
 
 Logic to update:
-- stats (channes, who can use)
 - appreciation
 - custom commands
 - help pages
 - banned words
 - emoji for role
 
-> Stats
-- Exit
-- List Channels for statistics
-- Add Channel for statistics
-- Remove Channel for statistics
-- enable/disable
-- admin/everybody
-
-
-
-
-Stats
-- global server stats
-- roles to check
-- mentioned people
-- used emojis
-- number of roles with numebr of people for each role
-- default channels to collect stats
-
-
-- Set stats Channels
