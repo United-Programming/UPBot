@@ -57,3 +57,9 @@ Logic to update:
 - banned words
 - emoji for role
 
+
+
+How to setup banned words?
+Enable/Disable
+Remove one from list
+Add a new one

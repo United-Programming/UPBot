@@ -89,7 +89,6 @@ namespace UPBot {
         lw?.WriteLine("RegisterCommands");
         lw.Flush();
 
-        BannedWords.Init();
         lw?.WriteLine("BannedWords");
         lw.Flush();
         client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };

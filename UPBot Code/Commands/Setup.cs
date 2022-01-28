@@ -18,6 +18,7 @@ public class SetupModule : BaseCommandModule {
   public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
   public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
   public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
+  public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
 
   public static HashSet<string> RepSEmojis; // FIXME
   public static HashSet<ulong> RepIEmojis; // FIXME
@@ -66,41 +67,53 @@ public class SetupModule : BaseCommandModule {
   internal static void LoadParams(bool forceCleanBad = false) { // FIXME this ahs to be server specific
     List<Config> dbconfig = Database.GetAll<Config>();
     foreach (var c in dbconfig) {
-      if (!Configs.ContainsKey(c.Guild)) Configs[c.Guild] = new List<Config>();
-      Configs[c.Guild].Add(c);
+      ulong gid = c.Guild;
+
+      if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
+      Configs[gid].Add(c);
 
       // Guilds
-      if (!Guilds.ContainsKey(c.Guild)) {
-        if (TryGetGuild(c.Guild)==null) continue; // Guild is missing
+      if (!Guilds.ContainsKey(gid)) {
+        if (TryGetGuild(gid) ==null) continue; // Guild is missing
       }
 
       // Admin roles
       if (c.IsParam(Config.ParamType.AdminRole)) {
-        if (!AdminRoles.ContainsKey(c.Guild)) AdminRoles[c.Guild] = new List<ulong>();
-        AdminRoles[c.Guild].Add(c.IdVal);
+        if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
+        AdminRoles[gid].Add(c.IdVal);
       }
 
       // Tracking channels
       if (c.IsParam(Config.ParamType.TrackingChannel)) {
-        if (!TrackChannels.ContainsKey(c.Guild)) {
-          DiscordChannel ch =  Guilds[c.Guild].GetChannel(c.IdVal);
+        if (!TrackChannels.ContainsKey(gid)) {
+          DiscordChannel ch =  Guilds[gid].GetChannel(c.IdVal);
           if (ch != null) {
-            if (!TrackChannels.ContainsKey(c.Guild) || TrackChannels[c.Guild] == null) TrackChannels[c.Guild] = new TrackChannel();
-            TrackChannels[c.Guild].channel = ch;
-            TrackChannels[c.Guild].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
-            TrackChannels[c.Guild].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
-            TrackChannels[c.Guild].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
-            TrackChannels[c.Guild].config = c;
+            if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) TrackChannels[gid] = new TrackChannel();
+            TrackChannels[gid].channel = ch;
+            TrackChannels[gid].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
+            TrackChannels[gid].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
+            TrackChannels[gid].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
+            TrackChannels[gid].config = c;
           }
         }
       }
 
       // Spam Protection
       if (c.IsParam(Config.ParamType.SpamProtection)) {
-        SpamProtection[c.Guild] = c.IdVal;
+        SpamProtection[gid] = c.IdVal;
       }
     }
 
+    // Banned Words
+    List<BannedWord> words = Database.GetAll<BannedWord>();
+    Utils.Log("Found " + words.Count + " banned words from all servers");
+    foreach (BannedWord word in words) {
+      ulong gid = word.Guild;
+      if (BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+      BannedWords[gid].Add(word.Word);
+    }
+    foreach (var bwords in BannedWords.Values)
+      bwords.Sort((a, b) => { return a.CompareTo(b); });
 
     Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
   }
@@ -843,6 +856,42 @@ static ulong GetIDParam(string param) {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id.Length > 12 && ir.Id[0..13] == "idfeatbannedw") { // ********* Config Banned Words ***********************************************************************
+        if (ir.Id == "idfeatbannedwed") {
+          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
+          else SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
+        } else if (ir.Id == "idfeatbannedwadd") {
+          await ctx.Channel.DeleteMessageAsync(msg);
+          DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the word to be banned (at least 4 letters), you have 1 minute before timeout");
+          var answer = await interact.WaitForMessageAsync((dm) => {
+            return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+          }, TimeSpan.FromMinutes(1));
+          if (answer.Result == null || answer.Result.Content.Length < 4) {
+            _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
+          }
+          else { // Is it already here? (avoid duplicates)
+            string bw = answer.Result.Content.ToLowerInvariant().Trim();
+            if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+            if (BannedWords[gid].Contains(bw)) {
+              _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("The word is already there"));
+            }
+            else {
+              BannedWords[gid].Add(bw);
+              Database.Add(new BannedWord(gid, bw));
+            }
+          }
+          await ctx.Channel.DeleteMessageAsync(prompt);
+
+        } else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatbannedwr") {
+          // Get the word by number, remove it. In case there are no more disable the feature
+          int.TryParse(ir.Id[13..], out int num);
+          Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, BannedWords[gid][num]));
+          BannedWords[gid].RemoveAt(num);
+        }
+        msg = CreateBannedWordsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
@@ -1489,6 +1538,8 @@ static ulong GetIDParam(string param) {
     // timezones
     // unitydocs
     // Spam protection
+    // Stats
+    // Banned words
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
@@ -1498,7 +1549,8 @@ static ulong GetIDParam(string param) {
     actions.Add(new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er));
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Stats);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatstats0", "Stats", false, er));
-
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatbannedw", "Banned Words", false, er));
     builder.AddComponents(actions);
 
 
@@ -1879,7 +1931,75 @@ static ulong GetIDParam(string param) {
   }
 
 
-  
+
+
+  private DiscordMessage CreateBannedWordsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Banned Words"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The bot can automatically remove messages containing banned words.\n\n";
+
+    if (!BannedWords.ContainsKey(ctx.Guild.Id) || BannedWords[ctx.Guild.Id].Count == 0) {
+      eb.Description += "No banned words defined.\n\n";
+    } else {
+      eb.Description += "Banned words:";
+      foreach (var w in BannedWords[ctx.Guild.Id])
+        eb.Description += w + ", ";
+      eb.Description = eb.Description[0..^2] + "\n\n";
+    }
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Banned Words** feature is _Disabled_";
+    else eb.Description += "**Banned Words** feature is _Enabled_";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(
+      cv==Config.ConfVal.NotAllowed ?
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Enable", false, ey) :
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwadd", "Add", false, er));
+
+    if (BannedWords.ContainsKey(ctx.Guild.Id)) {
+      // Goups of 5, but we start at 1 for the global enable/disable
+      int num = 1;
+      int count = 0;
+      foreach (var w in BannedWords[ctx.Guild.Id]) {
+        actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwr" + count, w, false, en));
+        num++;
+        count++;
+        if (num == 5) {
+          builder.AddComponents(actions);
+          actions = new List<DiscordButtonComponent>();
+        }
+      }
+    }
+    if (actions.Count > 0) builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+
+
+
 
   private static Config GetConfig(ulong gid, Config.ParamType t) {
     if (!Configs.ContainsKey(gid)) return null;

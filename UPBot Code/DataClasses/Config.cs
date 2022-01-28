@@ -54,6 +54,7 @@ public class Config : Entity {
     JScriptDocs,
     SpamProtection,
     Stats,
+    BannedWords,
     //VideosAbout
   }
 

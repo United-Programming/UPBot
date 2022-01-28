@@ -3,20 +3,29 @@
 
 public class BannedWord : Entity {
   [Key]
+  public long WordKey;
+  public ulong Guild;
   public string Word;
-  public ulong Creator;
-  public DateTime DateAdded;
 
   public BannedWord() { }
 
-  public BannedWord(string w, ulong id) {
+  public BannedWord(ulong guild, string w) {
+    Guild = guild;
     Word = w;
-    Creator = id;
-    DateAdded = DateTime.Now;
+    WordKey = TheKey();
   }
 
   public override string ToString() {
-    return Word + "\t" + Creator + "\t" + DateAdded + "\n";
+    return Word + "\t" + Guild + "\n";
   }
+
+  public long TheKey() {
+    return (long)Guild ^ Word.GetHashCode();
+  }
+
+  public static long GetTheKey(ulong gid, string w) {
+    return (long)gid ^ w.GetHashCode();
+  }
+
 }
 
