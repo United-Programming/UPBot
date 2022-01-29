@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -13,78 +14,100 @@ public class AppreciationTracking : BaseCommandModule {
   readonly static Regex thankyou = new Regex("(^|[^a-z0-9_])thanks{0,1}\\s{0,1}you($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly static Regex thank2you = new Regex("(^|[^a-z0-9_])thanks{0,1}\\s{0,1}to\\s{0,1}you($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly static Regex thank4n = new Regex("(^|[^a-z0-9_])thanks{0,1}\\s{0,1}for\\s{0,1}nothing($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  public static ReputationTracking tracking = null;
-
-  private static bool GetTracking() {
-    if (tracking != null) return false;
-    tracking = new ReputationTracking();
-    return (tracking == null);
-  }
 
   [Command("Appreciation")]
+  [Aliases("Ranking")]
   [Description("It shows the statistics for users")]
   public async Task ShowAppreciationCommand(CommandContext ctx) {
     Utils.LogUserCommand(ctx);
     try {
-      if (GetTracking()) return;
+      ulong gid = ctx.Guild.Id;
+      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+
+      if (SetupModule.WhatToTracks[gid] == WhatToTrack.None) return;
+
       DiscordEmbedBuilder e = Utils.BuildEmbed("Appreciation", "These are the most appreciated people of this server", DiscordColor.Azure);
 
-      List<Reputation> vals = new List<Reputation>(tracking.GetReputation());
-      Dictionary<ulong, string> users = new Dictionary<ulong, string>();
-      string emjs = "";
-      foreach (string emj in SetupModule.RepSEmojis) emjs += emj;
-      foreach (ulong emj in SetupModule.RepIEmojis) emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
-      e.AddField("Reputation ----------------", "For receving these emojis in the posts: " + emjs, false);
-      vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
-      for (int i = 0; i < 6; i++) {
-        if (i >= vals.Count) break;
-        Reputation r = vals[i];
-        if (r.Rep == 0) break;
-        if (!users.ContainsKey(r.User)) {
-          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
-          if (users[r.User] == null) {
-            tracking.RemoveEntry(r.User); // Remove the entry
-            users.Remove(r.User);
+      List<Reputation> vals = SetupModule.GetReputations(gid).ToList();
+
+      if (wtt.HasFlag(WhatToTrack.Thanks)) {
+        vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
+        e.AddField("Thanks --------------------", "For receving a message with _Thanks_ or _Thank you_", false);
+        
+        for (int i = 0; i < 10; i++) {
+          if (i >= vals.Count) break;
+          Reputation r = vals[i];
+          if (r.Tnk == 0) break;
+          string u = Utils.GetSafeMemberName(ctx, r.User);
+          if (u == null) { // Remove
+            SetupModule.Reputations[gid].Remove(r.User);
+            Database.Delete(r);
+            continue;
           }
+          e.AddField(u, "Thanks: _" + r.Tnk + "_");
         }
-        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Reputation: _" + r.Rep + "_", true);
       }
 
-      emjs = "";
-      foreach (string emj in SetupModule.FunSEmojis) emjs += emj;
-      foreach (ulong emj in SetupModule.FunIEmojis) emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
-      e.AddField("Fun -----------------------", "For receving these emojis in the posts: " + emjs, false);
-      vals.Sort((a, b) => { return b.Fun.CompareTo(a.Fun); });
-      for (int i = 0; i < 6; i++) {
-        if (i >= vals.Count) break;
-        Reputation r = vals[i];
-        if (r.Fun == 0) break;
-        if (!users.ContainsKey(r.User)) {
-          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
-          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
-          if (users[r.User] == null) {
-            tracking.RemoveEntry(r.User); // Remove the entry
-            users.Remove(r.User);
+      if (wtt.HasFlag(WhatToTrack.Reputation)) {
+        vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
+        string emjs = "";
+        foreach (RepEmoji emj in SetupModule.RepEmojis[gid]) {
+          if (emj.sid != null) emjs += emj;
+          else emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj.lid));
+        }       
+        e.AddField("Reputation ----------------", "For receving these emojis: " + emjs, false);
+
+
+        for (int i = 0; i < 10; i++) {
+          if (i >= vals.Count) break;
+          Reputation r = vals[i];
+          if (r.Rep == 0) break;
+          string u = Utils.GetSafeMemberName(ctx, r.User);
+          if (u == null) { // Remove
+            SetupModule.Reputations[gid].Remove(r.User);
+            Database.Delete(r);
+            continue;
           }
+          e.AddField(u, "Reputation: _" + r.Rep + "_");
         }
-        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Fun: _" + r.Fun + "_", (i < vals.Count - 1 && i < 5));
       }
 
-      e.AddField("Thanks --------------------", "For receving a message with _Thanks_ or _Thank you_", false);
-      vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
-      for (int i = 0; i < 6; i++) {
-        if (i >= vals.Count) break;
-        Reputation r = vals[i];
-        if (r.Tnk == 0) break;
-        if (!users.ContainsKey(r.User)) {
-          users[r.User] = Utils.GetSafeMemberName(ctx, r.User);
-          if (users[r.User] == null) {
-            tracking.RemoveEntry(r.User); // Remove the entry
-            users.Remove(r.User);
-          }
+      if (wtt.HasFlag(WhatToTrack.Fun)) {
+        vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
+        string emjs = "";
+        foreach (RepEmoji emj in SetupModule.FunEmojis[gid]) {
+          if (emj.sid != null) emjs += emj;
+          else emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj.lid));
         }
-        if (users.ContainsKey(r.User)) e.AddField(users[r.User], "Thanks: _" + r.Tnk + "_", (i < vals.Count - 1 && i < 5));
+        e.AddField("Fun --------------------", "For receving these emojis: " + emjs, false);
+
+        for (int i = 0; i < 10; i++) {
+          if (i >= vals.Count) break;
+          Reputation r = vals[i];
+          if (r.Tnk == 0) break;
+          string u = Utils.GetSafeMemberName(ctx, r.User);
+          if (u == null) { // Remove
+            SetupModule.Reputations[gid].Remove(r.User);
+            Database.Delete(r);
+            continue;
+          }
+          e.AddField(u, "Fun: _" + r.Tnk + "_");
+        }
       }
+
+      if (wtt.HasFlag(WhatToTrack.Rank)) {
+        // Calculate the rank of every user, and show the top 10
+        // FIXME
+        /*
+lev = floor(
+    1.25 * numword ^ 0.25 + 
+    1.5 * numappr ^ 0.27
+    1.5 * numfun ^ 0.27
+    1.5 * numthanks ^ 0.27
+)        
+        */
+      }
+
 
       await ctx.Message.RespondAsync(e.Build());
     } catch (Exception ex) {
@@ -92,64 +115,151 @@ public class AppreciationTracking : BaseCommandModule {
     }
   }
 
+  private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
 
-  private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = null;
-
-  internal static void InitChannelList() {
-    Dictionary<ulong, Dictionary<ulong, DiscordChannel>> channels = Utils.GetAllChannelsFromGuilds(); // FIXME this should be specific for each server
-    LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
-    foreach (ulong gid in channels.Keys) {
-      LastMemberPerGuildPerChannels[gid] = new Dictionary<ulong, LastPosters>();
-      foreach (ulong cid in channels[gid].Keys) LastMemberPerGuildPerChannels[gid][cid] = new LastPosters();
-    }
-  }
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
     try {
-      string msg = args.Message.Content.ToLowerInvariant();
-      ulong memberid = args.Message.Author.Id;
-      ulong channelid = args.Message.ChannelId;
-      ulong guildid = args.Guild.Id;
-      if (LastMemberPerGuildPerChannels == null) InitChannelList();
-      LastPosters lp = LastMemberPerGuildPerChannels[guildid][channelid];
-      lp.Add(memberid);
+      if (args.Author.IsBot) Task.FromResult(0);
+      ulong gid = args.Guild.Id;
+      // Are we tracking this guild and is the tracking active?
+      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+      if (wtt == WhatToTrack.None) return Task.FromResult(0);
 
-      if (thanks.IsMatch(msg) || thankyou.IsMatch(msg) || thank2you.IsMatch(msg)) { // Add thanks
-        if (thank4n.IsMatch(msg)) return Task.FromResult(0);
-        if (GetTracking()) return Task.FromResult(0);
+      if (wtt.HasFlag(WhatToTrack.Thanks)) CheckThanks(args.Message);
+      if (wtt.HasFlag(WhatToTrack.Rank)) CheckRanks(args.Guild.Id, args.Message);
 
-        DiscordMessage theMsg = args.Message;
-        ulong authorId = theMsg.Author.Id;
-        if (theMsg.Reference == null && (theMsg.MentionedUsers == null || theMsg.MentionedUsers.Count == 0)) {
-          if (lp.secondLast != 0 || lp.secondLast != 875701548301299743ul)
-            tracking.AlterThankYou(lp.secondLast);
-          else {
-            // Unrelated thank you, get the previous message and check /*
-            IReadOnlyList<DiscordMessage> msgs = theMsg.Channel.GetMessagesBeforeAsync(theMsg.Id, 2).Result;
-            theMsg = null;
-            foreach (DiscordMessage m in msgs)
-              if (m.Author.Id != authorId) {
-                theMsg = m;
-                break;
-              }
-          }
-          if (theMsg == null) return Task.FromResult(0);
-        }
-
-        IReadOnlyList<DiscordUser> mentions = theMsg.MentionedUsers;
-        ulong refAuthorId = theMsg.Reference != null ? theMsg.Reference.Message.Author.Id : 0;
-        if (mentions != null)
-          foreach (DiscordUser u in mentions)
-            if (u.Id != authorId && u.Id != refAuthorId) tracking.AlterThankYou(u.Id);
-        if (theMsg.Reference != null)
-          if (theMsg.Reference.Message.Author.Id != authorId) tracking.AlterThankYou(theMsg.Reference.Message.Author.Id);
-      }
-
-      return Task.FromResult(0);
     } catch (Exception ex) {
       Utils.Log("Error in ThanksAdded: " + ex.Message);
-      return Task.FromResult(0);
     }
+    return Task.FromResult(0);
+  }
+
+  static void CheckThanks(DiscordMessage msg) {
+    string text = msg.Content.Trim().ToLowerInvariant();
+    if (thanks.IsMatch(text) || thankyou.IsMatch(text) || thank2you.IsMatch(text)) { // Add thanks
+      if (thank4n.IsMatch(text)) return; // Not what we want
+
+      ulong authorId = msg.Author.Id;
+      ulong cid = msg.Channel.Id;
+      ulong gid = msg.Channel.Guild.Id;
+      if (!LastMemberPerGuildPerChannels.ContainsKey(gid)) LastMemberPerGuildPerChannels[gid] = new Dictionary<ulong, LastPosters>();
+      LastPosters lp;
+      if (!LastMemberPerGuildPerChannels[gid].ContainsKey(cid)) {
+        lp = new LastPosters();
+        LastMemberPerGuildPerChannels[gid][cid] = lp;
+      } else lp = LastMemberPerGuildPerChannels[gid][cid];
+      lp.Add(authorId);
+
+      if (msg.Reference == null && (msg.MentionedUsers == null || msg.MentionedUsers.Count == 0)) { // Get the previous poster
+        IReadOnlyList<DiscordMessage> msgs = msg.Channel.GetMessagesBeforeAsync(msg.Id, 3).Result;
+        msg = null;
+        foreach (DiscordMessage m in msgs) {
+          ulong oid = m.Author.Id;
+          if (oid != authorId) {
+            Reputation r = SetupModule.GetReputation(gid, oid);
+            r.Tnk++;
+            Database.Update(r);
+            return;
+          }
+        }
+      } else if (msg.Reference != null) { // By reference
+        ulong oid = msg.Reference.Message.Author.Id;
+        if (oid != authorId) {
+          Reputation r = SetupModule.GetReputation(gid, oid);
+          r.Tnk++;
+          Database.Update(r);
+          return;
+        }
+      } else { // Mentioned
+        foreach (var usr in msg.MentionedUsers) {
+          ulong oid = usr.Id;
+          if (oid != authorId) {
+            Reputation r = SetupModule.GetReputation(gid, oid);
+            r.Tnk++;
+            Database.Update(r);
+          }
+        }
+      }
+    }
+  }
+
+  readonly static TimeSpan aMinute = TimeSpan.FromSeconds(60);
+
+  static void CheckRanks(ulong gid, DiscordMessage msg) {
+    try {
+      ulong oid = msg.Author.Id;
+      Reputation r = SetupModule.GetReputation(gid, oid);
+      if (DateTime.Now - r.LastUpdate < aMinute) return;
+
+      string txt = msg.Content.Trim().Replace("\t", " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ");
+      int num = 0;
+      foreach (char c in txt)
+        if (c == ' ') num++;
+      num = (int)Math.Sqrt(num);
+      r.Ran += num;
+      r.LastUpdate = DateTime.Now;
+      Database.Update(r);
+
+    } catch (Exception ex) {
+      Utils.Log("Error in CheckRanks: " + ex.Message);
+    }
+  }
+
+
+  internal static Task ReactionAdded(DiscordClient sender, MessageReactionAddEventArgs mr) {
+    try {
+      if (mr.User.IsBot) return Task.FromResult(0);
+      ulong gid = mr.Guild.Id;
+      // Are we tracking this guild and is the tracking active?
+      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+      if (wtt == WhatToTrack.None || (!wtt.HasFlag(WhatToTrack.Reputation) && !wtt.HasFlag(WhatToTrack.Fun))) return Task.FromResult(0);
+
+      ulong emojiId = mr.Emoji.Id;
+      string emojiName = mr.Emoji.Name;
+
+      DiscordUser author = mr.Message.Author;
+      if (author == null) {
+        ulong msgId = mr.Message.Id;
+        ulong chId = mr.Message.ChannelId;
+        DiscordChannel c = mr.Guild.GetChannel(chId);
+        DiscordMessage m = c.GetMessageAsync(msgId).Result;
+        author = m.Author;
+      }
+      ulong authorId = author.Id;
+      if (authorId == mr.User.Id) return Task.Delay(0); // If member is equal to author ignore (no self emojis)
+
+
+      RepEmoji rem = new RepEmoji(emojiId, emojiName);
+      if (wtt.HasFlag(WhatToTrack.Reputation)) {
+        // Do we have this emoji in the Reputation list for the server?
+        if (SetupModule.RepEmojis[gid].Contains(rem)) {
+          Reputation r = SetupModule.GetReputation(gid, authorId);
+          r.Rep++;
+          Database.Update(r);
+        }
+      }
+
+      if (wtt.HasFlag(WhatToTrack.Fun)) {
+        // Do we have this emoji in the Reputation list for the server?
+        if (SetupModule.RepEmojis[gid].Contains(rem)) {
+          Reputation r = SetupModule.GetReputation(gid, authorId);
+          r.Fun++;
+          Database.Update(r);
+        }
+      }
+
+    } catch (Exception ex) {
+      Utils.Log("Error in ReactionAdded: " + ex.Message);
+    }
+    return Task.FromResult(0);
+  }
+
+  static void CheckFun(MessageReactionAddEventArgs mr) {
+  }
+
+  static void CheckReputation(MessageReactionAddEventArgs mr) {
+
   }
 
 
@@ -167,66 +277,38 @@ public class AppreciationTracking : BaseCommandModule {
   }
 
 
+}
 
-  internal static Task ReacionAdded(DiscordClient sender, MessageReactionAddEventArgs a) {
-    try {
-      ulong emojiId = a.Emoji.Id;
-      string emojiName = a.Emoji.Name;
+public class RepEmoji {
+  public ulong lid;
+  public string sid;
 
-      DiscordUser author = a.Message.Author;
-      if (author == null) {
-        ulong msgId = a.Message.Id;
-        ulong chId = a.Message.ChannelId;
-        DiscordChannel c = a.Guild.GetChannel(chId);
-        DiscordMessage m = c.GetMessageAsync(msgId).Result;
-        author = m.Author;
-      }
-      ulong authorId = author.Id;
-      if (authorId == a.User.Id) return Task.Delay(10); // If member is equal to author ignore (no self emojis)
-      return HandleReactions(emojiId, emojiName, authorId, true);
-    } catch (Exception ex) {
-      Utils.Log("Error in AppreciationTracking.ReatcionAdded: " + ex.Message);
-      return Task.FromResult(0);
-    }
+  public RepEmoji(ulong id) {
+    lid = id;
+    sid = null;
   }
 
-  internal static Task ReactionRemoved(DiscordClient sender, MessageReactionRemoveEventArgs a) {
-    try {
-      ulong emojiId = a.Emoji.Id;
-      string emojiName = a.Emoji.Name;
-
-      DiscordUser author = a.Message.Author;
-      if (author == null) {
-        ulong msgId = a.Message.Id;
-        ulong chId = a.Message.ChannelId;
-        DiscordChannel c = a.Guild.GetChannel(chId);
-        DiscordMessage m = c.GetMessageAsync(msgId).Result;
-        author = m.Author;
-      }
-      ulong authorId = author.Id;
-      if (authorId == a.User.Id) return Task.Delay(10); // If member is equal to author ignore (no self emojis)
-      return HandleReactions(emojiId, emojiName, authorId, false);
-    } catch (Exception ex) {
-      Utils.Log("Error in AppreciationTracking.ReactionAdded: " + ex.Message);
-      return Task.FromResult(0);
-    }
+  public RepEmoji(string id) {
+    sid = id;
+    lid = 0;
   }
 
-  static Task HandleReactions(ulong emojiId, string emojiName, ulong authorId, bool added) {
-    if (SetupModule.FunIEmojis == null) return Task.Delay(10);
-    // check if emoji is :smile: :rolf: :strongsmil: (find valid emojis -> increase fun level of user
-    if ((emojiId != 0 && SetupModule.FunIEmojis.Contains(emojiId)) || (!string.IsNullOrEmpty(emojiName) && SetupModule.FunSEmojis.Contains(emojiName))) {
-      if (GetTracking()) return Task.FromResult(0);
-      tracking.AlterFun(authorId, added);
-    }
-
-    // check if emoji is :OK: or :ThumbsUp: -> Increase reputation for user
-    if ((emojiId != 0 && SetupModule.RepIEmojis.Contains(emojiId)) || (!string.IsNullOrEmpty(emojiName) && SetupModule.RepSEmojis.Contains(emojiName))) {
-      if (GetTracking()) return Task.FromResult(0);
-      tracking.AlterRep(authorId, added);
-    }
-
-    return Task.Delay(10);
+  public RepEmoji(ulong id1, string id2) {
+    lid = id1;
+    sid = id2;
   }
 
+
+  public override int GetHashCode() {
+    if (sid == null) return lid.GetHashCode();
+    else return sid.GetHashCode();
+  }
+}
+
+public enum WhatToTrack {
+  None = 0,
+  Thanks = 1,
+  Reputation = 2,
+  Fun = 4,
+  Rank = 8,
 }

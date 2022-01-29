@@ -128,10 +128,11 @@ namespace UPBot {
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
-      client.MessageReactionAdded += AppreciationTracking.ReacionAdded;
+      client.MessageReactionAdded += AppreciationTracking.ReactionAdded;
       client.MessageReactionAdded += EmojisForRole.ReacionAdded;
-      client.MessageReactionRemoved += AppreciationTracking.ReactionRemoved;
       client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
+
+      client.GuildCreated += SetupModule.NewGuildAdded;
 
       await Task.Delay(500);
 

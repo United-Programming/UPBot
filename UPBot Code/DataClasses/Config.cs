@@ -55,6 +55,7 @@ public class Config : Entity {
     SpamProtection,
     Stats,
     BannedWords,
+    Scores,
     //VideosAbout
   }
 

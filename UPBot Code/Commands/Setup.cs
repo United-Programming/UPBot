@@ -20,10 +20,12 @@ public class SetupModule : BaseCommandModule {
   public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
   public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
 
-  public static HashSet<string> RepSEmojis; // FIXME
-  public static HashSet<ulong> RepIEmojis; // FIXME
-  public static HashSet<string> FunSEmojis; // FIXME
-  public static HashSet<ulong> FunIEmojis; // FIXME
+  public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
+  public static Dictionary<ulong, HashSet<RepEmoji>> RepEmojis = new Dictionary<ulong, HashSet<RepEmoji>>();
+  public static Dictionary<ulong, HashSet<RepEmoji>> FunEmojis = new Dictionary<ulong, HashSet<RepEmoji>>();
+  public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
+
+
   private readonly static Regex emjSnowflakeER = new Regex(@"(<:[a-z0-9_]+:[0-9]+>)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
 
@@ -48,7 +50,7 @@ public class SetupModule : BaseCommandModule {
   }
 
   internal static bool Permitted(ulong guild, Config.ParamType t, IEnumerable<DiscordRole> roles) {
-    if (!Configs.ContainsKey(guild)) return t == Config.ParamType.Ping; // Only ping is available by default
+    if (Configs[guild].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
     List<Config> cfgs = Configs[guild];
     Config.ConfVal cv = GetConfigValue(guild, t);
     switch (cv) {
@@ -64,7 +66,25 @@ public class SetupModule : BaseCommandModule {
   }
 
 
-  internal static void LoadParams(bool forceCleanBad = false) {
+  internal static Reputation GetReputation(ulong gid, ulong uid) {
+    if (!Reputations.ContainsKey(gid)) Reputations[gid] = new Dictionary<ulong, Reputation>();
+    if (!Reputations[gid].ContainsKey(uid)) {
+      Reputations[gid][uid] = new Reputation(gid, uid);
+      Database.Add(Reputations[gid][uid]);
+    }
+    return Reputations[gid][uid];
+  }
+
+  internal static IReadOnlyCollection<Reputation> GetReputations(ulong gid) {
+    if (!Reputations.ContainsKey(gid)) Reputations[gid] = new Dictionary<ulong, Reputation>();
+    return Reputations[gid].Values;
+  }
+
+  internal static void LoadParams() {
+    foreach (var g in Utils.GetClient().Guilds.Values) {
+      Guilds[g.Id] = g;
+    }
+
     List<Config> dbconfig = Database.GetAll<Config>();
     foreach (var c in dbconfig) {
       ulong gid = c.Guild;
@@ -74,7 +94,7 @@ public class SetupModule : BaseCommandModule {
 
       // Guilds
       if (!Guilds.ContainsKey(gid)) {
-        if (TryGetGuild(gid) ==null) continue; // Guild is missing
+        if (TryGetGuild(gid) == null) continue; // Guild is missing
       }
 
       // Admin roles
@@ -102,6 +122,11 @@ public class SetupModule : BaseCommandModule {
       if (c.IsParam(Config.ParamType.SpamProtection)) {
         SpamProtection[gid] = c.IdVal;
       }
+
+      // Reputation Tracking
+      if (c.IsParam(Config.ParamType.Scores)) {
+        WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
+      }
     }
 
     // Banned Words
@@ -115,35 +140,50 @@ public class SetupModule : BaseCommandModule {
     foreach (var bwords in BannedWords.Values)
       bwords.Sort((a, b) => { return a.CompareTo(b); });
 
+    // Reputation Tracking
+    List<Reputation> allReps = Database.GetAll<Reputation>();
+    foreach (var r in allReps) {
+      if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
+      Reputations[r.Guild][r.User] = r;
+    }
+
+    // Fill all missing guilds
+    foreach (var g in Guilds.Keys) {
+      if (!Configs.ContainsKey(g)) Configs[g] = new List<Config>();
+      if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
+      if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
+      if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
+      if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
+
+      if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
+      if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new HashSet<RepEmoji>();
+      if (!FunEmojis.ContainsKey(g)) FunEmojis[g] = new HashSet<RepEmoji>();
+    }
+
     Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
   }
 
-  internal static TrackChannel GetTrackChannel(ulong id) {
-    if (TrackChannels.ContainsKey(id)) return TrackChannels[id];
-    return null;
+  internal static Task NewGuildAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildCreateEventArgs e) {
+    // FIXME handle this to fill all values for a new guild added
+    return Task.FromResult(0);
   }
 
   internal static bool IsAdminRole(ulong guild, DiscordRole role) {
     if (role.Position == 0 || role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)) return true;
-    if(!AdminRoles.ContainsKey(guild)) return false;
     return AdminRoles[guild].Contains(role.Id);
   }
 
   private void TryAddRole(ulong gid, ulong rid) {
-    if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
     if (AdminRoles[gid].Contains(rid)) return;
     Config c = new Config(gid, Config.ParamType.AdminRole, rid);
     AdminRoles[gid].Add(rid);
-    if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
     Configs[gid].Add(c);
     Database.Add(c);
   }
 
   private void TryRemoveRole(ulong gid, ulong rid) {
-    if (!AdminRoles.ContainsKey(gid)) return;
     if (!AdminRoles[gid].Contains(rid)) return;
     AdminRoles[gid].Remove(rid);
-    if (!Configs.ContainsKey(gid)) return;
 
     long key = Config.TheKey(gid, Config.ParamType.AdminRole, rid);
     foreach (Config c in Configs[gid]) 
@@ -826,7 +866,6 @@ static ulong GetIDParam(string param) {
         if (val != old) {
           if (c == null) {
             c = new Config(gid, Config.ParamType.SpamProtection, val);
-            if (!Configs.ContainsKey(gid)) Configs[gid]=new List<Config>();
             Configs[gid].Add(c);
           } else c.IdVal = val;
           Database.Add(c);
@@ -872,7 +911,6 @@ static ulong GetIDParam(string param) {
           }
           else { // Is it already here? (avoid duplicates)
             string bw = answer.Result.Content.ToLowerInvariant().Trim();
-            if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
             if (BannedWords[gid].Contains(bw)) {
               _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("The word is already there"));
             }
@@ -918,7 +956,7 @@ static ulong GetIDParam(string param) {
       string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
       string part = "";
       // Admins ******************************************************
-      if(!AdminRoles.ContainsKey(gid)) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+      if(AdminRoles[gid].Count == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
       else {
         foreach (var rid in AdminRoles[gid]) {
           DiscordRole r = g.GetRole(rid);
@@ -929,7 +967,7 @@ static ulong GetIDParam(string param) {
       }
 
       // TrackingChannel ******************************************************
-      if(!TrackChannels.ContainsKey(gid)) msg += "**TrackingChannel**: _no tracking channel defined_\n";
+      if(TrackChannels[gid] == null) msg += "**TrackingChannel**: _no tracking channel defined_\n";
       else {
         msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
         if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
@@ -995,7 +1033,7 @@ static ulong GetIDParam(string param) {
       cfg = GetConfig(gid, Config.ParamType.BannedWords);
       if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
       else {
-        if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count==0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
+        if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
         else {
           string bws = "";
           foreach (var w in BannedWords[gid]) bws += w + ", ";
@@ -1013,7 +1051,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.Ping);
       if (c == null) {
         c = new Config(gid, Config.ParamType.Ping, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1028,7 +1066,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.WhoIs);
       if (c == null) {
         c = new Config(gid, Config.ParamType.WhoIs, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1043,7 +1081,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.MassDel);
       if (c == null) {
         c = new Config(gid, Config.ParamType.MassDel, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1058,7 +1096,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.Games);
       if (c == null) {
         c = new Config(gid, Config.ParamType.Games, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1073,7 +1111,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.Refactor);
       if (c == null) {
         c = new Config(gid, Config.ParamType.Refactor, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1088,7 +1126,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.UnityDocs);
       if (c == null) {
         c = new Config(gid, Config.ParamType.UnityDocs, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> {c};
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1107,7 +1145,7 @@ static ulong GetIDParam(string param) {
       if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
         if (cg == null) {
           cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cg };
+          Configs[gid].Add(cg);
         }
         if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
         if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1116,7 +1154,7 @@ static ulong GetIDParam(string param) {
       } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
         if (cs == null) {
           cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cs };
+          Configs[gid].Add(cs);
         }
         if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
         if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1126,7 +1164,7 @@ static ulong GetIDParam(string param) {
         char whos = cmds[1][0];
         if (cg == null) {
           cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cg };
+          Configs[gid].Add(cg);
         }
         if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
         if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1134,7 +1172,7 @@ static ulong GetIDParam(string param) {
 
         if (cs == null) {
           cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-          if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { cs };
+          Configs[gid].Add(cs);
         }
         if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
         if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1150,7 +1188,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.TrackingChannel);
       if (c == null) {
         c = new Config(gid, Config.ParamType.TrackingChannel, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { c };
+        Configs[gid].Add(c);
       }
 
       // [channel]|remove j l r
@@ -1183,7 +1221,7 @@ static ulong GetIDParam(string param) {
         c.StrVal = (j ? "1" : "0") + (l ? "1" : "0") + (r ? "1" : "0");
       }
       // Update the cache
-      if (!TrackChannels.ContainsKey(gid)) {
+      if (TrackChannels[gid] == null) {
         TrackChannels[gid] = new TrackChannel() { channel = forLater, config = c, trackJoin = j, trackLeave = l, trackRoles = r };
       } else {
         if (c.IdVal != 0 && forLater != null) TrackChannels[gid].channel = forLater;
@@ -1277,7 +1315,7 @@ static ulong GetIDParam(string param) {
       // And show the result
       string msg;
 
-      if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
+      if (AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
       else {
         msg = "**AdminRoles** are: ";
         foreach (var rid in AdminRoles[gid]) {
@@ -1305,7 +1343,6 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.SpamProtection);
       if (c == null) {
         c = new Config(gid, Config.ParamType.SpamProtection, val);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
         Configs[gid].Add(c);
       } else c.IdVal = val;
       Database.Add(c);
@@ -1328,7 +1365,7 @@ static ulong GetIDParam(string param) {
       Config c = GetConfig(gid, Config.ParamType.Stats);
       if (c == null) {
         c = new Config(gid, Config.ParamType.Stats, 1);
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config> { c };
+        Configs[gid].Add(c);
       }
       if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
       if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
@@ -1341,7 +1378,7 @@ static ulong GetIDParam(string param) {
     if (cmds[0].Equals("bannedwords")) {
       if (cmds.Length > 1) {
         if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) { // LIST ********************************************************************************************************************
-          if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
+          if (BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
           string bws = "Banned Words: ";
           foreach (var w in BannedWords[gid]) bws += w + ", ";
           bws = bws[0..^2];
@@ -1351,7 +1388,7 @@ static ulong GetIDParam(string param) {
 
         } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
           SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
-          if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count == 0)
+          if (BannedWords[gid].Count == 0)
             await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_ (but no banned words are deifned)"));
           else
             await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_"));
@@ -1362,7 +1399,6 @@ static ulong GetIDParam(string param) {
 
         } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
           string bw = cmds[2].ToLowerInvariant().Trim();
-          if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
           if (BannedWords[gid].Contains(bw)) {
             await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is already there"));
           } else {
@@ -1372,7 +1408,6 @@ static ulong GetIDParam(string param) {
           await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is added the the list of banned words"));
 
         } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
-          if (!BannedWords.ContainsKey(gid)) return;
           string bw = cmds[2].ToLowerInvariant().Trim();
           if (BannedWords[gid].Contains(bw)) {
             Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
@@ -1383,7 +1418,6 @@ static ulong GetIDParam(string param) {
           }
 
         } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
-          if (!BannedWords.ContainsKey(gid)) return;
           foreach (var bw in BannedWords[gid]) {
             Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
           }
@@ -1399,7 +1433,6 @@ static ulong GetIDParam(string param) {
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
-    if (!TrackChannels.ContainsKey(gid)) return;
     TrackChannel tc = TrackChannels[gid];
     if (j) tc.trackJoin = !tc.trackJoin;
     if (l) tc.trackLeave = !tc.trackLeave;
@@ -1409,7 +1442,7 @@ static ulong GetIDParam(string param) {
   }
 
   private void TryRemoveChannel(ulong id) {
-    if (TrackChannels.ContainsKey(id)) {
+    if (TrackChannels[id] != null) {
       Database.DeleteByKey<Config>(Config.TheKey(id, Config.ParamType.TrackingChannel, TrackChannels[id].channel.Id));
       TrackChannels.Remove(id);
     }
@@ -1417,7 +1450,7 @@ static ulong GetIDParam(string param) {
 
   private void TryAddChannel(DiscordChannel ch) {
     TrackChannel tc;
-    if (!TrackChannels.ContainsKey(ch.Guild.Id)) {
+    if (TrackChannels[ch.Guild.Id] == null) {
       tc = new TrackChannel();
       TrackChannels[ch.Guild.Id] = tc;
       tc.trackJoin = true;
@@ -1474,7 +1507,7 @@ static ulong GetIDParam(string param) {
       "Current server roles that are considered bot administrators:\n";
 
     // List admin roles
-    if (!AdminRoles.ContainsKey(ctx.Guild.Id)) desc += "_**No admin roles defined.** Owner and server Admins will be used_";
+    if (AdminRoles[ctx.Guild.Id].Count == 0) desc += "_**No admin roles defined.** Owner and server Admins will be used_";
     else {
       List<ulong> roles = AdminRoles[ctx.Guild.Id];
       bool one = false;
@@ -1515,7 +1548,7 @@ static ulong GetIDParam(string param) {
   private DiscordMessage CreateTrackingInteraction(CommandContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
-    TrackChannel tc = TrackChannels.ContainsKey(ctx.Guild.Id) ? TrackChannels[ctx.Guild.Id] : null;
+    TrackChannel tc = TrackChannels[ctx.Guild.Id];
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Tracking channel"
@@ -1539,7 +1572,7 @@ static ulong GetIDParam(string param) {
     // - Change channel
     actions = new List<DiscordButtonComponent>();
     actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idchangetrackch", "Change channel", false, ok));
-    if (TrackChannels.ContainsKey(ctx.Guild.Id))
+    if (TrackChannels[ctx.Guild.Id] != null)
       actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idremtrackch", "Remove channel", false, ko));
     builder.AddComponents(actions);
 
@@ -2014,7 +2047,7 @@ static ulong GetIDParam(string param) {
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "The bot can automatically remove messages containing banned words.\n\n";
 
-    if (!BannedWords.ContainsKey(ctx.Guild.Id) || BannedWords[ctx.Guild.Id].Count == 0) {
+    if (BannedWords[ctx.Guild.Id].Count == 0) {
       eb.Description += "No banned words defined.\n\n";
     } else {
       eb.Description += "Banned words: ";
@@ -2033,23 +2066,21 @@ static ulong GetIDParam(string param) {
 
     actions = new List<DiscordButtonComponent>();
     actions.Add(
-      cv==Config.ConfVal.NotAllowed ?
+      cv == Config.ConfVal.NotAllowed ?
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatbannedwed", "Enable", false, ey) :
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en));
     actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwadd", "Add", false, er));
 
-    if (BannedWords.ContainsKey(ctx.Guild.Id)) {
-      // Goups of 5, but we start at 1 for the global enable/disable
-      int num = 1;
-      int count = 0;
-      foreach (var w in BannedWords[ctx.Guild.Id]) {
-        actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwr" + count, w, false, en));
-        num++;
-        count++;
-        if (num == 5) {
-          builder.AddComponents(actions);
-          actions = new List<DiscordButtonComponent>();
-        }
+    // Goups of 5, but we start at 1 for the global enable/disable
+    int num = 1;
+    int count = 0;
+    foreach (var w in BannedWords[ctx.Guild.Id]) {
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwr" + count, w, false, en));
+      num++;
+      count++;
+      if (num == 5) {
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
       }
     }
     if (actions.Count > 0) builder.AddComponents(actions);
@@ -2072,7 +2103,6 @@ static ulong GetIDParam(string param) {
 
 
   private static Config GetConfig(ulong gid, Config.ParamType t) {
-    if (!Configs.ContainsKey(gid)) return null;
     List<Config> cs = Configs[gid];
     foreach (var c in cs) {
       if (c.IsParam(t)) return c;
@@ -2080,7 +2110,6 @@ static ulong GetIDParam(string param) {
     return null;
   }
   private static Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
-    if (!Configs.ContainsKey(gid)) return Config.ConfVal.NotAllowed;
     List<Config> cs = Configs[gid];
     foreach (var c in cs) {
       if (c.IsParam(t)) return (Config.ConfVal)c.IdVal;
@@ -2088,9 +2117,6 @@ static ulong GetIDParam(string param) {
     return Config.ConfVal.NotAllowed;
   }
   private void SetConfigValue(ulong gid, Config.ParamType t, Config.ConfVal v) {
-    if (!Configs.ContainsKey(gid)) {
-      Configs[gid] = new List<Config>();
-    }
     List<Config> cs = Configs[gid];
     Config tc = null;
     foreach (var c in cs) {

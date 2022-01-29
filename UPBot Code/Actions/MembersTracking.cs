@@ -10,7 +10,7 @@ public class MembersTracking {
   public static async Task DiscordMemberRemoved(DiscordClient client, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      TrackChannel trackChannel = SetupModule.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
 
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
@@ -37,7 +37,7 @@ public class MembersTracking {
   public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try{
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      TrackChannel trackChannel = SetupModule.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
 
       tracking[args.Member.Id] = DateTime.Now;
@@ -51,7 +51,7 @@ public class MembersTracking {
   public static async Task DiscordMemberUpdated(DiscordClient client, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = SetupModule.GetTrackChannel(args.Guild.Id);
+      TrackChannel trackChannel = SetupModule.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackRoles) return;
 
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;

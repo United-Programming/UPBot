@@ -40,7 +40,7 @@ unitydocs       |    X    |         |           |    X      |          |        
 To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
 
 
-
+If we are added to a new server we need to fill all values of setup or we will miserably fail
 
 
 ------------- Rank thinking --------------------
@@ -62,19 +62,22 @@ Setup Menus to create:
 - appreciation (emojis, where is tracked, who can use)
 - custom commands (who can define, who can use)
 - help pages (who can use)
-- banned words (who can define, enabled/disabled)
 - emoji for role (who can use, role/post to use/emoji)
 
 Logic to update:
 - appreciation
 - custom commands
 - help pages
-- banned words
 - emoji for role
 
 
+------------- Appreciation --------------------
+track thanks
+track emojis of 2 categories
 
-How to setup banned words?
-Enable/Disable
-Remove one from list
-Add a new one
+enable/disable the 3 types of tracking [inter/string]
+list the emojis for the 2 trachings [inter/string]
+add/remove emojis (also mass add/remove) [string only]
+
+
+
