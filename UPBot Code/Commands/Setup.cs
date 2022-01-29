@@ -64,7 +64,7 @@ public class SetupModule : BaseCommandModule {
   }
 
 
-  internal static void LoadParams(bool forceCleanBad = false) { // FIXME this ahs to be server specific
+  internal static void LoadParams(bool forceCleanBad = false) {
     List<Config> dbconfig = Database.GetAll<Config>();
     foreach (var c in dbconfig) {
       ulong gid = c.Guild;
@@ -109,7 +109,7 @@ public class SetupModule : BaseCommandModule {
     Utils.Log("Found " + words.Count + " banned words from all servers");
     foreach (BannedWord word in words) {
       ulong gid = word.Guild;
-      if (BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+      if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
       BannedWords[gid].Add(word.Word);
     }
     foreach (var bwords in BannedWords.Values)
@@ -858,10 +858,11 @@ static ulong GetIDParam(string param) {
 
       } else if (ir.Id.Length > 12 && ir.Id[0..13] == "idfeatbannedw") { // ********* Config Banned Words ***********************************************************************
         if (ir.Id == "idfeatbannedwed") {
-          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
-          else SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
+          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
+          else SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
         } else if (ir.Id == "idfeatbannedwadd") {
           await ctx.Channel.DeleteMessageAsync(msg);
+          msg = null;
           DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the word to be banned (at least 4 letters), you have 1 minute before timeout");
           var answer = await interact.WaitForMessageAsync((dm) => {
             return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
@@ -989,6 +990,18 @@ static ulong GetIDParam(string param) {
       cfg = GetConfig(gid, Config.ParamType.Stats);
       if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
       else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+      // Banned Words ******************************************************
+      cfg = GetConfig(gid, Config.ParamType.BannedWords);
+      if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
+      else {
+        if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count==0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
+        else {
+          string bws = "";
+          foreach (var w in BannedWords[gid]) bws += w + ", ";
+          msg += "**BannedWords**: " + bws[0..^2] + ".\n";
+        }
+      }
 
 
       await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
@@ -1324,7 +1337,64 @@ static ulong GetIDParam(string param) {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
     }
 
+    // ****************** BANNEDWORDS *********************************************************************************************************************************************
+    if (cmds[0].Equals("bannedwords")) {
+      if (cmds.Length > 1) {
+        if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) { // LIST ********************************************************************************************************************
+          if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
+          string bws = "Banned Words: ";
+          foreach (var w in BannedWords[gid]) bws += w + ", ";
+          bws = bws[0..^2];
+          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) bws += " (_disabled_)";
+          else bws += " (_enabled_)";
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(bws));
 
+        } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
+          SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
+          if (!BannedWords.ContainsKey(gid) || BannedWords[gid].Count == 0)
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_ (but no banned words are deifned)"));
+          else
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_"));
+
+        } else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
+          SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _disabled_"));
+
+        } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
+          string bw = cmds[2].ToLowerInvariant().Trim();
+          if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+          if (BannedWords[gid].Contains(bw)) {
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is already there"));
+          } else {
+            BannedWords[gid].Add(bw);
+            Database.Add(new BannedWord(gid, bw));
+          }
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is added the the list of banned words"));
+
+        } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
+          if (!BannedWords.ContainsKey(gid)) return;
+          string bw = cmds[2].ToLowerInvariant().Trim();
+          if (BannedWords[gid].Contains(bw)) {
+            Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+            BannedWords[gid].Remove(bw);
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
+          } else {
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is not in the list of banned words"));
+          }
+
+        } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
+          if (!BannedWords.ContainsKey(gid)) return;
+          foreach (var bw in BannedWords[gid]) {
+            Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+          }
+          BannedWords[gid].Clear();
+        }
+      }
+      if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `enable` or `disable` to change the status\n`add` _word_ to add a new word to ban\n`remove` _word_ to remove a word from the list\n`clear` to remove all words\n`list` to show all banned words."));
+      }
+
+    }
 
   }
 
@@ -1934,7 +2004,7 @@ static ulong GetIDParam(string param) {
 
 
   private DiscordMessage CreateBannedWordsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Banned Words"
@@ -1947,7 +2017,7 @@ static ulong GetIDParam(string param) {
     if (!BannedWords.ContainsKey(ctx.Guild.Id) || BannedWords[ctx.Guild.Id].Count == 0) {
       eb.Description += "No banned words defined.\n\n";
     } else {
-      eb.Description += "Banned words:";
+      eb.Description += "Banned words: ";
       foreach (var w in BannedWords[ctx.Guild.Id])
         eb.Description += w + ", ";
       eb.Description = eb.Description[0..^2] + "\n\n";
@@ -1964,9 +2034,9 @@ static ulong GetIDParam(string param) {
     actions = new List<DiscordButtonComponent>();
     actions.Add(
       cv==Config.ConfVal.NotAllowed ?
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Enable", false, ey) :
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatbannedwed", "Enable", false, ey) :
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwadd", "Add", false, er));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwadd", "Add", false, er));
 
     if (BannedWords.ContainsKey(ctx.Guild.Id)) {
       // Goups of 5, but we start at 1 for the global enable/disable

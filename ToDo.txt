@@ -41,6 +41,21 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 
 
 
+
+
+------------- Rank thinking --------------------
+Number of words for each message
+Excluding text from codeblocks
+Receiving any kind of emoji, especially on codeblocks
+Receiving thanks and appreciations
+Use some low exponential grow function
+
+lev = floor(
+    1.25 * numword ^ 0.25 + 
+    1.5 * numappr ^ 0.27
+    1.5 * numthanks ^ 0.27
+)
+
 ------------- Setup --------------------
 
 Setup Menus to create:

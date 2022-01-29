@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 /// </summary>
 public class Stats : BaseCommandModule {
 
-
   /*
   
 Stats
@@ -31,7 +30,6 @@ stats emojis #channel
 stats all #channel  
   
   */
-
 
   [Command("stats")]
   [Description("Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
