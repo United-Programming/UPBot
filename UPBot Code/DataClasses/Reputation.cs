@@ -11,6 +11,7 @@ public class Reputation : Entity {
   public int Ran;
   public DateTime LastUpdate;
 
+  public Reputation() { }
   public Reputation(ulong gid, ulong usr) {
     Guild = gid;
     User = usr;

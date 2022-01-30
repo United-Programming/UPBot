@@ -235,6 +235,7 @@ public static class Utils
   /// <param name="emoji">The emoji to convert</param>
   /// <returns>A string representation of the emoji that can be used in a message</returns>
   public static string GetEmojiSnowflakeID(DiscordEmoji emoji) {
+    if (emoji == null) return "";
     return "<" + emoji.GetDiscordName() + emoji.Id.ToString() + ">";
   }
 

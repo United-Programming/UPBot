@@ -68,6 +68,7 @@ namespace UPBot {
         lw.Flush();
         Database.AddTable<BannedWord>();
         Database.AddTable<Reputation>();
+        Database.AddTable<ReputationEmoji>();
         Database.AddTable<EmojiForRoleValue>();
         Database.AddTable<CustomCommand>();
         Database.AddTable<Config>();
@@ -87,14 +88,6 @@ namespace UPBot {
         commands.CommandErrored += CustomCommandsService.CommandError;
         commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
         lw?.WriteLine("RegisterCommands");
-        lw.Flush();
-
-        lw?.WriteLine("BannedWords");
-        lw.Flush();
-        client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
-        client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
-        client.MessageCreated += AppreciationTracking.ThanksAdded;
-        lw?.WriteLine("Tracking");
         lw.Flush();
 
         CustomCommandsService.LoadCustomCommands();
@@ -122,17 +115,6 @@ namespace UPBot {
       lw.Flush();
 
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
-
-      lw?.WriteLine("Adding action events");
-      lw.Flush();
-      client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
-      client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
-      client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
-      client.MessageReactionAdded += AppreciationTracking.ReactionAdded;
-      client.MessageReactionAdded += EmojisForRole.ReacionAdded;
-      client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
-
-      client.GuildCreated += SetupModule.NewGuildAdded;
 
       await Task.Delay(500);
 
@@ -178,6 +160,23 @@ namespace UPBot {
       lw?.WriteLine("LoadingParams");
       lw.Flush();
       SetupModule.LoadParams();
+
+      lw?.WriteLine("Adding action events");
+      lw.Flush();
+      client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
+      client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
+      client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
+      client.MessageReactionAdded += AppreciationTracking.ReactionAdded;
+      client.MessageReactionAdded += EmojisForRole.ReacionAdded;
+      client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
+
+      client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
+      client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
+      client.MessageCreated += AppreciationTracking.ThanksAdded;
+      lw?.WriteLine("Tracking");
+      lw.Flush();
+
+      client.GuildCreated += SetupModule.NewGuildAdded;
 
       lw?.WriteLine("done");
       lw.Flush();

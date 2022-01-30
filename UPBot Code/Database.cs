@@ -299,22 +299,23 @@ public class Database {
         int num = 0;
         foreach (FieldInfo field in t.GetFields()) {
           FieldType ft = ed.fields[field.Name];
-          if (reader.IsDBNull(num)) continue;
-          switch (ft) {
-            case FieldType.Bool: field.SetValue(val, reader.GetByte(num) != 0); break;
-            case FieldType.Byte: field.SetValue(val, reader.GetByte(num)); break;
-            case FieldType.Int: field.SetValue(val, reader.GetInt32(num)); break;
-            case FieldType.Long: field.SetValue(val, reader.GetInt64(num)); break;
-            case FieldType.ULong: field.SetValue(val, (ulong)reader.GetInt64(num)); break;
-            case FieldType.String: field.SetValue(val, reader.GetString(num)); break;
-            case FieldType.Comment: field.SetValue(val, reader.GetString(num)); break;
-            case FieldType.Date: field.SetValue(val, reader.GetDateTime(num)); break;
-            case FieldType.Float: field.SetValue(val, reader.GetFloat(num)); break;
-            case FieldType.Double: field.SetValue(val, reader.GetDouble(num)); break;
-            case FieldType.Blob:
-            case FieldType.ByteArray:
-              field.SetValue(val, (byte[])reader[field.Name]);
-              break;
+          if (!reader.IsDBNull(num)) {
+            switch (ft) {
+              case FieldType.Bool: field.SetValue(val, reader.GetByte(num) != 0); break;
+              case FieldType.Byte: field.SetValue(val, reader.GetByte(num)); break;
+              case FieldType.Int: field.SetValue(val, reader.GetInt32(num)); break;
+              case FieldType.Long: field.SetValue(val, reader.GetInt64(num)); break;
+              case FieldType.ULong: field.SetValue(val, (ulong)reader.GetInt64(num)); break;
+              case FieldType.String: field.SetValue(val, reader.GetString(num)); break;
+              case FieldType.Comment: field.SetValue(val, reader.GetString(num)); break;
+              case FieldType.Date: field.SetValue(val, reader.GetDateTime(num)); break;
+              case FieldType.Float: field.SetValue(val, reader.GetFloat(num)); break;
+              case FieldType.Double: field.SetValue(val, reader.GetDouble(num)); break;
+              case FieldType.Blob:
+              case FieldType.ByteArray:
+                field.SetValue(val, (byte[])reader[field.Name]);
+                break;
+            }
           }
           num++;
         }

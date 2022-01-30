@@ -72,12 +72,3 @@ Logic to update:
 
 
 ------------- Appreciation --------------------
-track thanks
-track emojis of 2 categories
-
-enable/disable the 3 types of tracking [inter/string]
-list the emojis for the 2 trachings [inter/string]
-add/remove emojis (also mass add/remove) [string only]
-
-
-

@@ -9,6 +9,11 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Used to keep track on specific emojis, thanks, and global number of stuff posted.
+/// It is also the base for the ranking system.
+/// Each of the 4 features can be enabled individually
+/// </summary>
 public class AppreciationTracking : BaseCommandModule {
   readonly static Regex thanks = new Regex("(^|[^a-z0-9_])thanks($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly static Regex thankyou = new Regex("(^|[^a-z0-9_])thanks{0,1}\\s{0,1}you($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -51,9 +56,9 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Reputation)) {
         vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
         string emjs = "";
-        foreach (RepEmoji emj in SetupModule.RepEmojis[gid]) {
-          if (emj.sid != null) emjs += emj;
-          else emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj.lid));
+        foreach (ReputationEmoji emj in SetupModule.RepEmojis[gid].Values) {
+          if (emj.HasFlag(WhatToTrack.Reputation))
+            emjs += emj.GetEmoji(ctx.Guild);
         }       
         e.AddField("Reputation ----------------", "For receving these emojis: " + emjs, false);
 
@@ -75,9 +80,9 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Fun)) {
         vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
         string emjs = "";
-        foreach (RepEmoji emj in SetupModule.FunEmojis[gid]) {
-          if (emj.sid != null) emjs += emj;
-          else emjs += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj.lid));
+        foreach (ReputationEmoji emj in SetupModule.RepEmojis[gid].Values) {
+          if (emj.HasFlag(WhatToTrack.Fun))
+            emjs += emj.GetEmoji(ctx.Guild);
         }
         e.AddField("Fun --------------------", "For receving these emojis: " + emjs, false);
 
@@ -97,15 +102,15 @@ public class AppreciationTracking : BaseCommandModule {
 
       if (wtt.HasFlag(WhatToTrack.Rank)) {
         // Calculate the rank of every user, and show the top 10
-        // FIXME
-        /*
-lev = floor(
-    1.25 * numword ^ 0.25 + 
-    1.5 * numappr ^ 0.27
-    1.5 * numfun ^ 0.27
-    1.5 * numthanks ^ 0.27
-)        
-        */
+        List<UserRank> ranks = CalculateRanks(ctx.Guild);
+        e.AddField("Ranking --------------------", "For global activity on the server", false);
+
+        for (int i = 0; i < 10; i++) {
+          if (i >= ranks.Count) break;
+          UserRank r = ranks[i];
+          if (r.Score == 0) break;
+          e.AddField(r.Name, "Rank: #_" + r.Score + "_");
+        }
       }
 
 
@@ -116,7 +121,6 @@ lev = floor(
   }
 
   private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
-
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
     try {
@@ -230,23 +234,20 @@ lev = floor(
       if (authorId == mr.User.Id) return Task.Delay(0); // If member is equal to author ignore (no self emojis)
 
 
-      RepEmoji rem = new RepEmoji(emojiId, emojiName);
-      if (wtt.HasFlag(WhatToTrack.Reputation)) {
-        // Do we have this emoji in the Reputation list for the server?
-        if (SetupModule.RepEmojis[gid].Contains(rem)) {
-          Reputation r = SetupModule.GetReputation(gid, authorId);
-          r.Rep++;
-          Database.Update(r);
-        }
+      long key = ReputationEmoji.GetTheKey(gid, emojiId, emojiName);
+      if (!SetupModule.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
+      ReputationEmoji rem = SetupModule.RepEmojis[gid][key];
+
+      if (wtt.HasFlag(WhatToTrack.Reputation) && rem.HasFlag(WhatToTrack.Reputation)) {
+        Reputation r = SetupModule.GetReputation(gid, authorId);
+        r.Rep++;
+        Database.Update(r);
       }
 
-      if (wtt.HasFlag(WhatToTrack.Fun)) {
-        // Do we have this emoji in the Reputation list for the server?
-        if (SetupModule.RepEmojis[gid].Contains(rem)) {
-          Reputation r = SetupModule.GetReputation(gid, authorId);
-          r.Fun++;
-          Database.Update(r);
-        }
+      if (wtt.HasFlag(WhatToTrack.Fun) && rem.HasFlag(WhatToTrack.Fun)) {
+        Reputation r = SetupModule.GetReputation(gid, authorId);
+        r.Fun++;
+        Database.Update(r);
       }
 
     } catch (Exception ex) {
@@ -255,13 +256,30 @@ lev = floor(
     return Task.FromResult(0);
   }
 
-  static void CheckFun(MessageReactionAddEventArgs mr) {
+
+  List<UserRank> CalculateRanks(DiscordGuild guild, ulong user = 0) {
+    List<UserRank> ranks = new List<UserRank>();
+
+    IReadOnlyCollection<Reputation> reps = SetupModule.Reputations[guild.Id].Values;
+    foreach (Reputation r in reps) {
+      double lev = Math.Floor(
+                      1.25 * Math.Pow(r.Ran, 0.25) +
+                      1.5 * Math.Pow(r.Rep, 0.27) +
+                      1.5 * Math.Pow(r.Fun, 0.27) +
+                      1.5 * Math.Pow(r.Tnk, 0.27));
+      if (r.User == user) {
+        DiscordUser usr = guild.GetMemberAsync(r.User).Result;
+        if (usr == null) return null;
+        ranks.Add(new UserRank() { Name = usr.Username, Id = r.User, Score = (int)lev });
+        return ranks;
+      }
+      DiscordUser du = guild.GetMemberAsync(r.User).Result;
+      if (du == null) continue;
+      ranks.Add(new UserRank() { Name = du.Username, Id = r.User, Score = (int)lev });
+    }
+    ranks.Sort((a,b) => {  return b.Score.CompareTo(a.Score); });
+    return ranks;
   }
-
-  static void CheckReputation(MessageReactionAddEventArgs mr) {
-
-  }
-
 
   internal class LastPosters {
     public ulong thirdLast;
@@ -279,6 +297,7 @@ lev = floor(
 
 }
 
+/*
 public class RepEmoji {
   public ulong lid;
   public string sid;
@@ -293,6 +312,11 @@ public class RepEmoji {
     lid = 0;
   }
 
+  public RepEmoji(ReputationEmoji r) {
+    lid = r.Lid;
+    sid = r.Sid;
+  }
+
   public RepEmoji(ulong id1, string id2) {
     lid = id1;
     sid = id2;
@@ -304,6 +328,7 @@ public class RepEmoji {
     else return sid.GetHashCode();
   }
 }
+*/
 
 public enum WhatToTrack {
   None = 0,
@@ -311,4 +336,10 @@ public enum WhatToTrack {
   Reputation = 2,
   Fun = 4,
   Rank = 8,
+}
+
+public class UserRank {
+  public string Name;
+  public ulong Id;
+  public int Score;
 }

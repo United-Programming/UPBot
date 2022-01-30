@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity.Core.Metadata.Edm;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -21,13 +20,13 @@ public class SetupModule : BaseCommandModule {
   public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
 
   public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
-  public static Dictionary<ulong, HashSet<RepEmoji>> RepEmojis = new Dictionary<ulong, HashSet<RepEmoji>>();
-  public static Dictionary<ulong, HashSet<RepEmoji>> FunEmojis = new Dictionary<ulong, HashSet<RepEmoji>>();
+  public static Dictionary<ulong, Dictionary<long, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<long, ReputationEmoji>>();
   public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
 
 
-  private readonly static Regex emjSnowflakeER = new Regex(@"(<:[a-z0-9_]+:[0-9]+>)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+  private readonly static Regex emjSnowflakeER = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
+  private readonly static Regex emjUnicodeER = new Regex(@"[#*0-9]\uFE0F?\u20E3|©\uFE0F?|[®\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA]\uFE0F?|[\u231A\u231B]|[\u2328\u23CF]\uFE0F?|[\u23E9-\u23EC]|[\u23ED-\u23EF]\uFE0F?|\u23F0|[\u23F1\u23F2]\uFE0F?|\u23F3|[\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC]\uFE0F?|[\u25FD\u25FE]|[\u2600-\u2604\u260E\u2611]\uFE0F?|[\u2614\u2615]|\u2618\uFE0F?|\u261D(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642]\uFE0F?|[\u2648-\u2653]|[\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E]\uFE0F?|\u267F|\u2692\uFE0F?|\u2693|[\u2694-\u2697\u2699\u269B\u269C\u26A0]\uFE0F?|\u26A1|\u26A7\uFE0F?|[\u26AA\u26AB]|[\u26B0\u26B1]\uFE0F?|[\u26BD\u26BE\u26C4\u26C5]|\u26C8\uFE0F?|\u26CE|[\u26CF\u26D1\u26D3]\uFE0F?|\u26D4|\u26E9\uFE0F?|\u26EA|[\u26F0\u26F1]\uFE0F?|[\u26F2\u26F3]|\u26F4\uFE0F?|\u26F5|[\u26F7\u26F8]\uFE0F?|\u26F9(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\u26FA\u26FD]|\u2702\uFE0F?|\u2705|[\u2708\u2709]\uFE0F?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\u270F\uFE0F?|[\u2712\u2714\u2716\u271D\u2721]\uFE0F?|\u2728|[\u2733\u2734\u2744\u2747]\uFE0F?|[\u274C\u274E\u2753-\u2755\u2757]|\u2763\uFE0F?|\u2764(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79)|\uFE0F(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?)?|[\u2795-\u2797]|\u27A1\uFE0F?|[\u27B0\u27BF]|[\u2934\u2935\u2B05-\u2B07]\uFE0F?|[\u2B1B\u2B1C\u2B50\u2B55]|[\u3030\u303D\u3297\u3299]\uFE0F?|\uD83C(?:[\uDC04\uDCCF]|[\uDD70\uDD71\uDD7E\uDD7F]\uFE0F?|[\uDD8E\uDD91-\uDD9A]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDE01|\uDE02\uFE0F?|[\uDE1A\uDE2F\uDE32-\uDE36]|\uDE37\uFE0F?|[\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20]|[\uDF21\uDF24-\uDF2C]\uFE0F?|[\uDF2D-\uDF35]|\uDF36\uFE0F?|[\uDF37-\uDF7C]|\uDF7D\uFE0F?|[\uDF7E-\uDF84]|\uDF85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDF86-\uDF93]|[\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F]\uFE0F?|[\uDFA0-\uDFC1]|\uDFC2(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC3\uDFC4](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFC5\uDFC6]|\uDFC7(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC8\uDFC9]|\uDFCA(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCB\uDFCC](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCD\uDFCE]\uFE0F?|[\uDFCF-\uDFD3]|[\uDFD4-\uDFDF]\uFE0F?|[\uDFE0-\uDFF0]|\uDFF3(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08)|\uFE0F(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?)?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?|[\uDFF5\uDFF7]\uFE0F?|[\uDFF8-\uDFFF])|\uD83D(?:[\uDC00-\uDC07]|\uDC08(?:\u200D\u2B1B)?|[\uDC09-\uDC14]|\uDC15(?:\u200D\uD83E\uDDBA)?|[\uDC16-\uDC3A]|\uDC3B(?:\u200D\u2744\uFE0F?)?|[\uDC3C-\uDC3E]|\uDC3F\uFE0F?|\uDC40|\uDC41(?:\u200D\uD83D\uDDE8\uFE0F?|\uFE0F(?:\u200D\uD83D\uDDE8\uFE0F?)?)?|[\uDC42\uDC43](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC44\uDC45]|[\uDC46-\uDC50](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC51-\uDC65]|[\uDC66\uDC67](?:\uD83C[\uDFFB-\uDFFF])?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC6A|[\uDC6B-\uDC6D](?:\uD83C[\uDFFB-\uDFFF])?|\uDC6E(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDC70\uDC71](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC72(?:\uD83C[\uDFFB-\uDFFF])?|\uDC73(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC74-\uDC76](?:\uD83C[\uDFFB-\uDFFF])?|\uDC77(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC78(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC79-\uDC7B]|\uDC7C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC7D-\uDC80]|[\uDC81\uDC82](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC83(?:\uD83C[\uDFFB-\uDFFF])?|\uDC84|\uDC85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC86\uDC87](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC88-\uDC8E]|\uDC8F(?:\uD83C[\uDFFB-\uDFFF])?|\uDC90|\uDC91(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC92-\uDCA9]|\uDCAA(?:\uD83C[\uDFFB-\uDFFF])?|[\uDCAB-\uDCFC]|\uDCFD\uFE0F?|[\uDCFF-\uDD3D]|[\uDD49\uDD4A]\uFE0F?|[\uDD4B-\uDD4E\uDD50-\uDD67]|[\uDD6F\uDD70\uDD73]\uFE0F?|\uDD74(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\uDD75(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD76-\uDD79]\uFE0F?|\uDD7A(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD87\uDD8A-\uDD8D]\uFE0F?|\uDD90(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDD95\uDD96](?:\uD83C[\uDFFB-\uDFFF])?|\uDDA4|[\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA]\uFE0F?|[\uDDFB-\uDE2D]|\uDE2E(?:\u200D\uD83D\uDCA8)?|[\uDE2F-\uDE34]|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|[\uDE37-\uDE44]|[\uDE45-\uDE47](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDE48-\uDE4A]|\uDE4B(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE4D\uDE4E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE80-\uDEA2]|\uDEA3(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEA4-\uDEB3]|[\uDEB4-\uDEB6](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEB7-\uDEBF]|\uDEC0(?:\uD83C[\uDFFB-\uDFFF])?|[\uDEC1-\uDEC5]|\uDECB\uFE0F?|\uDECC(?:\uD83C[\uDFFB-\uDFFF])?|[\uDECD-\uDECF]\uFE0F?|[\uDED0-\uDED2\uDED5-\uDED7]|[\uDEE0-\uDEE5\uDEE9]\uFE0F?|[\uDEEB\uDEEC]|[\uDEF0\uDEF3]\uFE0F?|[\uDEF4-\uDEFC\uDFE0-\uDFEB])|\uD83E(?:\uDD0C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD0D\uDD0E]|\uDD0F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD10-\uDD17]|[\uDD18-\uDD1C](?:\uD83C[\uDFFB-\uDFFF])?|\uDD1D|[\uDD1E\uDD1F](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD20-\uDD25]|\uDD26(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD27-\uDD2F]|[\uDD30-\uDD34](?:\uD83C[\uDFFB-\uDFFF])?|\uDD35(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD36(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD37-\uDD39](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD3A|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD3D\uDD3E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD3F-\uDD45\uDD47-\uDD76]|\uDD77(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD78\uDD7A-\uDDB4]|[\uDDB5\uDDB6](?:\uD83C[\uDFFB-\uDFFF])?|\uDDB7|[\uDDB8\uDDB9](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDBA|\uDDBB(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDBC-\uDDCB]|[\uDDCD-\uDDCF](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD0|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1|[\uDDAF-\uDDB3\uDDBC\uDDBD]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|[\uDDD2\uDDD3](?:\uD83C[\uDFFB-\uDFFF])?|\uDDD4(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD5(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDD6-\uDDDD](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDE0-\uDDFF\uDE70-\uDE74\uDE78-\uDE7A\uDE80-\uDE86\uDE90-\uDEA8\uDEB0-\uDEB6\uDEC0-\uDEC2\uDED0-\uDED6])", RegexOptions.Compiled);
 
   public static DiscordGuild TryGetGuild(ulong id) {
     if (Guilds.ContainsKey(id)) return Guilds[id];
@@ -81,86 +80,111 @@ public class SetupModule : BaseCommandModule {
   }
 
   internal static void LoadParams() {
-    foreach (var g in Utils.GetClient().Guilds.Values) {
-      Guilds[g.Id] = g;
-    }
-
-    List<Config> dbconfig = Database.GetAll<Config>();
-    foreach (var c in dbconfig) {
-      ulong gid = c.Guild;
-
-      if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
-      Configs[gid].Add(c);
-
-      // Guilds
-      if (!Guilds.ContainsKey(gid)) {
-        if (TryGetGuild(gid) == null) continue; // Guild is missing
+    try {
+      foreach (var g in Utils.GetClient().Guilds.Values) {
+        Guilds[g.Id] = g;
       }
 
-      // Admin roles
-      if (c.IsParam(Config.ParamType.AdminRole)) {
-        if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
-        AdminRoles[gid].Add(c.IdVal);
+      List<Config> dbconfig = Database.GetAll<Config>();
+      foreach (var c in dbconfig) {
+        ulong gid = c.Guild;
+
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
+        Configs[gid].Add(c);
+
+        // Guilds
+        if (!Guilds.ContainsKey(gid)) {
+          if (TryGetGuild(gid) == null) continue; // Guild is missing
+        }
+
+        // Admin roles
+        if (c.IsParam(Config.ParamType.AdminRole)) {
+          if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
+          AdminRoles[gid].Add(c.IdVal);
+        }
+
+        // Tracking channels
+        if (c.IsParam(Config.ParamType.TrackingChannel)) {
+          if (!TrackChannels.ContainsKey(gid)) {
+            DiscordChannel ch = Guilds[gid].GetChannel(c.IdVal);
+            if (ch != null) {
+              if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) TrackChannels[gid] = new TrackChannel();
+              TrackChannels[gid].channel = ch;
+              TrackChannels[gid].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
+              TrackChannels[gid].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
+              TrackChannels[gid].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
+              TrackChannels[gid].config = c;
+            }
+          }
+        }
+
+        // Spam Protection
+        if (c.IsParam(Config.ParamType.SpamProtection)) {
+          SpamProtection[gid] = c.IdVal;
+        }
+
+        // Reputation Tracking
+        if (c.IsParam(Config.ParamType.Scores)) {
+          WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
+        }
       }
 
-      // Tracking channels
-      if (c.IsParam(Config.ParamType.TrackingChannel)) {
-        if (!TrackChannels.ContainsKey(gid)) {
-          DiscordChannel ch =  Guilds[gid].GetChannel(c.IdVal);
-          if (ch != null) {
-            if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) TrackChannels[gid] = new TrackChannel();
-            TrackChannels[gid].channel = ch;
-            TrackChannels[gid].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
-            TrackChannels[gid].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
-            TrackChannels[gid].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
-            TrackChannels[gid].config = c;
+      // Banned Words
+      List<BannedWord> words = Database.GetAll<BannedWord>();
+      Utils.Log("Found " + words.Count + " banned words from all servers");
+      foreach (BannedWord word in words) {
+        ulong gid = word.Guild;
+        if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+        BannedWords[gid].Add(word.Word);
+      }
+      foreach (var bwords in BannedWords.Values)
+        bwords.Sort((a, b) => { return a.CompareTo(b); });
+
+      // Reputation Tracking
+      List<Reputation> allReps = Database.GetAll<Reputation>();
+      foreach (var r in allReps) {
+        if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
+        Reputations[r.Guild][r.User] = r;
+      }
+
+      // Reputation Emojis
+      List<ReputationEmoji> allEmojis = Database.GetAll<ReputationEmoji>();
+      if (allEmojis != null) {
+        foreach (var r in allEmojis) {
+          ulong gid = r.Guild;
+          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
+          if (r.For == 0) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetTheKey() + " from Guild " + r.Guild + ": no valid use.");
+            continue;
+          }
+          try {
+            RepEmojis[gid].Add(r.GetTheKey(), r);
+
+
+          } catch (ArgumentException aex) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetTheKey() + " from Guild " + r.Guild + ": " + aex.Message);
           }
         }
       }
 
-      // Spam Protection
-      if (c.IsParam(Config.ParamType.SpamProtection)) {
-        SpamProtection[gid] = c.IdVal;
+      // Fill all missing guilds
+      foreach (var g in Guilds.Keys) {
+        if (!Configs.ContainsKey(g)) Configs[g] = new List<Config>();
+        if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
+        if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
+        if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
+        if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
+
+        if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
+        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<long, ReputationEmoji>();
       }
 
-      // Reputation Tracking
-      if (c.IsParam(Config.ParamType.Scores)) {
-        WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
-      }
+      Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
+    } catch (Exception ex) {
+      Utils.Log("Error in SetupLoadParams:" + ex.Message);
     }
-
-    // Banned Words
-    List<BannedWord> words = Database.GetAll<BannedWord>();
-    Utils.Log("Found " + words.Count + " banned words from all servers");
-    foreach (BannedWord word in words) {
-      ulong gid = word.Guild;
-      if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
-      BannedWords[gid].Add(word.Word);
-    }
-    foreach (var bwords in BannedWords.Values)
-      bwords.Sort((a, b) => { return a.CompareTo(b); });
-
-    // Reputation Tracking
-    List<Reputation> allReps = Database.GetAll<Reputation>();
-    foreach (var r in allReps) {
-      if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
-      Reputations[r.Guild][r.User] = r;
-    }
-
-    // Fill all missing guilds
-    foreach (var g in Guilds.Keys) {
-      if (!Configs.ContainsKey(g)) Configs[g] = new List<Config>();
-      if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
-      if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
-      if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
-      if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
-
-      if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
-      if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new HashSet<RepEmoji>();
-      if (!FunEmojis.ContainsKey(g)) FunEmojis[g] = new HashSet<RepEmoji>();
-    }
-
-    Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
   }
 
   internal static Task NewGuildAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildCreateEventArgs e) {
@@ -201,485 +225,6 @@ public class SetupModule : BaseCommandModule {
   readonly DiscordComponentEmoji ec = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❌"));
   DiscordComponentEmoji ok = null;
   DiscordComponentEmoji ko = null;
-
-  /* RECYCLE **************************************************
-
- // Stats channels
- StatsChannels = new List<Stats.StatChannel>();
- foreach (var param in Params) {
-   if (param.Param == "StatsChannel") {
-     try {
-       DiscordChannel c = guild.GetChannel(param.IdVal);
-       if (c != null) StatsChannels.Add(new Stats.StatChannel { id = c.Id, name = c.Name });
-     } catch (Exception ex) {
-       Utils.Log("Error in reading channels from Setup: " + param.IdVal + " " + ex.Message);
-       if (forceCleanBad) {
-         Database.Delete(param);
-       }
-     }
-   }
- }
- if (StatsChannels.Count == 0) {
-   // Check the basic 4 channels of UnitedPrograming, other servers will have nothing
-   TryAddDefaultChannel(guild, 830904407540367441ul);
-   TryAddDefaultChannel(guild, 830904726375628850ul);
-   TryAddDefaultChannel(guild, 830921265648631878ul);
-   TryAddDefaultChannel(guild, 830921315657449472ul);
- }
- // Rep and Fun Emojis
- RepSEmojis = new HashSet<string>();
- RepIEmojis = new HashSet<ulong>();
- FunSEmojis = new HashSet<string>();
- FunIEmojis = new HashSet<ulong>();
- foreach (var param in Params) {
-   if (param.Param == "RepEmoji") {
-     if (param.IdVal == 0) RepSEmojis.Add(param.StrVal);
-     else RepIEmojis.Add(param.IdVal);
-   }
-   if (param.Param == "FunEmoji") {
-     if (param.IdVal == 0) FunSEmojis.Add(param.StrVal);
-     else FunIEmojis.Add(param.IdVal);
-   }
- }
- if (RepIEmojis.Count == 0 && RepSEmojis.Count == 0) { // Add defaults
-   RepIEmojis.Add(830907665869570088ul); // :OK:
-   RepIEmojis.Add(840702597216337990ul); // :whatthisguysaid:
-   RepIEmojis.Add(552147917876625419ul); // :thoose:
-   RepSEmojis.Add("👍"); // :thumbsup:
-   RepSEmojis.Add("❤️"); // :hearth:
-   RepSEmojis.Add("🥰"); // :hearth:
-   RepSEmojis.Add("😍"); // :hearth:
-   RepSEmojis.Add("🤩"); // :hearth:
-   RepSEmojis.Add("😘"); // :hearth:
-   RepSEmojis.Add("💯"); // :100:
- }
-
- if (FunIEmojis.Count == 0 && FunSEmojis.Count == 0) { // Add defaults
-   FunIEmojis.Add(830907626928996454ul); // :StrongSmile: 
-   FunSEmojis.Add("😀");
-   FunSEmojis.Add("😃");
-   FunSEmojis.Add("😄");
-   FunSEmojis.Add("😁");
-   FunSEmojis.Add("😆");
-   FunSEmojis.Add("😅");
-   FunSEmojis.Add("🤣");
-   FunSEmojis.Add("😂");
-   FunSEmojis.Add("🙂");
-   FunSEmojis.Add("🙃");
-   FunSEmojis.Add("😉");
-   FunSEmojis.Add("😊");
-   FunSEmojis.Add("😇");
- }
-}
-
-
-
-[Command("setup")]
-[Description("Configure the bot")]
-[RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-public async Task Setup(CommandContext ctx) { // Show the possible options
- string msg =
-   "**TrackingChannel** _<#channel>_  - to set what channel to use for tracking purposes.\n" +
-   "**ListAdminRoles** - to list all admin roles.\n" +
-   "**AddAdminRole** _<@Role>_ - adds a role to the admins.\n" +
-   "**RemoveAdminRole** _<@Role>_ - removes the role to the admins.\n" +
-   "**ServerId** - prints the current server guild id.\n" +
-   "**GuildId** - prints the current server guild id.\n" +
-   "**BotID** - prints the bot id in the current server guild.\n" +
-   "**ListEmojiReputation** - to list all emojis for Reputation tracking.\n" +
-   "**ListEmojiFun** - to list all emojis for Fun tracking.\n" +
-   "**AddEmojiReputation** _emoji_ - to add an emoji for Reputation tracking.\n" +
-   "**AddEmojiFun** - _emoji_ - to add an emoji for Fun tracking.\n" +
-   "**RemoveEmojiReputation** _emoji_ - to remove an emoji for Reputation tracking.\n" +
-   "**RemoveEmojiFun** - _emoji_ - to remove an emoji for Fun tracking.\n" +
-   "**ListStatsChannels** - to list all channels used for stats.\n" +
-   "**AddStatsChannel** _<#channel>_ - adds a channel to the channels used for stats.\n" +
-   "**RemoveStatsChannel** _<#channel>_ - removes the channel from the channels used for stats.";
-
- DiscordMessage answer = ctx.RespondAsync(msg).Result;
- await Utils.DeleteDelayed(30, ctx.Message, answer);
-}
-
-[Command("setup")]
-[Description("Configure the bot")]
-[RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-public async Task Setup(CommandContext ctx, string command) { // Command with no parameters
- Utils.LogUserCommand(ctx);
- command = command.ToLowerInvariant().Trim();
- switch (command) {
-   case "trackingchannel": await TrackingChannel(ctx, null); break;
-   case "botid": await GetIDs(ctx, true); break;
-   case "serverid": await GetIDs(ctx, false); break;
-   case "guildid": await GetIDs(ctx, false); break;
-   case "listadminroles": await ListAdminRoles(ctx); break;
-   case "addadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to add parameter").Result); break;
-   case "removeadminrole": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing role to remove parameter").Result); break;
-   case "liststatschannels": await ListStatChannels(ctx); break;
-   case "addstatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to add parameter").Result); break;
-   case "removestatschannel": await Utils.DeleteDelayed(30, ctx.Message, ctx.RespondAsync("Missing channel to remove parameter").Result); break;
-   case "listemojireputation": await ListEmojiAppreciation(ctx, true); break;
-   case "listemojifun": await ListEmojiAppreciation(ctx, false); break;
-
-   default:
-     DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
-     await Utils.DeleteDelayed(30, ctx.Message, answer);
-     break;
- }
-}
-
-[Command("setup")]
-[Description("Configure the bot")]
-[RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-public async Task Setup(CommandContext ctx, string command, DiscordRole role) { // Command with role as parameter
- Utils.LogUserCommand(ctx);
- command = command.ToLowerInvariant().Trim();
- switch (command) {
-   case "addadminrole": await AddRemoveAdminRoles(ctx, role, true); break;
-   case "removeadminrole": await AddRemoveAdminRoles(ctx, role, false); break;
-
-   default:
-     DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
-     await Utils.DeleteDelayed(30, ctx.Message, answer);
-     break;
- }
-}
-
-[Command("setup")]
-[Description("Configure the bot")]
-[RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-public async Task Setup(CommandContext ctx, string command, DiscordChannel channel) { // Command with channel as parameter
- Utils.LogUserCommand(ctx);
- command = command.ToLowerInvariant().Trim();
- switch (command) {
-   case "trackingchannel": await TrackingChannel(ctx, channel); break;
-   case "addstatschannel": await AddRemoveStatChannel(ctx, channel, true); break;
-   case "removestatschannel": await AddRemoveStatChannel(ctx, channel, false); break;
-
-   default:
-     DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
-     await Utils.DeleteDelayed(30, ctx.Message, answer);
-     break;
- }
-}
-
-[Command("setup")]
-[Description("Configure the bot")]
-[RequireRoles(RoleCheckMode.Any, "Mod", "helper", "Owner", "Admin", "Moderator")] // Restrict access to users with a high level role
-public async Task Setup(CommandContext ctx, string command, string msg) { // Command with string as parameter
- Utils.LogUserCommand(ctx);
- command = command.ToLowerInvariant().Trim();
- switch (command) {
-   case "addemojireputation": await AddRemoveEmojiAppreciation(ctx, true, true); break;
-   case "removeemojireputation": await AddRemoveEmojiAppreciation(ctx, true, false); break;
-   case "addemojifun": await AddRemoveEmojiAppreciation(ctx, false, true); break;
-   case "removeemojifun": await AddRemoveEmojiAppreciation(ctx, false, false); break;
-
-   default:
-     DiscordMessage answer = ctx.RespondAsync("Unknown setup command").Result;
-     await Utils.DeleteDelayed(30, ctx.Message, answer);
-     break;
- }
-}
-
-Task TrackingChannel(CommandContext ctx, DiscordChannel channel) {
- try {
-   string msg;
-   if (channel == null) { // Read current value
-     DiscordGuild guild = Utils.GetGuild();
-     ulong channelid = GetIDParam("TrackingChannel");
-     if (channelid == 0) {
-       msg = "No channel set as Tracking Channel";
-     } else {
-       DiscordChannel tc = guild.GetChannel(channelid);
-       msg = "Current tracking channel for this server is: " + tc.Mention + " (" + tc.Id + ")";
-     }
-   }
-   else { // set the channel
-     SetupParam p = new SetupParam("TrackingChannel", channel.Id);
-     Database.Add(p);
-     Params.Add(p);
-     msg = "TrackingChannel set to " + channel.Mention;
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
-
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.TrackingChannel", ex));
- }
-}
-
-Task GetIDs(CommandContext ctx, bool forBot) {
- try {
-   string msg;
-   if (forBot) { // Read current value
-     DiscordMember bot = Utils.GetMyself();
-     msg = "Bot ID is: " + bot.Mention + " (" + bot.Id + ")";
-   } else {
-     DiscordGuild guild = Utils.GetGuild();
-     msg = "Server/Guild ID is: " + guild.Name + " (" + guild.Id + ")";
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
-
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.GetIDs", ex));
- }
-}
-
-Task ListAdminRoles(CommandContext ctx) {
- try   {
-   string msg = "";
-   if (AdminRoles == null || AdminRoles.Count == 0) { // Try to read again the guild
-     LoadParams();
-   }
-   if (AdminRoles == null || AdminRoles.Count == 0) {
-     msg = "No admin roles defined";
-   } else {
-     DiscordGuild guild = Utils.GetGuild();
-     foreach (ulong id in AdminRoles) {
-       DiscordRole r = guild.GetRole(id);
-       if (r != null) msg += r.Mention + ", ";
-     }
-     msg = msg[0..^2];
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListAdminRoles", ex));
- }
-}
-
-Task AddRemoveAdminRoles(CommandContext ctx, DiscordRole role, bool add) {
- try {
-   string msg = null;
-   if (add) {
-     foreach (var p in AdminRoles) if (p == role.Id) {
-         msg = "The role " + role.Name + " is already an Admin role for the bot.";
-         break;
-       }
-     if (msg == null) {
-       SetupParam p = new SetupParam("AdminRole", role.Id);
-       AdminRoles.Add(role.Id);
-       Database.Add(p);
-       Params.Add(p);
-       Utils.Log("Added role " + role.Name + " as admin role");
-       msg = "Role " + role.Name + " added as Admin Role";
-     }
-   } else {
-     foreach (var p in Params) {
-       if (p.Param == "AdminRole" && p.IdVal == role.Id) {
-         Database.Delete(p);
-         Params.Remove(p);
-         AdminRoles.Remove(role.Id);
-         msg = "Role " + role.Name + " removed from Admin Roles";
-         Utils.Log("Removed role " + role.Name + " as admin role");
-         break;
-       }
-     }
-     if (msg == null) msg = "Role " + role.Name + " was not an Admin Role";
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
-
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveAdminRoles", ex));
- }
-}
-
-
-Task ListStatChannels(CommandContext ctx) {
- try   {
-   string msg = "";
-   if (StatsChannels == null || StatsChannels.Count == 0) { // Try to read again the guild
-     LoadParams();
-   }
-   if (StatsChannels == null || StatsChannels.Count == 0) {
-     msg = "No stat channels defined";
-   } else {
-     DiscordGuild guild = Utils.GetGuild();
-     foreach (var sc in StatsChannels) {
-       DiscordChannel c = guild.GetChannel(sc.id);
-       if (c != null) msg += c.Mention + ", ";
-     }
-     msg = msg[0..^2];
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListStatChannels", ex));
- }
-}
-
-Task AddRemoveStatChannel(CommandContext ctx, DiscordChannel channel, bool add) {
- try {
-   string msg = null;
-   if (add) {
-     foreach (var sc in StatsChannels) if (sc.id == channel.Id) {
-         msg = "The channel " + channel.Name + " is already a stat channel.";
-         break;
-       }
-     if (msg == null) {
-       SetupParam p = new SetupParam("StatsChannel", channel.Id);
-       StatsChannels.Add(new Stats.StatChannel { id = channel.Id, name = channel.Name });
-       Database.Add(p);
-       Params.Add(p);
-       Utils.Log("Added channel " + channel.Name + " as stats channel");
-       msg = "Channel " + channel.Name + " added as stats channel";
-     }
-   } else {
-     foreach (var p in Params) {
-       if (p.Param == "StatsChannel" && p.IdVal == channel.Id) {
-         Database.Delete(p);
-         Params.Remove(p);
-         foreach (var sc in StatsChannels) 
-           if (sc.id == channel.Id) {
-             StatsChannels.Remove(sc);
-             break;
-           }
-         msg = "Channel " + channel.Name + " removed from stats channel";
-         Utils.Log("Removed channel " + channel.Name + " from stats channel");
-         break;
-       }
-     }
-     if (msg == null) msg = "Channel " + channel.Name + " was not a stats channel";
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
-
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveStatChannel", ex));
- }
-}
-
-Task ListEmojiAppreciation(CommandContext ctx, bool rep) {
- try {
-   string msg = "";
-   if (rep) {
-     if (RepIEmojis.Count == 0 && RepSEmojis.Count == 0) msg = "No emojis for reputation are defined";
-     else {
-       msg = "Emojis for reputation: ";
-       foreach (string emj in RepSEmojis) msg += emj;
-       foreach (ulong emj in RepIEmojis) msg += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
-     }
-   }
-   else {
-     if (FunIEmojis.Count == 0 && FunSEmojis.Count == 0) msg = "No emojis for fun are defined";
-     else {
-       msg = "Emojis for fun: ";
-       foreach (string emj in FunSEmojis) msg += emj;
-       foreach (ulong emj in FunIEmojis) msg += Utils.GetEmojiSnowflakeID(Utils.GetEmoji(emj));
-     }
-   }
-   if (StatsChannels == null || StatsChannels.Count == 0) { // Try to read again the guild
-     LoadParams();
-   }
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.ListEmojiAppreciation", ex));
- }
-}
-
-Task AddRemoveEmojiAppreciation(CommandContext ctx, bool rep, bool add) {
- try {
-   string[] contentParts = ctx.Message.Content.Split(' ');
-   // Get the 3rd that is not empty
-   string content = null;
-   int num = 0;
-   foreach (string part in contentParts) {
-     if (!string.IsNullOrEmpty(part)) {
-       num++;
-       if (num == 3) { content = part; break; }
-     }
-   }
-   string msg = null;
-   // Do we have an emoji snoflake id?
-   Match match = emjSnowflakeER.Match(content);
-   if (match.Success) {
-     content = match.Groups[1].Value;
-     if (add) {
-       if (rep) {
-         if (RepSEmojis.Contains(content)) msg = "Emoji " + content + " already in the reputation list";
-         else {
-
-//              WeakReference should get the ulong for the emoji here!!!! Not the string!!!!!
-
-           SetupParam p = new SetupParam("RepEmoji", content);
-           Params.Add(p);
-           Database.Add(p);
-           RepSEmojis.Add(content);
-           msg = "Emoji " + content + " added to the reputation list";
-         }
-
-       } else {
-         if (FunSEmojis.Contains(content)) msg = "Emoji " + content + " already in the fun list";
-         else {
-           SetupParam p = new SetupParam("FunEmoji", content);
-           Params.Add(p);
-           Database.Add(p);
-           FunSEmojis.Add(content);
-           msg = "Emoji " + content + " added to the fun list";
-         }
-       }
-     } else { // Remove
-       string t = (rep ? "RepEmoji" : "FunEmoji");
-         foreach (var p in Params) {
-         if (p.Param == t && p.StrVal == content) {
-           Params.Remove(p);
-           Database.Delete(p);
-           if (rep) {
-             RepSEmojis.Remove(content);
-             msg = "Emoji " + content + " removed to the reputation list";
-           } else {
-             FunSEmojis.Remove(content);
-             msg = "Emoji " + content + " removed to the fun list";
-           }
-           break;
-         }
-       }
-     }
-   }
-   else { // Grab the very first unicode emoji we can find
-     for (int i = 0; i < content.Length - 1; i++) {
-       if (char.IsSurrogate(content[i]) && char.IsSurrogatePair(content[i], content[i + 1])) {
-         int codePoint = char.ConvertToUtf32(content[i], content[i + 1]);
-         content = "" + content[i] + content[i + 1];
-         break;
-       }
-     }
-   }
-
-
-   DiscordMessage answer = ctx.RespondAsync(msg).Result;
-   return Utils.DeleteDelayed(30, ctx.Message, answer);
-
- } catch (Exception ex) {
-   return ctx.RespondAsync(Utils.GenerateErrorAnswer("Setup.AddRemoveStatChannel", ex));
- }
-}
-
-
-//  public async Task Setup(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
-
-
-roles for commands
-ids for emojis
-ids for admins: 830901562960117780ul 830901743624650783ul 831050318171078718ul
-channels for stats: 
-             830904407540367441ul, "Unity",
-             830904726375628850ul, "CSharp",
-             830921265648631878ul, "Help1",
-             830921315657449472ul, "Help2",
-
-static ulong GetIDParam(string param) {
- if (Params == null) return 0;
- foreach (SetupParam p in Params) {
-   if (p.Param == param) return p.IdVal;
- }
- return 0; // not found
-}
-*/
-
 
   /**************************** Interaction *********************************/
   [Command("Setup")]
@@ -931,6 +476,48 @@ static ulong GetIDParam(string param) {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id == "idfeatscoresere" || ir.Id == "idfeatscoresefe") { // ********* Config Scoring emojis ***********************************************************************
+
+        await ctx.Channel.DeleteMessageAsync(msg);
+        msg = null;
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used as " +
+          (ir.Id == "idfeatscoresere" ? "Reputation" : "Fun") + ", you have 5 minutes before timeout");
+        var answer = await interact.WaitForMessageAsync((dm) => {
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+        }, TimeSpan.FromMinutes(5));
+        if (answer.Result == null || answer.Result.Content.Length < 4) {
+          _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
+        } else {
+
+          // FIXME
+
+
+          string emjs = answer.Result.Content.ToLowerInvariant().Trim();
+        }
+        await ctx.Channel.DeleteMessageAsync(prompt);
+
+
+      } else if (ir.Id.Length > 10 && ir.Id[0..11] == "idfeatscore") { // ********* Config Scoring ***********************************************************************
+        Config c = GetConfig(gid, Config.ParamType.Scores);
+        ulong val = 0;
+        if (c != null) val = c.IdVal;
+        ulong old = val;
+        if (ir.Id == "idfeatscorese0") val ^= (ulong)WhatToTrack.Reputation;
+        if (ir.Id == "idfeatscorese1") val ^= (ulong)WhatToTrack.Fun;
+        if (ir.Id == "idfeatscorese2") val ^= (ulong)WhatToTrack.Thanks;
+        if (ir.Id == "idfeatscorese3") val ^= (ulong)WhatToTrack.Rank;
+        if (val != old) {
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.Scores, val);
+            Configs[gid].Add(c);
+          } else c.IdVal = val;
+          Database.Add(c);
+          SpamProtection[gid] = val;
+        }
+        msg = CreateScoresInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
@@ -945,491 +532,664 @@ static ulong GetIDParam(string param) {
   [Description("Configration of the bot (interactive if without parameters)")]
   public async Task SetupCommand(CommandContext ctx, [RemainingText] [Description("The setup command to execute")]string command) {
     Utils.LogUserCommand(ctx);
-    DiscordGuild g = ctx.Guild;
-    ulong gid = g.Id;
-    string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
+    try {
+      DiscordGuild g = ctx.Guild;
+      ulong gid = g.Id;
+      string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
 
-    // ****************** LIST *********************************************************************************************************************************************
-    if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
-      // list
+      // ****************** LIST *********************************************************************************************************************************************
+      if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
+        // list
 
-      string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
-      string part = "";
-      // Admins ******************************************************
-      if(AdminRoles[gid].Count == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
-      else {
-        foreach (var rid in AdminRoles[gid]) {
-          DiscordRole r = g.GetRole(rid);
-          if (r != null) part += r.Name + ", ";
-        }
-        if (part.Length == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
-        else msg += "**AdminRoles**: " + part[0..^2] + "\n";
-      }
-
-      // TrackingChannel ******************************************************
-      if(TrackChannels[gid] == null) msg += "**TrackingChannel**: _no tracking channel defined_\n";
-      else {
-        msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
-        if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
-          if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
-          if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
-          if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
-        } else msg += "nothing";
-        msg += "\n";
-      }
-
-      // Ping ******************************************************
-      Config cfg = GetConfig(gid, Config.ParamType.Ping);
-      if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
-      else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // WhoIs ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.WhoIs);
-      if (cfg == null) msg += "**WhoIs**: _not defined (disabled by default)_\n";
-      else msg += "**WhoIs**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // MassDel ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.MassDel);
-      if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
-      else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // Games ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.Games);
-      if (cfg == null) msg += "**Games**: _not defined (disabled by default)_\n";
-      else msg += "**Games**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // Refactor ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.Refactor);
-      if (cfg == null) msg += "**Code Refactor**: _not defined (disabled by default)_\n";
-      else msg += "**Code Refactor**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // Timezones ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.TimezoneS);
-      Config cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
-      if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
-      else msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + " Read = " + (Config.ConfVal)cfg2.IdVal + "\n";
-
-      // UnityDocs ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.UnityDocs);
-      if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
-      else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // SpamProtection ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.SpamProtection);
-      if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
-      else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
-      else msg += "**Spam Protection**: enabled for" +
-          ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
-          ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-          ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
-          "\n";
-
-      // Stats ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.Stats);
-      if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
-      else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-      // Banned Words ******************************************************
-      cfg = GetConfig(gid, Config.ParamType.BannedWords);
-      if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
-      else {
-        if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
+        string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
+        string part = "";
+        // Admins ******************************************************
+        if (AdminRoles[gid].Count == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
         else {
-          string bws = "";
-          foreach (var w in BannedWords[gid]) bws += w + ", ";
-          msg += "**BannedWords**: " + bws[0..^2] + ".\n";
-        }
-      }
-
-
-      await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
-    }
-
-    // ****************** PING *********************************************************************************************************************************************
-    if (cmds[0].Equals("ping") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.Ping);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.Ping, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** WHOIS *********************************************************************************************************************************************
-    if (cmds[0].Equals("whois") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.WhoIs);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.WhoIs, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** MASSDEL *********************************************************************************************************************************************
-    if (cmds[0].Equals("massdel") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.MassDel);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.MassDel, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** GAMES *********************************************************************************************************************************************
-    if (cmds[0].Equals("games") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.Games);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.Games, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** REFACTOR *********************************************************************************************************************************************
-    if (cmds[0].Equals("refactor") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.Refactor);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.Refactor, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** UNITYDOCS *********************************************************************************************************************************************
-    if (cmds[0].Equals("unitydocs") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.UnityDocs);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.UnityDocs, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
-    }
-
-    // ****************** TIMEZONES *********************************************************************************************************************************************
-    if (cmds[0].Equals("timezones") && cmds.Length > 2) {
-      // get|set who
-      // who who
-      char who = cmds[2][0];
-      Config cg = GetConfig(gid, Config.ParamType.TimezoneG);
-      Config cs = GetConfig(gid, Config.ParamType.TimezoneS);
-      if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
-        if (cg == null) {
-          cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-          Configs[gid].Add(cg);
-        }
-        if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
-
-      } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
-        if (cs == null) {
-          cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-          Configs[gid].Add(cs);
-        }
-        if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (who == 'e' || who == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
-
-      } else {
-        char whos = cmds[1][0];
-        if (cg == null) {
-          cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-          Configs[gid].Add(cg);
-        }
-        if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
-
-        if (cs == null) {
-          cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-          Configs[gid].Add(cs);
-        }
-        if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
-      }
-
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
-    }
-
-    // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
-    if (cmds[0].Equals("trackingchannel") && cmds.Length > 1) {
-      Config c = GetConfig(gid, Config.ParamType.TrackingChannel);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.TrackingChannel, 1);
-        Configs[gid].Add(c);
-      }
-
-      // [channel]|remove j l r
-      bool j = false;
-      bool l = false;
-      bool r = false;
-      DiscordChannel forLater = null;
-      for (int i = 1; i < cmds.Length; i++) {
-        string part = cmds[i].ToLowerInvariant();
-        if (part[0] == '#') part = part[1..];
-        // Is it a channel?
-        foreach (DiscordChannel ch in g.Channels.Values) {
-          if (ch.Name.Equals(part, StringComparison.InvariantCultureIgnoreCase)) {
-            c.IdVal = ch.Id;
-            forLater = ch;
-            break;
+          foreach (var rid in AdminRoles[gid]) {
+            DiscordRole r = g.GetRole(rid);
+            if (r != null) part += r.Name + ", ";
           }
+          if (part.Length == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+          else msg += "**AdminRoles**: " + part[0..^2] + "\n";
         }
-        if (part.Length > 2 && part[0..3] == "rem") { // remove
-          c.IdVal = 0;
-          c.StrVal = null;
-          forLater = null;
-          break;
-        }
-        if (part[0] == 'j' && c.IdVal != 0) j = true; // join
-        if (part[0] == 'l' && c.IdVal != 0) l = true; // leave
-        if (part[0] == 'r' && c.IdVal != 0) r = true; // roles
-      }
-      if (c.IdVal != 0) {
-        c.StrVal = (j ? "1" : "0") + (l ? "1" : "0") + (r ? "1" : "0");
-      }
-      // Update the cache
-      if (TrackChannels[gid] == null) {
-        TrackChannels[gid] = new TrackChannel() { channel = forLater, config = c, trackJoin = j, trackLeave = l, trackRoles = r };
-      } else {
-        if (c.IdVal != 0 && forLater != null) TrackChannels[gid].channel = forLater;
-        else if (c.IdVal == 0) TrackChannels[gid].channel = null;
-        TrackChannels[gid].config = c;
-        TrackChannels[gid].trackJoin = j;
-        TrackChannels[gid].trackLeave = l;
-        TrackChannels[gid].trackRoles = r;
-      }
 
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      string msg;
-      if (c.IdVal == 0) msg = "TrackingChannel command changed to _tracking channel removed_";
-      else {
-        msg = "TrackingChannel command changed to " + g.GetChannel(c.IdVal).Mention + " for ";
-        if (!j && !l && !r) {
-          msg += "_nothing_";
+        // TrackingChannel ******************************************************
+        if (TrackChannels[gid] == null) msg += "**TrackingChannel**: _no tracking channel defined_\n";
+        else {
+          msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
+          if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
+            if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
+            if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
+            if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
+          } else msg += "nothing";
+          msg += "\n";
         }
-        if (j) msg += "_Join_ ";
-        if (l) msg += "_Leave_ ";
-        if (r) msg += "_Roles_ ";
-      }
-      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-    }
 
-    // ****************** ADMINROLES *********************************************************************************************************************************************
-    if (cmds[0].Equals("adminroles") && cmds.Length > 1) {
-      var errs = "";
-      // set them, or remove
-      if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
-        Config c = GetConfig(gid, Config.ParamType.AdminRole);
-        while (c != null) {
-          Configs[gid].Remove(c);
-          Database.Delete(c);
-          AdminRoles[gid].Remove(c.IdVal);
-          c = GetConfig(gid, Config.ParamType.AdminRole);
-        }
-      } else {
-        var guildRoles = g.Roles.Values;
-        List<Config> confRoles = new List<Config>();
-        foreach (var c in Configs[gid])
-          if (c.IsParam(Config.ParamType.AdminRole)) {
-            confRoles.Add(c);
-            c.StrVal = "*";
-          }
-        for (int i = 1; i < cmds.Length; i++) {
-          // Find if we have it (and the id)
-          ulong id = 0;
-          Match rm = roleParser.Match(cmds[i]);
-          if (rm.Success)
-            ulong.TryParse(rm.Groups[1].Value, out id);
+        // Ping ******************************************************
+        Config cfg = GetConfig(gid, Config.ParamType.Ping);
+        if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
+        else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // WhoIs ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.WhoIs);
+        if (cfg == null) msg += "**WhoIs**: _not defined (disabled by default)_\n";
+        else msg += "**WhoIs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // MassDel ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.MassDel);
+        if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
+        else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // Games ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.Games);
+        if (cfg == null) msg += "**Games**: _not defined (disabled by default)_\n";
+        else msg += "**Games**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // Refactor ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.Refactor);
+        if (cfg == null) msg += "**Code Refactor**: _not defined (disabled by default)_\n";
+        else msg += "**Code Refactor**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // Timezones ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.TimezoneS);
+        Config cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
+        if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
+        else msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + " Read = " + (Config.ConfVal)cfg2.IdVal + "\n";
+
+        // UnityDocs ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.UnityDocs);
+        if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
+        else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // SpamProtection ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.SpamProtection);
+        if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
+        else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
+        else msg += "**Spam Protection**: enabled for" +
+            ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
+            ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+            ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
+            "\n";
+
+        // Stats ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.Stats);
+        if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
+        else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+        // Banned Words ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.BannedWords);
+        if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
+        else {
+          if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
           else {
-            foreach (var r in guildRoles)
-              if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
-                id = r.Id;
+            string bws = "";
+            foreach (var w in BannedWords[gid]) bws += w + ", ";
+            msg += "**BannedWords**: " + bws[0..^2] + ".\n";
+          }
+        }
+
+        // Scores ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.Scores);
+        if (cfg == null) msg += "**Scores**: _not defined (disabled by default)_\n";
+        else {
+          WhatToTrack wtt = (WhatToTrack)cfg.IdVal;
+          if (wtt == WhatToTrack.None) msg += "**Scores** is _Disabled_\n"; else msg += "**Scores** _Enabled_ are";
+          if (wtt.HasFlag(WhatToTrack.Reputation)) {
+            msg += " **Reputation**";
+            bool missing = true;
+            foreach (var e in RepEmojis[gid].Values)
+              if (e.HasFlag(WhatToTrack.Reputation)) {
+                missing = false;
                 break;
               }
+            if (missing) msg += " (_No emojis defined!_)  ";
           }
-          if (id == 0) {
-            errs += cmds[i] + " ";
-            continue;
+          if (wtt.HasFlag(WhatToTrack.Fun)) {
+            msg += " **Fun**";
+            bool missing = true;
+            foreach (var e in RepEmojis[gid].Values)
+              if (e.HasFlag(WhatToTrack.Fun)) {
+                missing = false;
+                break;
+              }
+            if (missing) msg += " (_No emojis defined!_)  ";
           }
-          // Do we have it in the Configs?
-          bool notfound = true;
-          foreach (var c in confRoles) {
-            if (c.IdVal == id) {
-              c.StrVal = null;
-              notfound = false;
+          if (wtt.HasFlag(WhatToTrack.Thanks)) msg += " **Thanks**";
+          if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
+          msg += "\n";
+        }
+
+        await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
+      }
+
+      // ****************** PING *********************************************************************************************************************************************
+      if (cmds[0].Equals("ping") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.Ping);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.Ping, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** WHOIS *********************************************************************************************************************************************
+      if (cmds[0].Equals("whois") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.WhoIs);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.WhoIs, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** MASSDEL *********************************************************************************************************************************************
+      if (cmds[0].Equals("massdel") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.MassDel);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.MassDel, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** GAMES *********************************************************************************************************************************************
+      if (cmds[0].Equals("games") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.Games);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.Games, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** REFACTOR *********************************************************************************************************************************************
+      if (cmds[0].Equals("refactor") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.Refactor);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.Refactor, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** UNITYDOCS *********************************************************************************************************************************************
+      if (cmds[0].Equals("unitydocs") && cmds.Length > 1) {
+        char mode = cmds[1][0];
+        Config c = GetConfig(gid, Config.ParamType.UnityDocs);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.UnityDocs, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
+      }
+
+      // ****************** TIMEZONES *********************************************************************************************************************************************
+      if (cmds[0].Equals("timezones") && cmds.Length > 2) {
+        // get|set who
+        // who who
+        char who = cmds[2][0];
+        Config cg = GetConfig(gid, Config.ParamType.TimezoneG);
+        Config cs = GetConfig(gid, Config.ParamType.TimezoneS);
+        if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
+          if (cg == null) {
+            cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+            Configs[gid].Add(cg);
+          }
+          if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
+
+        } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
+          if (cs == null) {
+            cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+            Configs[gid].Add(cs);
+          }
+          if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (who == 'e' || who == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
+
+        } else {
+          char whos = cmds[1][0];
+          if (cg == null) {
+            cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+            Configs[gid].Add(cg);
+          }
+          if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
+
+          if (cs == null) {
+            cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+            Configs[gid].Add(cs);
+          }
+          if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
+        }
+
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
+      }
+
+      // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
+      if (cmds[0].Equals("trackingchannel") && cmds.Length > 1) {
+        Config c = GetConfig(gid, Config.ParamType.TrackingChannel);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.TrackingChannel, 1);
+          Configs[gid].Add(c);
+        }
+
+        // [channel]|remove j l r
+        bool j = false;
+        bool l = false;
+        bool r = false;
+        DiscordChannel forLater = null;
+        for (int i = 1; i < cmds.Length; i++) {
+          string part = cmds[i].ToLowerInvariant();
+          if (part[0] == '#') part = part[1..];
+          // Is it a channel?
+          foreach (DiscordChannel ch in g.Channels.Values) {
+            if (ch.Name.Equals(part, StringComparison.InvariantCultureIgnoreCase)) {
+              c.IdVal = ch.Id;
+              forLater = ch;
               break;
             }
           }
-          if (notfound) { // Add it
-            Config c = new Config(gid, Config.ParamType.AdminRole, id);
-            confRoles.Add(c);
-            Configs[gid].Add(c);
-            Database.Add(c);
-            AdminRoles[gid].Add(id);
+          if (part.Length > 2 && part[0..3] == "rem") { // remove
+            c.IdVal = 0;
+            c.StrVal = null;
+            forLater = null;
+            break;
           }
+          if (part[0] == 'j' && c.IdVal != 0) j = true; // join
+          if (part[0] == 'l' && c.IdVal != 0) l = true; // leave
+          if (part[0] == 'r' && c.IdVal != 0) r = true; // roles
         }
-        // Remove all configs that are not required
-        for (int i = confRoles.Count - 1; i >= 0; i--) {
-          if (confRoles[i].StrVal != null) {
-            Config c = confRoles[i];
-            confRoles.RemoveAt(i);
+        if (c.IdVal != 0) {
+          c.StrVal = (j ? "1" : "0") + (l ? "1" : "0") + (r ? "1" : "0");
+        }
+        // Update the cache
+        if (TrackChannels[gid] == null) {
+          TrackChannels[gid] = new TrackChannel() { channel = forLater, config = c, trackJoin = j, trackLeave = l, trackRoles = r };
+        } else {
+          if (c.IdVal != 0 && forLater != null) TrackChannels[gid].channel = forLater;
+          else if (c.IdVal == 0) TrackChannels[gid].channel = null;
+          TrackChannels[gid].config = c;
+          TrackChannels[gid].trackJoin = j;
+          TrackChannels[gid].trackLeave = l;
+          TrackChannels[gid].trackRoles = r;
+        }
+
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        string msg;
+        if (c.IdVal == 0) msg = "TrackingChannel command changed to _tracking channel removed_";
+        else {
+          msg = "TrackingChannel command changed to " + g.GetChannel(c.IdVal).Mention + " for ";
+          if (!j && !l && !r) {
+            msg += "_nothing_";
+          }
+          if (j) msg += "_Join_ ";
+          if (l) msg += "_Leave_ ";
+          if (r) msg += "_Roles_ ";
+        }
+        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+      }
+
+      // ****************** ADMINROLES *********************************************************************************************************************************************
+      if (cmds[0].Equals("adminroles") && cmds.Length > 1) {
+        var errs = "";
+        // set them, or remove
+        if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
+          Config c = GetConfig(gid, Config.ParamType.AdminRole);
+          while (c != null) {
             Configs[gid].Remove(c);
-            AdminRoles[gid].Remove(c.IdVal);
             Database.Delete(c);
+            AdminRoles[gid].Remove(c.IdVal);
+            c = GetConfig(gid, Config.ParamType.AdminRole);
+          }
+        } else {
+          var guildRoles = g.Roles.Values;
+          List<Config> confRoles = new List<Config>();
+          foreach (var c in Configs[gid])
+            if (c.IsParam(Config.ParamType.AdminRole)) {
+              confRoles.Add(c);
+              c.StrVal = "*";
+            }
+          for (int i = 1; i < cmds.Length; i++) {
+            // Find if we have it (and the id)
+            ulong id = 0;
+            Match rm = roleParser.Match(cmds[i]);
+            if (rm.Success)
+              ulong.TryParse(rm.Groups[1].Value, out id);
+            else {
+              foreach (var r in guildRoles)
+                if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
+                  id = r.Id;
+                  break;
+                }
+            }
+            if (id == 0) {
+              errs += cmds[i] + " ";
+              continue;
+            }
+            // Do we have it in the Configs?
+            bool notfound = true;
+            foreach (var c in confRoles) {
+              if (c.IdVal == id) {
+                c.StrVal = null;
+                notfound = false;
+                break;
+              }
+            }
+            if (notfound) { // Add it
+              Config c = new Config(gid, Config.ParamType.AdminRole, id);
+              confRoles.Add(c);
+              Configs[gid].Add(c);
+              Database.Add(c);
+              AdminRoles[gid].Add(id);
+            }
+          }
+          // Remove all configs that are not required
+          for (int i = confRoles.Count - 1; i >= 0; i--) {
+            if (confRoles[i].StrVal != null) {
+              Config c = confRoles[i];
+              confRoles.RemoveAt(i);
+              Configs[gid].Remove(c);
+              AdminRoles[gid].Remove(c.IdVal);
+              Database.Delete(c);
+            }
           }
         }
-      }
-      // And show the result
-      string msg;
+        // And show the result
+        string msg;
 
-      if (AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
-      else {
-        msg = "**AdminRoles** are: ";
-        foreach (var rid in AdminRoles[gid]) {
-          DiscordRole r = g.GetRole(rid);
-          if (r != null) msg += r.Mention + ", ";
+        if (AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
+        else {
+          msg = "**AdminRoles** are: ";
+          foreach (var rid in AdminRoles[gid]) {
+            DiscordRole r = g.GetRole(rid);
+            if (r != null) msg += r.Mention + ", ";
+          }
+          msg = msg[0..^2];
         }
-        msg = msg[0..^2];
+        if (errs.Length > 0) msg += " _Errors:_ " + errs;
+
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
       }
-      if (errs.Length > 0) msg += " _Errors:_ " + errs;
 
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-    }
+      // ****************** SPAMPROTECTION *********************************************************************************************************************************************
+      if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection")) && cmds.Length > 1) {
+        bool edisc = false, esteam = false, eepic = false;
+        for (int i = 1; i < cmds.Length; i++) {
+          char mode = cmds[1][0];
+          if (mode == 'd') edisc = true;
+          if (mode == 's') esteam = true;
+          if (mode == 'e') eepic = true;
+        }
+        ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
+        Config c = GetConfig(gid, Config.ParamType.SpamProtection);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.SpamProtection, val);
+          Configs[gid].Add(c);
+        } else c.IdVal = val;
+        Database.Add(c);
+        SpamProtection[gid] = val;
 
-    // ****************** SPAMPROTECTION *********************************************************************************************************************************************
-    if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection")) && cmds.Length > 1) {
-      bool edisc = false, esteam = false, eepic = false;
-      for (int i = 1; i < cmds.Length; i++) {
+        string msg = "SpamProtection command changed to ";
+        if (val == 0) msg += "_disabled_\n";
+        else msg += "enabled for" +
+            ((val & 1ul) == 1 ? " _Discord_" : "") +
+            ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+            ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
+
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+      }
+
+      // ****************** STATS *********************************************************************************************************************************************
+      if (cmds[0].Equals("stats") && cmds.Length > 1) {
         char mode = cmds[1][0];
-        if (mode == 'd') edisc = true;
-        if (mode == 's') esteam = true;
-        if (mode == 'e') eepic = true;
+        Config c = GetConfig(gid, Config.ParamType.Stats);
+        if (c == null) {
+          c = new Config(gid, Config.ParamType.Stats, 1);
+          Configs[gid].Add(c);
+        }
+        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        _ = Utils.DeleteDelayed(15, ctx.Message);
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
       }
-      ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
-      Config c = GetConfig(gid, Config.ParamType.SpamProtection);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.SpamProtection, val);
-        Configs[gid].Add(c);
-      } else c.IdVal = val;
-      Database.Add(c);
-      SpamProtection[gid] = val;
 
-      string msg = "SpamProtection command changed to ";
-      if (val == 0) msg += "_disabled_\n";
-      else msg += "enabled for" +
-          ((val & 1ul) == 1 ? " _Discord_" : "") +
-          ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-          ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
+      // ****************** BANNEDWORDS *********************************************************************************************************************************************
+      if (cmds[0].Equals("bannedwords")) {
+        if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `enable` or `disable` to change the status\n`add` _word_ to add a new word to ban\n`remove` _word_ to remove a word from the list\n`clear` to remove all words\n`list` to show all banned words."));
+        }
+        if (cmds.Length > 1) {
+          if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) { // LIST ********************************************************************************************************************
+            if (BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
+            string bws = "Banned Words: ";
+            foreach (var w in BannedWords[gid]) bws += w + ", ";
+            bws = bws[0..^2];
+            if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) bws += " (_disabled_)";
+            else bws += " (_enabled_)";
+            await Utils.DeleteDelayed(15, ctx.RespondAsync(bws));
 
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-    }
+          } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
+            SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
+            if (BannedWords[gid].Count == 0)
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_ (but no banned words are deifned)"));
+            else
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_"));
 
-    // ****************** STATS *********************************************************************************************************************************************
-    if (cmds[0].Equals("stats") && cmds.Length > 1) {
-      char mode = cmds[1][0];
-      Config c = GetConfig(gid, Config.ParamType.Stats);
-      if (c == null) {
-        c = new Config(gid, Config.ParamType.Stats, 1);
-        Configs[gid].Add(c);
-      }
-      if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-      if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-      if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-      _ = Utils.DeleteDelayed(15, ctx.Message);
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
-    }
+          } else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
+            SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _disabled_"));
 
-    // ****************** BANNEDWORDS *********************************************************************************************************************************************
-    if (cmds[0].Equals("bannedwords")) {
-      if (cmds.Length > 1) {
-        if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) { // LIST ********************************************************************************************************************
-          if (BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
-          string bws = "Banned Words: ";
-          foreach (var w in BannedWords[gid]) bws += w + ", ";
-          bws = bws[0..^2];
-          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) bws += " (_disabled_)";
-          else bws += " (_enabled_)";
-          await Utils.DeleteDelayed(15, ctx.RespondAsync(bws));
+          } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
+            string bw = cmds[2].ToLowerInvariant().Trim();
+            if (BannedWords[gid].Contains(bw)) {
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is already there"));
+            } else {
+              BannedWords[gid].Add(bw);
+              Database.Add(new BannedWord(gid, bw));
+            }
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is added the the list of banned words"));
 
-        } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
-          SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
-          if (BannedWords[gid].Count == 0)
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_ (but no banned words are deifned)"));
-          else
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_"));
+          } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
+            string bw = cmds[2].ToLowerInvariant().Trim();
+            if (BannedWords[gid].Contains(bw)) {
+              Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+              BannedWords[gid].Remove(bw);
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
+            } else {
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is not in the list of banned words"));
+            }
 
-        } else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
-          SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _disabled_"));
-
-        } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
-          string bw = cmds[2].ToLowerInvariant().Trim();
-          if (BannedWords[gid].Contains(bw)) {
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is already there"));
-          } else {
-            BannedWords[gid].Add(bw);
-            Database.Add(new BannedWord(gid, bw));
+          } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
+            foreach (var bw in BannedWords[gid]) {
+              Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+            }
+            BannedWords[gid].Clear();
           }
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is added the the list of banned words"));
-
-        } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
-          string bw = cmds[2].ToLowerInvariant().Trim();
-          if (BannedWords[gid].Contains(bw)) {
-            Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
-            BannedWords[gid].Remove(bw);
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
-          } else {
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is not in the list of banned words"));
-          }
-
-        } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
-          foreach (var bw in BannedWords[gid]) {
-            Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
-          }
-          BannedWords[gid].Clear();
         }
       }
-      if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `enable` or `disable` to change the status\n`add` _word_ to add a new word to ban\n`remove` _word_ to remove a word from the list\n`clear` to remove all words\n`list` to show all banned words."));
+
+
+      // ****************** SCORES *********************************************************************************************************************************************
+      if (cmds[0].Equals("scores")) {
+        if (cmds.Length > 1) {
+          // [rep*|fun|thank*|rank*] (val) -> enable disable
+          // [rep*|fun] set -> set emojis
+          // [rep*|fun] list -> list emojis
+
+          Config c = GetConfig(gid, Config.ParamType.Scores);
+          string what = (cmds[1].Trim() + "  ")[0..3].ToLowerInvariant();
+          if (what == "res") {
+
+            foreach (var em in RepEmojis[gid].Values) {
+              Database.Delete(em);
+            }
+            int num = RepEmojis[gid].Count;
+            RepEmojis[gid].Clear();
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("All emojis for Scores have been removed (" + num + " items.)"));
+
+          } else if (what == "rep" || what == "fun") {
+            WhatToTrack wtt = (what == "rep") ? WhatToTrack.Reputation : WhatToTrack.Fun;
+            string wtts = (what == "rep") ? "Reputation" : "Fun";
+
+            if (c == null) { c = new Config(gid, Config.ParamType.Scores, 0); Configs[gid].Add(c); }
+            if (cmds.Length == 2 || (cmds.Length > 2 && cmds[2].Trim().ToLowerInvariant() == "list")) {
+              string emjs = "Emojis defined for the _" + wtts + "_ score: ";
+              bool missing = true;
+              foreach (var e in RepEmojis[ctx.Guild.Id].Values)
+                if (e.HasFlag(wtt)) {
+                  emjs += e.GetEmoji(ctx.Guild) + " ";
+                  missing = false;
+                }
+              if (missing) emjs += " (_No emojis defined!_)  ";
+              _ = Utils.DeleteDelayed(15, ctx.Message);
+              await Utils.DeleteDelayed(15, ctx.RespondAsync(emjs));
+
+            } else if (cmds.Length > 2 && cmds[2].Trim().ToLowerInvariant() == "del") {
+              List<long> toRemove = new List<long>();
+              foreach (var k in RepEmojis[gid].Keys) {
+                var em = RepEmojis[gid][k];
+                if (em.HasFlag(wtt)) {
+                  Database.Delete(em);
+                  toRemove.Add(k);
+                }
+              }
+              foreach (var k in toRemove)
+                RepEmojis[gid].Remove(k);
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("All emojis for " + wtts + " have been removed."));
+
+            } else if (cmds.Length > 2 && cmds[2].Trim().ToLowerInvariant() == "set") {
+              DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + wtts + "_, you have 5 minutes before timeout");
+              var interact = ctx.Client.GetInteractivity();
+              var answer = await interact.WaitForMessageAsync((dm) => {
+                return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+              }, TimeSpan.FromMinutes(5));
+              await prompt.DeleteAsync();
+              if (answer.Result == null || answer.Result.Content.Length < 4) {
+                _ = Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("Config timed out"));
+              } else {
+                Dictionary<long, ReputationEmoji> eset = new Dictionary<long, ReputationEmoji>();
+
+                // Start by grabbing all values that are snowflakes
+                string resp = answer.Result.Content.Trim();
+                resp = emjSnowflakeER.Replace(resp, (m) => {
+                  if (ulong.TryParse(m.Groups[1].Value, out ulong id))
+                    eset.Add(ReputationEmoji.GetTheKey(gid, id, null), new ReputationEmoji(gid, id, null, wtt));
+                  return "";
+                });
+                // And then the values of the unicode emojis regex
+                resp = emjUnicodeER.Replace(resp, (m) => {
+                  eset.Add(ReputationEmoji.GetTheKey(gid, 0, m.Value), new ReputationEmoji(gid, 0, m.Value, wtt));
+                  return "";
+                });
+
+                // Remove all entries that are no more in the list
+                List<long> toRemove = new List<long>();
+                foreach (var ek in RepEmojis[gid].Keys) {
+                  if (!eset.ContainsKey(ek)) toRemove.Add(ek);
+                }
+                foreach (var e in toRemove) {
+                  ReputationEmoji re = RepEmojis[gid][e];
+                  RepEmojis[gid].Remove(e);
+                  Database.Delete(re);
+                }
+                // Add all missing entries
+                foreach (var ek in eset.Keys) {
+                  if (!RepEmojis[gid].ContainsKey(ek)) {
+                    RepEmojis[gid].Add(ek, eset[ek]);
+                    Database.Add(eset[ek]);
+                  } else {
+                    Database.Update(eset[ek]);
+                  }
+                }
+
+                // Show the result, just to check
+                string emjs = "Emojis defined for the _" + wtts + "_ score: ";
+                bool missing = true;
+                foreach (var e in RepEmojis[gid].Values)
+                  if (e.HasFlag(wtt)) {
+                    emjs += e.GetEmoji(ctx.Guild) + " ";
+                    missing = false;
+                  }
+                if (missing) emjs += " (_No emojis defined!_)  ";
+                _ = Utils.DeleteDelayed(15, ctx.Message);
+                await Utils.DeleteDelayed(15, ctx.RespondAsync(emjs));
+              }
+
+            } else if (cmds.Length > 2) {
+              char mode = cmds[2].ToLowerInvariant()[0];
+              if (mode == 'n' || mode == 'd' || mode == '-') c.IdVal &= ~(ulong)wtt;
+              if (mode == 'y' || mode == 'e' || mode == '+') c.IdVal |= (ulong)wtt;
+              Database.Update(c);
+              if (((WhatToTrack)c.IdVal).HasFlag(wtt))
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _enabled_"));
+              else
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _disabled_"));
+            }
+          } else if ((what == "tha" || what == "tha") && cmds.Length > 2) {
+            if (c == null) { c = new Config(gid, Config.ParamType.Scores, 0); Configs[gid].Add(c); }
+            WhatToTrack wtt = (what == "tha") ? WhatToTrack.Thanks : WhatToTrack.Rank;
+            string wtts = (what == "tha") ? "Thanks" : "Rank";
+
+            char mode = cmds[2].ToLowerInvariant()[0];
+            if (mode == 'n' || mode == 'd' || mode == '-') c.IdVal &= ~(ulong)wtt;
+            if (mode == 'y' || mode == 'e' || mode == '+') c.IdVal |= (ulong)wtt;
+            Database.Update(c);
+            if (((WhatToTrack)c.IdVal).HasFlag(wtt))
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _enabled_"));
+            else
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _disabled_"));
+          }
+
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+
+        }
+        if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `rep` or `fun` or `thanks` or `rank` to enable/disable the features\n`rep` (or `fun`) `list` will show the emojis for the categories\n`rep` (or `fun`) `set` will wait for a set of emojis to be used for the category."));
+        }
       }
 
+    } catch (Exception ex) {
+      Utils.Log("Error in Setup by command line: " + ex.Message);
     }
-
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
@@ -1654,6 +1414,12 @@ static ulong GetIDParam(string param) {
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatstats0", "Stats", false, er));
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatbannedw", "Banned Words", false, er));
+    builder.AddComponents(actions);
+
+    // ranking
+    actions = new List<DiscordButtonComponent>();
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Scores);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatscores", "Scores", false, er));
     builder.AddComponents(actions);
 
 
@@ -2005,7 +1771,7 @@ static ulong GetIDParam(string param) {
       "The **Spam Protection** is a feature of the bot used to watch all posts contain links.\n" +
       "If the link is a counterfait Discord (or Steam, or Epic) link (usually a false free nitro,\n" +
       "then the link will be immediately removed.\n\n**Spam Protection** for\n";
-    eb.Description += "**Discord Nitro** feature is " + (edisc ? "_Enabled_" : "_Disabled_") + " _recommended!_\n";
+    eb.Description += "**Discord Nitro** feature is " + (edisc ? "_Enabled_" : "_Disabled_") + " (_recommended!_)\n";
     eb.Description += "**Steam** feature is " + (esteam ? "_Enabled_" : "_Disabled_") + "\n";
     eb.Description += "**Epic Game Store** feature is " + (eepic ? "_Enabled_" : "_Disabled_") + "\n";
     eb.WithImageUrl(ctx.Guild.BannerUrl);
@@ -2033,6 +1799,81 @@ static ulong GetIDParam(string param) {
     return builder.SendAsync(ctx.Channel).Result;
   }
 
+
+  private DiscordMessage CreateScoresInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Scores"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    WhatToTrack wtt = WhatToTracks[ctx.Guild.Id];
+    bool vala = wtt.HasFlag(WhatToTrack.Reputation);
+    bool valf = wtt.HasFlag(WhatToTrack.Fun);
+    bool valt = wtt.HasFlag(WhatToTrack.Thanks);
+    bool valr = wtt.HasFlag(WhatToTrack.Rank);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **Scores** feature provides some tracking of the users in 4 possible areas:\n" +
+      "-> _Reputation_ increases by receiving particular emojis (they can be defined.)\n" +
+      "-> _Fun_ increases by receiving particular emojis (they can be defined.)\n" +
+      "-> _Thanks_ increases by receiving a **thank you** message.\n" +
+      "-> _Rank_ increases by posting (1 minutes delay between posts to avoid spam).\n\n" +
+      "The users can call the command to see the status of the whole server or just to get the own ranking.\n" +
+      "Each scoring can be enabled and disabled individually.\n\n";
+    if (wtt == WhatToTrack.None) eb.Description += "**Scores** is _Disabled_"; else eb.Description += "_Enabled_ **Scores** are";
+    if (vala) {
+      eb.Description += " **Reputation**";
+      bool missing = true;
+      foreach (var e in RepEmojis[ctx.Guild.Id].Values)
+        if (e.HasFlag(WhatToTrack.Reputation)) {
+          missing = false;
+          break;
+        }
+      if (missing) eb.Description += " (_No emojis defined!_)  ";
+    }
+    if (valf) {
+      eb.Description += " **Fun**";
+      bool missing = true;
+      foreach (var e in RepEmojis[ctx.Guild.Id].Values)
+        if (e.HasFlag(WhatToTrack.Fun)) {
+          missing = false;
+          break;
+        }
+      if (missing) eb.Description += " (_No emojis defined!_)  ";
+    }
+    if (valt) eb.Description += " **Thanks**";
+    if (valr) eb.Description += " **Rank**";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(vala ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese0", "Reputation", false, vala ? ey : en));
+    actions.Add(new DiscordButtonComponent(valf ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese1", "Fun", false, valf ? ey : en));
+    actions.Add(new DiscordButtonComponent(valt ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese2", "Thanks", false, valt ? ey : en));
+    actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese3", "Ranking", false, valr ? ey : en));
+    builder.AddComponents(actions);
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresere", "Define Reputation emojis", false, er));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresefe", "Define Fun emojis", false, er));
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
 
 
 
