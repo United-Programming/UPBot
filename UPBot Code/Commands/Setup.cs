@@ -11,7 +11,7 @@ using DSharpPlus.Interactivity.Extensions;
 /// This command is used to configure the bot, so roles and messages can be set for other servers.
 /// author: CPU
 /// </summary>
-public class SetupModule : BaseCommandModule {
+public class Setup : BaseCommandModule {
   private static Dictionary<ulong, DiscordGuild> Guilds = new Dictionary<ulong, DiscordGuild>();
   private static Dictionary<ulong, List<Config>> Configs = new Dictionary<ulong, List<Config>>();
   public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
@@ -27,6 +27,141 @@ public class SetupModule : BaseCommandModule {
   private readonly static Regex emjSnowflakeER = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
   private readonly static Regex emjUnicodeER = new Regex(@"[#*0-9]\uFE0F?\u20E3|©\uFE0F?|[®\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA]\uFE0F?|[\u231A\u231B]|[\u2328\u23CF]\uFE0F?|[\u23E9-\u23EC]|[\u23ED-\u23EF]\uFE0F?|\u23F0|[\u23F1\u23F2]\uFE0F?|\u23F3|[\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC]\uFE0F?|[\u25FD\u25FE]|[\u2600-\u2604\u260E\u2611]\uFE0F?|[\u2614\u2615]|\u2618\uFE0F?|\u261D(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642]\uFE0F?|[\u2648-\u2653]|[\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E]\uFE0F?|\u267F|\u2692\uFE0F?|\u2693|[\u2694-\u2697\u2699\u269B\u269C\u26A0]\uFE0F?|\u26A1|\u26A7\uFE0F?|[\u26AA\u26AB]|[\u26B0\u26B1]\uFE0F?|[\u26BD\u26BE\u26C4\u26C5]|\u26C8\uFE0F?|\u26CE|[\u26CF\u26D1\u26D3]\uFE0F?|\u26D4|\u26E9\uFE0F?|\u26EA|[\u26F0\u26F1]\uFE0F?|[\u26F2\u26F3]|\u26F4\uFE0F?|\u26F5|[\u26F7\u26F8]\uFE0F?|\u26F9(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\u26FA\u26FD]|\u2702\uFE0F?|\u2705|[\u2708\u2709]\uFE0F?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\u270F\uFE0F?|[\u2712\u2714\u2716\u271D\u2721]\uFE0F?|\u2728|[\u2733\u2734\u2744\u2747]\uFE0F?|[\u274C\u274E\u2753-\u2755\u2757]|\u2763\uFE0F?|\u2764(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79)|\uFE0F(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?)?|[\u2795-\u2797]|\u27A1\uFE0F?|[\u27B0\u27BF]|[\u2934\u2935\u2B05-\u2B07]\uFE0F?|[\u2B1B\u2B1C\u2B50\u2B55]|[\u3030\u303D\u3297\u3299]\uFE0F?|\uD83C(?:[\uDC04\uDCCF]|[\uDD70\uDD71\uDD7E\uDD7F]\uFE0F?|[\uDD8E\uDD91-\uDD9A]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDE01|\uDE02\uFE0F?|[\uDE1A\uDE2F\uDE32-\uDE36]|\uDE37\uFE0F?|[\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20]|[\uDF21\uDF24-\uDF2C]\uFE0F?|[\uDF2D-\uDF35]|\uDF36\uFE0F?|[\uDF37-\uDF7C]|\uDF7D\uFE0F?|[\uDF7E-\uDF84]|\uDF85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDF86-\uDF93]|[\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F]\uFE0F?|[\uDFA0-\uDFC1]|\uDFC2(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC3\uDFC4](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFC5\uDFC6]|\uDFC7(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC8\uDFC9]|\uDFCA(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCB\uDFCC](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCD\uDFCE]\uFE0F?|[\uDFCF-\uDFD3]|[\uDFD4-\uDFDF]\uFE0F?|[\uDFE0-\uDFF0]|\uDFF3(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08)|\uFE0F(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?)?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?|[\uDFF5\uDFF7]\uFE0F?|[\uDFF8-\uDFFF])|\uD83D(?:[\uDC00-\uDC07]|\uDC08(?:\u200D\u2B1B)?|[\uDC09-\uDC14]|\uDC15(?:\u200D\uD83E\uDDBA)?|[\uDC16-\uDC3A]|\uDC3B(?:\u200D\u2744\uFE0F?)?|[\uDC3C-\uDC3E]|\uDC3F\uFE0F?|\uDC40|\uDC41(?:\u200D\uD83D\uDDE8\uFE0F?|\uFE0F(?:\u200D\uD83D\uDDE8\uFE0F?)?)?|[\uDC42\uDC43](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC44\uDC45]|[\uDC46-\uDC50](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC51-\uDC65]|[\uDC66\uDC67](?:\uD83C[\uDFFB-\uDFFF])?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC6A|[\uDC6B-\uDC6D](?:\uD83C[\uDFFB-\uDFFF])?|\uDC6E(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDC70\uDC71](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC72(?:\uD83C[\uDFFB-\uDFFF])?|\uDC73(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC74-\uDC76](?:\uD83C[\uDFFB-\uDFFF])?|\uDC77(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC78(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC79-\uDC7B]|\uDC7C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC7D-\uDC80]|[\uDC81\uDC82](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC83(?:\uD83C[\uDFFB-\uDFFF])?|\uDC84|\uDC85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC86\uDC87](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC88-\uDC8E]|\uDC8F(?:\uD83C[\uDFFB-\uDFFF])?|\uDC90|\uDC91(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC92-\uDCA9]|\uDCAA(?:\uD83C[\uDFFB-\uDFFF])?|[\uDCAB-\uDCFC]|\uDCFD\uFE0F?|[\uDCFF-\uDD3D]|[\uDD49\uDD4A]\uFE0F?|[\uDD4B-\uDD4E\uDD50-\uDD67]|[\uDD6F\uDD70\uDD73]\uFE0F?|\uDD74(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\uDD75(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD76-\uDD79]\uFE0F?|\uDD7A(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD87\uDD8A-\uDD8D]\uFE0F?|\uDD90(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDD95\uDD96](?:\uD83C[\uDFFB-\uDFFF])?|\uDDA4|[\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA]\uFE0F?|[\uDDFB-\uDE2D]|\uDE2E(?:\u200D\uD83D\uDCA8)?|[\uDE2F-\uDE34]|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|[\uDE37-\uDE44]|[\uDE45-\uDE47](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDE48-\uDE4A]|\uDE4B(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE4D\uDE4E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE80-\uDEA2]|\uDEA3(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEA4-\uDEB3]|[\uDEB4-\uDEB6](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEB7-\uDEBF]|\uDEC0(?:\uD83C[\uDFFB-\uDFFF])?|[\uDEC1-\uDEC5]|\uDECB\uFE0F?|\uDECC(?:\uD83C[\uDFFB-\uDFFF])?|[\uDECD-\uDECF]\uFE0F?|[\uDED0-\uDED2\uDED5-\uDED7]|[\uDEE0-\uDEE5\uDEE9]\uFE0F?|[\uDEEB\uDEEC]|[\uDEF0\uDEF3]\uFE0F?|[\uDEF4-\uDEFC\uDFE0-\uDFEB])|\uD83E(?:\uDD0C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD0D\uDD0E]|\uDD0F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD10-\uDD17]|[\uDD18-\uDD1C](?:\uD83C[\uDFFB-\uDFFF])?|\uDD1D|[\uDD1E\uDD1F](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD20-\uDD25]|\uDD26(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD27-\uDD2F]|[\uDD30-\uDD34](?:\uD83C[\uDFFB-\uDFFF])?|\uDD35(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD36(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD37-\uDD39](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD3A|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD3D\uDD3E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD3F-\uDD45\uDD47-\uDD76]|\uDD77(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD78\uDD7A-\uDDB4]|[\uDDB5\uDDB6](?:\uD83C[\uDFFB-\uDFFF])?|\uDDB7|[\uDDB8\uDDB9](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDBA|\uDDBB(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDBC-\uDDCB]|[\uDDCD-\uDDCF](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD0|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1|[\uDDAF-\uDDB3\uDDBC\uDDBD]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|[\uDDD2\uDDD3](?:\uD83C[\uDFFB-\uDFFF])?|\uDDD4(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD5(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDD6-\uDDDD](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDE0-\uDDFF\uDE70-\uDE74\uDE78-\uDE7A\uDE80-\uDE86\uDE90-\uDEA8\uDEB0-\uDEB6\uDEC0-\uDEC2\uDED0-\uDED6])", RegexOptions.Compiled);
+
+  internal static void LoadParams() {
+    try {
+      foreach (var g in Utils.GetClient().Guilds.Values) {
+        Guilds[g.Id] = g;
+      }
+
+      List<Config> dbconfig = Database.GetAll<Config>();
+      foreach (var c in dbconfig) {
+        ulong gid = c.Guild;
+
+        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
+        Configs[gid].Add(c);
+
+        // Guilds
+        if (!Guilds.ContainsKey(gid)) {
+          if (TryGetGuild(gid) == null) continue; // Guild is missing
+        }
+
+        // Spam Protection
+        if (c.IsParam(Config.ParamType.SpamProtection)) {
+          SpamProtection[gid] = c.IdVal;
+        }
+
+        // Reputation Tracking
+        if (c.IsParam(Config.ParamType.Scores)) {
+          WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
+        }
+      }
+
+      // Banned Words
+      List<BannedWord> words = Database.GetAll<BannedWord>();
+      Utils.Log("Found " + words.Count + " banned words from all servers");
+      foreach (BannedWord word in words) {
+        ulong gid = word.Guild;
+        if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
+        BannedWords[gid].Add(word.Word);
+      }
+      foreach (var bwords in BannedWords.Values)
+        bwords.Sort((a, b) => { return a.CompareTo(b); });
+
+      // Reputation Tracking
+      List<Reputation> allReps = Database.GetAll<Reputation>();
+      foreach (var r in allReps) {
+        if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
+        Reputations[r.Guild][r.User] = r;
+      }
+
+      // Reputation Emojis
+      List<ReputationEmoji> allEmojis = Database.GetAll<ReputationEmoji>();
+      if (allEmojis != null) {
+        foreach (var r in allEmojis) {
+          ulong gid = r.Guild;
+          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
+          if (r.For == 0) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
+            continue;
+          }
+          try {
+            RepEmojis[gid].Add(r.GetKeyValue(), r);
+
+          } catch (ArgumentException aex) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message);
+          }
+        }
+      }
+
+      // Admin Roles
+      List<AdminRole> allAdminRoles = Database.GetAll<AdminRole>();
+      if (allAdminRoles != null) {
+        foreach (var r in allAdminRoles) {
+          ulong gid = r.Guild;
+          if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
+          AdminRoles[gid].Add(r.Role);
+        }
+
+      }
+
+
+      // Tracking channels
+      List<TrackChannel> allTrackChannels = Database.GetAll<TrackChannel>();
+      if (allTrackChannels != null) {
+        foreach (var r in allTrackChannels) {
+          TrackChannels[r.Guild] = r;
+          if (!Guilds.ContainsKey(r.Guild) && TryGetGuild(r.Guild) == null) continue; // Guild is missing
+          DiscordChannel ch = Guilds[r.Guild].GetChannel(r.ChannelId);
+          if (ch == null) {
+            Utils.Log("Missing track channel id " + r.ChannelId + " from Guild " + Guilds[r.Guild].Name);
+            TrackChannels[r.Guild] = null;
+          }
+          else {
+            r.channel = ch;
+          }
+        }
+      }
+
+      // ReputationEmojis
+      if (allEmojis != null) {
+        foreach (var r in allEmojis) {
+          ulong gid = r.Guild;
+          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
+          if (r.For == 0) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
+            continue;
+          }
+          try {
+            RepEmojis[gid].Add(r.GetKeyValue(), r);
+
+          } catch (ArgumentException aex) {
+            Database.Delete(r);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message);
+          }
+        }
+      }
+
+      // Fill all missing guilds
+      foreach (var g in Guilds.Keys) {
+        if (!Configs.ContainsKey(g)) Configs[g] = new List<Config>();
+        if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
+        if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
+        if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
+        if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
+        if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
+        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<long, ReputationEmoji>();
+      }
+
+      Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
+    } catch (Exception ex) {
+      Utils.Log("Error in SetupLoadParams:" + ex.Message);
+    }
+  }
+
 
   public static DiscordGuild TryGetGuild(ulong id) {
     if (Guilds.ContainsKey(id)) return Guilds[id];
@@ -79,114 +214,6 @@ public class SetupModule : BaseCommandModule {
     return Reputations[gid].Values;
   }
 
-  internal static void LoadParams() {
-    try {
-      foreach (var g in Utils.GetClient().Guilds.Values) {
-        Guilds[g.Id] = g;
-      }
-
-      List<Config> dbconfig = Database.GetAll<Config>();
-      foreach (var c in dbconfig) {
-        ulong gid = c.Guild;
-
-        if (!Configs.ContainsKey(gid)) Configs[gid] = new List<Config>();
-        Configs[gid].Add(c);
-
-        // Guilds
-        if (!Guilds.ContainsKey(gid)) {
-          if (TryGetGuild(gid) == null) continue; // Guild is missing
-        }
-
-        // Admin roles
-        if (c.IsParam(Config.ParamType.AdminRole)) {
-          if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
-          AdminRoles[gid].Add(c.IdVal);
-        }
-
-        // Tracking channels
-        if (c.IsParam(Config.ParamType.TrackingChannel)) {
-          if (!TrackChannels.ContainsKey(gid)) {
-            DiscordChannel ch = Guilds[gid].GetChannel(c.IdVal);
-            if (ch != null) {
-              if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) TrackChannels[gid] = new TrackChannel();
-              TrackChannels[gid].channel = ch;
-              TrackChannels[gid].trackJoin = c.StrVal != null && c.StrVal.Length > 0 && c.StrVal[0] != '0';
-              TrackChannels[gid].trackLeave = c.StrVal != null && c.StrVal.Length > 1 && c.StrVal[1] != '0';
-              TrackChannels[gid].trackRoles = c.StrVal != null && c.StrVal.Length > 2 && c.StrVal[2] != '0';
-              TrackChannels[gid].config = c;
-            }
-          }
-        }
-
-        // Spam Protection
-        if (c.IsParam(Config.ParamType.SpamProtection)) {
-          SpamProtection[gid] = c.IdVal;
-        }
-
-        // Reputation Tracking
-        if (c.IsParam(Config.ParamType.Scores)) {
-          WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
-        }
-      }
-
-      // Banned Words
-      List<BannedWord> words = Database.GetAll<BannedWord>();
-      Utils.Log("Found " + words.Count + " banned words from all servers");
-      foreach (BannedWord word in words) {
-        ulong gid = word.Guild;
-        if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
-        BannedWords[gid].Add(word.Word);
-      }
-      foreach (var bwords in BannedWords.Values)
-        bwords.Sort((a, b) => { return a.CompareTo(b); });
-
-      // Reputation Tracking
-      List<Reputation> allReps = Database.GetAll<Reputation>();
-      foreach (var r in allReps) {
-        if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
-        Reputations[r.Guild][r.User] = r;
-      }
-
-      // Reputation Emojis
-      List<ReputationEmoji> allEmojis = Database.GetAll<ReputationEmoji>();
-      if (allEmojis != null) {
-        foreach (var r in allEmojis) {
-          ulong gid = r.Guild;
-          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
-          if (r.For == 0) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetTheKey() + " from Guild " + r.Guild + ": no valid use.");
-            continue;
-          }
-          try {
-            RepEmojis[gid].Add(r.GetTheKey(), r);
-
-
-          } catch (ArgumentException aex) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetTheKey() + " from Guild " + r.Guild + ": " + aex.Message);
-          }
-        }
-      }
-
-      // Fill all missing guilds
-      foreach (var g in Guilds.Keys) {
-        if (!Configs.ContainsKey(g)) Configs[g] = new List<Config>();
-        if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
-        if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
-        if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
-        if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
-
-        if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
-        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<long, ReputationEmoji>();
-      }
-
-      Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
-    } catch (Exception ex) {
-      Utils.Log("Error in SetupLoadParams:" + ex.Message);
-    }
-  }
-
   internal static Task NewGuildAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildCreateEventArgs e) {
     // FIXME handle this to fill all values for a new guild added
     return Task.FromResult(0);
@@ -195,27 +222,6 @@ public class SetupModule : BaseCommandModule {
   internal static bool IsAdminRole(ulong guild, DiscordRole role) {
     if (role.Position == 0 || role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)) return true;
     return AdminRoles[guild].Contains(role.Id);
-  }
-
-  private void TryAddRole(ulong gid, ulong rid) {
-    if (AdminRoles[gid].Contains(rid)) return;
-    Config c = new Config(gid, Config.ParamType.AdminRole, rid);
-    AdminRoles[gid].Add(rid);
-    Configs[gid].Add(c);
-    Database.Add(c);
-  }
-
-  private void TryRemoveRole(ulong gid, ulong rid) {
-    if (!AdminRoles[gid].Contains(rid)) return;
-    AdminRoles[gid].Remove(rid);
-
-    long key = Config.TheKey(gid, Config.ParamType.AdminRole, rid);
-    foreach (Config c in Configs[gid]) 
-      if (c.ConfigKey == key) {
-        Configs[gid].Remove(c);
-        break;
-      }
-    Database.DeleteByKey<Config>(key);
   }
 
   readonly DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
@@ -256,15 +262,18 @@ public class SetupModule : BaseCommandModule {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
-      } else if (ir.Id == "idaddrole") { // *********************************************************** AddRole *******************************************************************************
+      } else if (ir.Id == "idroleadd") { // *********************************************************** AddRole *******************************************************************************
         await ctx.Channel.DeleteMessageAsync(msg);
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the role to add (_type anything else to close_)");
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the roles to add (_type anything else to close_)");
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
         if (answer.Result != null && answer.Result.MentionedRoles.Count > 0) {
-          foreach (DiscordRole r in answer.Result.MentionedRoles) {
-            TryAddRole(gid, r.Id);
+          foreach (var dr in answer.Result.MentionedRoles) {
+            if (!AdminRoles[gid].Contains(dr.Id)) {
+              AdminRoles[gid].Add(dr.Id);
+              Database.Add(new AdminRole(gid, dr.Id));
+            }
           }
         }
 
@@ -273,19 +282,14 @@ public class SetupModule : BaseCommandModule {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
-      } else if (ir.Id == "idremrole") { // *********************************************************** RemRole *******************************************************************************
+      } else if (ir.Id.Length > 9 && ir.Id[0..9] == "idrolerem") { // *********************************************************** RemRole *******************************************************************************
         await ctx.Channel.DeleteMessageAsync(msg);
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the role to remove (_type anything else to close_)");
-        var answer = await interact.WaitForMessageAsync((dm) => {
-          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-        }, TimeSpan.FromMinutes(2));
-        if (answer.Result != null && answer.Result.MentionedRoles.Count > 0) {
-          foreach (DiscordRole r in answer.Result.MentionedRoles) {
-            TryRemoveRole(gid, r.Id);
-          }
+        if (int.TryParse(ir.Id[9..], out int rpos)) {
+          ulong rid = AdminRoles[ctx.Guild.Id][rpos]; ;
+          Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, rid));
+          AdminRoles[ctx.Guild.Id].RemoveAt(rpos);
         }
 
-        await ctx.Channel.DeleteMessageAsync(prompt);
         msg = CreateAdminsInteraction(ctx, null);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
@@ -307,9 +311,28 @@ public class SetupModule : BaseCommandModule {
         }
 
         if (answer.Result.MentionedChannels.Count > 0) {
-          TryAddChannel(answer.Result.MentionedChannels[0]);
+          if (TrackChannels[gid] == null) {
+            TrackChannel tc = new TrackChannel();
+            TrackChannels[gid] = tc;
+            tc.trackJoin = true;
+            tc.trackLeave = true;
+            tc.trackRoles = true;
+            tc.channel = answer.Result.MentionedChannels[0];
+            tc.Guild = gid;
+            tc.ChannelId = tc.channel.Id;
+          }
+          else {
+            Database.Delete(TrackChannels[gid]);
+            TrackChannels[gid].channel = answer.Result.MentionedChannels[0];
+            TrackChannels[gid].ChannelId = TrackChannels[gid].channel.Id;
+          }
+          Database.Add(TrackChannels[gid]);
+
         } else if (answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)) {
-          TryRemoveChannel(gid);
+          if (TrackChannels[gid] != null) {
+            Database.Delete(TrackChannels[gid]);
+            TrackChannels[gid] = null;
+          }
         }
 
         await ctx.Channel.DeleteMessageAsync(prompt);
@@ -318,7 +341,10 @@ public class SetupModule : BaseCommandModule {
         ir = result.Result;
 
       } else if (ir.Id == "idremtrackch") { // ************************************************************ Remove Tracking ************************************************************************
-        TryRemoveChannel(gid);
+        if (TrackChannels[gid] != null) {
+          Database.Delete(TrackChannels[gid]);
+          TrackChannels[gid] = null;
+        }
 
         msg = CreateTrackingInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
@@ -469,7 +495,7 @@ public class SetupModule : BaseCommandModule {
         } else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatbannedwr") {
           // Get the word by number, remove it. In case there are no more disable the feature
           int.TryParse(ir.Id[13..], out int num);
-          Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, BannedWords[gid][num]));
+          Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, BannedWords[gid][num]));
           BannedWords[gid].RemoveAt(num);
         }
         msg = CreateBannedWordsInteraction(ctx, msg);
@@ -478,23 +504,75 @@ public class SetupModule : BaseCommandModule {
 
       } else if (ir.Id == "idfeatscoresere" || ir.Id == "idfeatscoresefe") { // ********* Config Scoring emojis ***********************************************************************
 
-        await ctx.Channel.DeleteMessageAsync(msg);
+        if (msg != null) await ctx.Channel.DeleteMessageAsync(msg);
         msg = null;
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used as " +
-          (ir.Id == "idfeatscoresere" ? "Reputation" : "Fun") + ", you have 5 minutes before timeout");
+        string emjs = "";
+        bool missing = true;
+        WhatToTrack wtt = ir.Id == "idfeatscoresere" ? WhatToTrack.Reputation : WhatToTrack.Fun;
+        foreach (var e in RepEmojis[gid].Values)
+          if (e.HasFlag(wtt)) {
+            emjs += e.GetEmoji(ctx.Guild) + " ";
+            missing = false;
+          }
+        if (missing) emjs += " (_No emojis defined!_)";
+
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + (ir.Id == "idfeatscoresere" ? "Reputation" : "Fun") + "_, you have 5 minutes before timeout\nCurrent emojis are: " + emjs);
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(5));
         if (answer.Result == null || answer.Result.Content.Length < 4) {
           _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
+
         } else {
+          Dictionary<long, ReputationEmoji> eset = new Dictionary<long, ReputationEmoji>();
 
-          // FIXME
+          // Start by grabbing all values that are snowflakes
+          string resp = answer.Result.Content.Trim();
+          resp = emjSnowflakeER.Replace(resp, (m) => {
+            if (ulong.TryParse(m.Groups[1].Value, out ulong id)) {
+              var rem = new ReputationEmoji(gid, id, null, wtt);
+              eset.Add(rem.GetKeyValue(), rem);
+            }
+              
+            return "";
+          });
+          // And then the values of the unicode emojis regex
+          resp = emjUnicodeER.Replace(resp, (m) => {
+            var rem = new ReputationEmoji(gid, 0, m.Value, wtt);
+            eset.Add(rem.GetKeyValue(), rem);
+            return "";
+          });
+
+          /*
+            in set not in dic -> add
+            in set & in dic for other -> change (add should be enough)
+            in set & in dic for same -> do nothing
+            !in set & in dic for other -> do nothing
+            !in set & in dic for same -> remove
+          */
 
 
-          string emjs = answer.Result.Content.ToLowerInvariant().Trim();
+          // Remove all entries that are no more in the list
+          List<long> toRemove = new List<long>();
+          foreach (var ek in RepEmojis[gid].Keys) {
+            if (RepEmojis[gid][ek].HasFlag(wtt) && !eset.ContainsKey(ek)) toRemove.Add(ek);
+          }
+          foreach (var e in toRemove) {
+            ReputationEmoji re = RepEmojis[gid][e];
+            RepEmojis[gid].Remove(e);
+            Database.Delete(re);
+          }
+          // Add all missing entries
+          foreach (var ek in eset.Keys) {
+            RepEmojis[gid][ek] = eset[ek];
+            Database.Add(eset[ek]);
+          }
+
+          await ctx.Channel.DeleteMessageAsync(prompt);
+          msg = CreateScoresInteraction(ctx, msg);
+          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+          ir = result.Result;
         }
-        await ctx.Channel.DeleteMessageAsync(prompt);
 
 
       } else if (ir.Id.Length > 10 && ir.Id[0..11] == "idfeatscore") { // ********* Config Scoring ***********************************************************************
@@ -512,7 +590,7 @@ public class SetupModule : BaseCommandModule {
             Configs[gid].Add(c);
           } else c.IdVal = val;
           Database.Add(c);
-          SpamProtection[gid] = val;
+          WhatToTracks[gid] = (WhatToTrack)val;
         }
         msg = CreateScoresInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
@@ -802,67 +880,74 @@ public class SetupModule : BaseCommandModule {
       }
 
       // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
-      if (cmds[0].Equals("trackingchannel") && cmds.Length > 1) {
-        Config c = GetConfig(gid, Config.ParamType.TrackingChannel);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.TrackingChannel, 1);
-          Configs[gid].Add(c);
-        }
+      if (cmds[0].Equals("trackingchannel")) {
+        // trch [empty|help] -> help
+        // trch [rem|remove] -> remove
+        // trch channel [j] [l] [r] -> set
+        // trch [j] [l] [r] -> set on existing
 
-        // [channel]|remove j l r
-        bool j = false;
-        bool l = false;
-        bool r = false;
-        DiscordChannel forLater = null;
-        for (int i = 1; i < cmds.Length; i++) {
-          string part = cmds[i].ToLowerInvariant();
-          if (part[0] == '#') part = part[1..];
-          // Is it a channel?
-          foreach (DiscordChannel ch in g.Channels.Values) {
-            if (ch.Name.Equals(part, StringComparison.InvariantCultureIgnoreCase)) {
-              c.IdVal = ch.Id;
-              forLater = ch;
+        if (cmds.Length == 1 || cmds[1].Equals("help")) {
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(
+            "Use: `setup trackingchannel` _#channel_ to set a channel\n`j` to track who joins the server, `l` to track who leaves the server, 'r' to track changes on roles (_the flags can be used alone or after a channel definition_.)\n'rem' to remove the tracking channel"));
+        } else if (cmds.Length > 1) {
+          TrackChannel tc = null;
+          bool j = false;
+          bool l = false;
+          bool r = false;
+          bool atLestOne = false;
+          for (int i = 1; i < cmds.Length; i++) {
+            string cmd = cmds[i].Trim().ToLowerInvariant();
+            if (cmd == "rem") {  // Remove
+              if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) {
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("No tracking channel was defined for this server"));
+              } else {
+                Database.Delete(TrackChannels[gid]);
+                TrackChannels[gid] = null;
+              }
               break;
+            } else if (cmd == "j") {
+              j = true;
+              atLestOne = true;
+            } else if (cmd == "l") {
+              l = true;
+              atLestOne = true;
+            } else if (cmd == "r") {
+              r = true;
+              atLestOne = true;
+            } else { // Is it a channel?
+              if (cmd[0] == '#') cmd = cmd[1..];
+              foreach (DiscordChannel ch in g.Channels.Values) {
+                if (ch.Name.Equals(cmd, StringComparison.InvariantCultureIgnoreCase)) {
+                  if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) {
+                    tc = new TrackChannel(gid, ch.Id) {  // Create
+                      trackJoin = true,
+                      trackLeave = true,
+                      trackRoles = true,
+                      channel = ch
+                    };
+                    TrackChannels[gid] = tc;
+                  } else {
+                    tc = TrackChannels[gid]; // Grab
+                    tc.channel = ch;
+                  }
+                  break;
+                }
+              }
             }
           }
-          if (part.Length > 2 && part[0..3] == "rem") { // remove
-            c.IdVal = 0;
-            c.StrVal = null;
-            forLater = null;
-            break;
-          }
-          if (part[0] == 'j' && c.IdVal != 0) j = true; // join
-          if (part[0] == 'l' && c.IdVal != 0) l = true; // leave
-          if (part[0] == 'r' && c.IdVal != 0) r = true; // roles
-        }
-        if (c.IdVal != 0) {
-          c.StrVal = (j ? "1" : "0") + (l ? "1" : "0") + (r ? "1" : "0");
-        }
-        // Update the cache
-        if (TrackChannels[gid] == null) {
-          TrackChannels[gid] = new TrackChannel() { channel = forLater, config = c, trackJoin = j, trackLeave = l, trackRoles = r };
-        } else {
-          if (c.IdVal != 0 && forLater != null) TrackChannels[gid].channel = forLater;
-          else if (c.IdVal == 0) TrackChannels[gid].channel = null;
-          TrackChannels[gid].config = c;
-          TrackChannels[gid].trackJoin = j;
-          TrackChannels[gid].trackLeave = l;
-          TrackChannels[gid].trackRoles = r;
-        }
+          if (tc != null) {
+            if (atLestOne) {
+              tc.trackJoin = j;
+              tc.trackLeave = l;
+              tc.trackRoles = r;
+            }
+            Database.Add(tc);
 
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        string msg;
-        if (c.IdVal == 0) msg = "TrackingChannel command changed to _tracking channel removed_";
-        else {
-          msg = "TrackingChannel command changed to " + g.GetChannel(c.IdVal).Mention + " for ";
-          if (!j && !l && !r) {
-            msg += "_nothing_";
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Tracking Channel updated to " + tc.channel.Mention + " for " +
+              ((!j && !l && !r) ? "_no actions_" : "") + (j ? "_Join_ " : "") + (l ? "_Leave_ " : "") + (r ? "_Roles_ " : "")));
           }
-          if (j) msg += "_Join_ ";
-          if (l) msg += "_Leave_ ";
-          if (r) msg += "_Roles_ ";
         }
-        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+        _ = Utils.DeleteDelayed(15, ctx.Message);
       }
 
       // ****************** ADMINROLES *********************************************************************************************************************************************
@@ -870,21 +955,12 @@ public class SetupModule : BaseCommandModule {
         var errs = "";
         // set them, or remove
         if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
-          Config c = GetConfig(gid, Config.ParamType.AdminRole);
-          while (c != null) {
-            Configs[gid].Remove(c);
-            Database.Delete(c);
-            AdminRoles[gid].Remove(c.IdVal);
-            c = GetConfig(gid, Config.ParamType.AdminRole);
+          foreach(var r in AdminRoles[gid]) {
+            Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, r));
           }
+          AdminRoles[gid].Clear();
         } else {
           var guildRoles = g.Roles.Values;
-          List<Config> confRoles = new List<Config>();
-          foreach (var c in Configs[gid])
-            if (c.IsParam(Config.ParamType.AdminRole)) {
-              confRoles.Add(c);
-              c.StrVal = "*";
-            }
           for (int i = 1; i < cmds.Length; i++) {
             // Find if we have it (and the id)
             ulong id = 0;
@@ -901,32 +977,11 @@ public class SetupModule : BaseCommandModule {
             if (id == 0) {
               errs += cmds[i] + " ";
               continue;
-            }
-            // Do we have it in the Configs?
-            bool notfound = true;
-            foreach (var c in confRoles) {
-              if (c.IdVal == id) {
-                c.StrVal = null;
-                notfound = false;
-                break;
+            } else {
+              if (!AdminRoles[gid].Contains(id)) {
+                AdminRoles[gid].Add(id);
+                Database.Add(new AdminRole(gid, id));
               }
-            }
-            if (notfound) { // Add it
-              Config c = new Config(gid, Config.ParamType.AdminRole, id);
-              confRoles.Add(c);
-              Configs[gid].Add(c);
-              Database.Add(c);
-              AdminRoles[gid].Add(id);
-            }
-          }
-          // Remove all configs that are not required
-          for (int i = confRoles.Count - 1; i >= 0; i--) {
-            if (confRoles[i].StrVal != null) {
-              Config c = confRoles[i];
-              confRoles.RemoveAt(i);
-              Configs[gid].Remove(c);
-              AdminRoles[gid].Remove(c.IdVal);
-              Database.Delete(c);
             }
           }
         }
@@ -1031,7 +1086,7 @@ public class SetupModule : BaseCommandModule {
           } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
             string bw = cmds[2].ToLowerInvariant().Trim();
             if (BannedWords[gid].Contains(bw)) {
-              Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+              Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, bw));
               BannedWords[gid].Remove(bw);
               await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
             } else {
@@ -1040,7 +1095,7 @@ public class SetupModule : BaseCommandModule {
 
           } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
             foreach (var bw in BannedWords[gid]) {
-              Database.DeleteByKey<BannedWord>(BannedWord.GetTheKey(gid, bw));
+              Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, bw));
             }
             BannedWords[gid].Clear();
           }
@@ -1097,7 +1152,16 @@ public class SetupModule : BaseCommandModule {
               await Utils.DeleteDelayed(15, ctx.RespondAsync("All emojis for " + wtts + " have been removed."));
 
             } else if (cmds.Length > 2 && cmds[2].Trim().ToLowerInvariant() == "set") {
-              DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + wtts + "_, you have 5 minutes before timeout");
+              string emjs = "";
+              bool missing = true;
+              foreach (var e in RepEmojis[gid].Values)
+                if (e.HasFlag(wtt)) {
+                  emjs += e.GetEmoji(ctx.Guild) + " ";
+                  missing = false;
+                }
+              if (missing) emjs += " (_No emojis defined!_)";
+
+              DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + wtts + "_, you have 5 minutes before timeout\nCurrent emojis are: " + emjs);
               var interact = ctx.Client.GetInteractivity();
               var answer = await interact.WaitForMessageAsync((dm) => {
                 return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
@@ -1111,20 +1175,23 @@ public class SetupModule : BaseCommandModule {
                 // Start by grabbing all values that are snowflakes
                 string resp = answer.Result.Content.Trim();
                 resp = emjSnowflakeER.Replace(resp, (m) => {
-                  if (ulong.TryParse(m.Groups[1].Value, out ulong id))
-                    eset.Add(ReputationEmoji.GetTheKey(gid, id, null), new ReputationEmoji(gid, id, null, wtt));
+                  if (ulong.TryParse(m.Groups[1].Value, out ulong id)) {
+                    var rem = new ReputationEmoji(gid, id, null, wtt);
+                    eset.Add(rem.GetKeyValue(), rem);
+                  }
                   return "";
                 });
                 // And then the values of the unicode emojis regex
                 resp = emjUnicodeER.Replace(resp, (m) => {
-                  eset.Add(ReputationEmoji.GetTheKey(gid, 0, m.Value), new ReputationEmoji(gid, 0, m.Value, wtt));
+                  var rem = new ReputationEmoji(gid, 0, m.Value, wtt);
+                  eset.Add(rem.GetKeyValue(), rem);
                   return "";
                 });
 
                 // Remove all entries that are no more in the list
                 List<long> toRemove = new List<long>();
                 foreach (var ek in RepEmojis[gid].Keys) {
-                  if (!eset.ContainsKey(ek)) toRemove.Add(ek);
+                  if (RepEmojis[gid][ek].HasFlag(wtt) && !eset.ContainsKey(ek)) toRemove.Add(ek);
                 }
                 foreach (var e in toRemove) {
                   ReputationEmoji re = RepEmojis[gid][e];
@@ -1142,8 +1209,8 @@ public class SetupModule : BaseCommandModule {
                 }
 
                 // Show the result, just to check
-                string emjs = "Emojis defined for the _" + wtts + "_ score: ";
-                bool missing = true;
+                emjs = "Emojis defined for the _" + wtts + "_ score: ";
+                missing = true;
                 foreach (var e in RepEmojis[gid].Values)
                   if (e.HasFlag(wtt)) {
                     emjs += e.GetEmoji(ctx.Guild) + " ";
@@ -1158,13 +1225,14 @@ public class SetupModule : BaseCommandModule {
               char mode = cmds[2].ToLowerInvariant()[0];
               if (mode == 'n' || mode == 'd' || mode == '-') c.IdVal &= ~(ulong)wtt;
               if (mode == 'y' || mode == 'e' || mode == '+') c.IdVal |= (ulong)wtt;
+              WhatToTracks[gid] = (WhatToTrack)c.IdVal;
               Database.Update(c);
               if (((WhatToTrack)c.IdVal).HasFlag(wtt))
                 await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _enabled_"));
               else
                 await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _disabled_"));
             }
-          } else if ((what == "tha" || what == "tha") && cmds.Length > 2) {
+          } else if ((what == "tha" || what == "ran") && cmds.Length > 2) {
             if (c == null) { c = new Config(gid, Config.ParamType.Scores, 0); Configs[gid].Add(c); }
             WhatToTrack wtt = (what == "tha") ? WhatToTrack.Thanks : WhatToTrack.Rank;
             string wtts = (what == "tha") ? "Thanks" : "Rank";
@@ -1197,36 +1265,10 @@ public class SetupModule : BaseCommandModule {
     if (j) tc.trackJoin = !tc.trackJoin;
     if (l) tc.trackLeave = !tc.trackLeave;
     if (r) tc.trackRoles = !tc.trackRoles;
-    tc.config.StrVal = (tc.trackJoin ? "1" : "0") + (tc.trackLeave ? "1" : "0") + (tc.trackRoles ? "1" : "0");
-    Database.Update(tc.config);
+    Database.Update(tc);
   }
 
-  private void TryRemoveChannel(ulong id) {
-    if (TrackChannels[id] != null) {
-      Database.DeleteByKey<Config>(Config.TheKey(id, Config.ParamType.TrackingChannel, TrackChannels[id].channel.Id));
-      TrackChannels.Remove(id);
-    }
-  }
-
-  private void TryAddChannel(DiscordChannel ch) {
-    TrackChannel tc;
-    if (TrackChannels[ch.Guild.Id] == null) {
-      tc = new TrackChannel();
-      TrackChannels[ch.Guild.Id] = tc;
-      tc.trackJoin = true;
-      tc.trackLeave = true;
-      tc.trackRoles = true;
-    } else {
-      Database.DeleteByKey<Config>(Config.TheKey(ch.Guild.Id, Config.ParamType.TrackingChannel, TrackChannels[ch.Guild.Id].channel.Id));
-    }
-    tc = TrackChannels[ch.Guild.Id];
-    tc.channel = ch;
-    Config c = new Config(ch.Guild.Id, Config.ParamType.TrackingChannel, ch.Id);
-    c.StrVal = (tc.trackJoin ? "1" : "0") + (tc.trackLeave ? "1" : "0") + (tc.trackRoles ? "1" : "0");
-    Database.Add(c);
-  }
-
-
+ 
   private DiscordMessage CreateMainConfigPage(CommandContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
@@ -1285,16 +1327,32 @@ public class SetupModule : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
-    
 
-    // - Add role
-    // - Remove role
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idaddrole", "Add role", false, ok));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idremrole", "Remove role", false, ko));
-    builder.AddComponents(actions);
+    // - Define roles
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    builder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idroleadd", "Add roles", false, ok));
+    // - Remove roles
+    int num = 0;
+    int cols = 0;
+    foreach(ulong rid in AdminRoles[ctx.Guild.Id]) {
+      DiscordRole role = ctx.Guild.GetRole(rid);
+      if (role == null) {
+        Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(ctx.Guild.Id, rid));
+        continue;
+      }
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idrolerem" + num, "Remove " + role.Name, false, ko));
+      num++;
+      cols++;
+      if (cols == 5) {
+        cols = 0;
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
+      }
+    }
+    if (cols > 0) builder.AddComponents(actions);
+
     // - Exit
     // - Back
     actions = new List<DiscordButtonComponent>();
@@ -1801,7 +1859,7 @@ public class SetupModule : BaseCommandModule {
 
 
   private DiscordMessage CreateScoresInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Scores"
@@ -1820,29 +1878,33 @@ public class SetupModule : BaseCommandModule {
       "-> _Rank_ increases by posting (1 minutes delay between posts to avoid spam).\n\n" +
       "The users can call the command to see the status of the whole server or just to get the own ranking.\n" +
       "Each scoring can be enabled and disabled individually.\n\n";
-    if (wtt == WhatToTrack.None) eb.Description += "**Scores** is _Disabled_"; else eb.Description += "_Enabled_ **Scores** are";
+    if (wtt == WhatToTrack.None) eb.Description += "**Scores** is _Disabled_"; else eb.Description += "_Enabled_ **Scores** are:\n";
     if (vala) {
-      eb.Description += " **Reputation**";
+      eb.Description += "- **Reputation** ";
+      string emjs = "";
       bool missing = true;
       foreach (var e in RepEmojis[ctx.Guild.Id].Values)
         if (e.HasFlag(WhatToTrack.Reputation)) {
+          emjs += e.GetEmoji(ctx.Guild) + " ";
           missing = false;
-          break;
         }
-      if (missing) eb.Description += " (_No emojis defined!_)  ";
+      if (missing) eb.Description += "(_No emojis defined!_)\n";
+      else eb.Description += emjs + "\n";
     }
     if (valf) {
-      eb.Description += " **Fun**";
+      eb.Description += "- **Fun** ";
+      string emjs = "";
       bool missing = true;
       foreach (var e in RepEmojis[ctx.Guild.Id].Values)
         if (e.HasFlag(WhatToTrack.Fun)) {
+          emjs += e.GetEmoji(ctx.Guild) + " ";
           missing = false;
-          break;
         }
-      if (missing) eb.Description += " (_No emojis defined!_)  ";
+      if (missing) eb.Description += "(_No emojis defined!_)\n";
+      else eb.Description += emjs + "\n";
     }
-    if (valt) eb.Description += " **Thanks**";
-    if (valr) eb.Description += " **Rank**";
+    if (valt) eb.Description += "- **Thanks**\n";
+    if (valr) eb.Description += "- **Rank**\n";
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
@@ -2001,12 +2063,4 @@ public class SetupModule : BaseCommandModule {
 
 
 
-}
-
-public class TrackChannel {
-  public DiscordChannel channel;
-  public bool trackJoin;
-  public bool trackLeave;
-  public bool trackRoles;
-  public Config config;
 }

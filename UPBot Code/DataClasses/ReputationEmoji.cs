@@ -1,12 +1,11 @@
-﻿using DSharpPlus.Entities;
-using System;
+﻿using System;
+using DSharpPlus.Entities;
 
 public class ReputationEmoji : Entity {
-  [Key]
-  public long EmKey;
-  public ulong Guild;
-  public ulong Lid;
-  public string Sid;
+  [Key] public long EmKey;
+  [KeyGen] public ulong Guild;
+  [KeyGen] public ulong Lid;
+  [KeyGen] public string Sid;
   public int For = 0;
 
   public ReputationEmoji() { }
@@ -16,16 +15,7 @@ public class ReputationEmoji : Entity {
     Lid = lid;
     Sid = sid;
     For = (int)f;
-    EmKey = GetTheKey(gid, lid, sid);
-  }
-
-  public static long GetTheKey(ulong gid, ulong lid, string sid) {
-    return (long)gid ^ (long)lid ^ (long)(sid == null ? 0 : sid.GetHashCode());
-  }
-
-
-  public long GetTheKey() {
-    return (long)Guild ^ (long)Lid ^ (long)(Sid == null ? 0 : Sid.GetHashCode());
+    EmKey = GetKeyValue(gid, lid, sid);
   }
 
   internal string GetEmoji(DiscordGuild guild) {

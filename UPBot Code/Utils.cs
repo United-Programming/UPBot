@@ -255,7 +255,7 @@ public static class Utils
   /// <param name="ctx"></param>
   /// <returns></returns>
   internal static void LogUserCommand(CommandContext ctx) {
-    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName);
+    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName + " (" + ctx.Guild.Name + ")");
   }
 
   /// <summary>

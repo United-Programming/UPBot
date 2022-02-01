@@ -15,7 +15,7 @@ using DSharpPlus.Interactivity.Extensions;
 public class GameModule : BaseCommandModule {
   [Command("game")]
   public async Task GameCommand(CommandContext ctx) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
     StringBuilder sb = new StringBuilder("Available game commmands\n");
     sb.AppendLine("========================");
@@ -28,7 +28,7 @@ public class GameModule : BaseCommandModule {
   [Command("bool")]
   [Description("Returns True or False")]
   public async Task BoolCommand(CommandContext ctx) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
     await PlayBool(ctx);
   }
@@ -36,14 +36,14 @@ public class GameModule : BaseCommandModule {
   [Command("rps")]
   [Description("Play Rock, Paper, Scissors")]
   public async Task RPSCommand(CommandContext ctx, [Description("rock | paper | scissors")] string kind) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
     await PlayRockPaperScissors(ctx, kind);
   }
 
   [Command("rps")]
   public async Task RPSCommand(CommandContext ctx) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Games, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
 
     ctx.Channel.DeleteMessageAsync(ctx.Message).Wait();

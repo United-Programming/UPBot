@@ -17,8 +17,8 @@ public class BannedWords : BaseCommandModule {
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
     try {
       // Is it from a guild we care?
-      if (!SetupModule.BannedWords.ContainsKey(args.Guild.Id)) return;
-      List<string> bannedWords = SetupModule.BannedWords[args.Guild.Id];
+      if (!Setup.BannedWords.ContainsKey(args.Guild.Id)) return;
+      List<string> bannedWords = Setup.BannedWords[args.Guild.Id];
       if (bannedWords.Count == 0) return;
 
 
@@ -27,7 +27,7 @@ public class BannedWords : BaseCommandModule {
       DiscordUser user = args.Author;
       DiscordMember member = await args.Guild.GetMemberAsync(user.Id);
       foreach (DiscordRole role in member.Roles) {
-        if (!SetupModule.IsAdminRole(args.Guild.Id, role)) return;
+        if (!Setup.IsAdminRole(args.Guild.Id, role)) return;
       }
 
       string msg = args.Message.Content.ToLowerInvariant();

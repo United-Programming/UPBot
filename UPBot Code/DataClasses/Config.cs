@@ -1,12 +1,9 @@
-﻿using System;
-
+﻿
 public class Config : Entity {
-  [Key]
-  public long ConfigKey; // Guild+ParamType+Value
-  public ulong Guild;
-  public int Param;
+  [Key] public long ConfigKey;
+  [KeyGen] public ulong Guild;
+  [KeyGen] public int Param;
   public ulong IdVal;
-  public string StrVal;
 
   [NotPersistent]
 
@@ -16,46 +13,30 @@ public class Config : Entity {
     Guild = guild;
     Param = (int)param;
     IdVal = val;
-    StrVal = null;
-    ConfigKey = TheKey();
+    ConfigKey = GetKeyValue();
   }
 
   public Config(ulong guild, ParamType param, string val) {
     Guild = guild;
     Param = (int)param;
     IdVal = 0;
-    StrVal = val;
-    ConfigKey = TheKey();
+    ConfigKey = GetKeyValue();
   }
 
-  public long TheKey() {
-    return (long)Guild ^ Param ^ (long)IdVal;
-  }
-
-  public static long TheKey(ulong g, ParamType p, ulong v) {
-    return (long)g ^ (int)p ^ (long)v;
-  }
 
   public enum ParamType {
-    AdminRole,
-    TrackingChannel,
-    Ping,
-    WhoIs,
-    MassDel,
-    Games,
-    Refactor,
-    TimezoneS,
-    TimezoneG,
-    UnityDocs,
-    CppDocs,
-    CSharpDocs,
-    PhytonDocs,
-    JavaDocs,
-    JScriptDocs,
-    SpamProtection,
-    Stats,
-    BannedWords,
-    Scores,
+    Ping = 1,
+    WhoIs = 2,
+    Stats = 3,
+    MassDel = 4,
+    Games = 5,
+    Refactor = 6,
+    TimezoneS = 7,
+    TimezoneG = 8,
+    UnityDocs = 9,
+    SpamProtection = 10,
+    BannedWords = 11,
+    Scores = 12,
     //VideosAbout
   }
 
@@ -68,8 +49,7 @@ public class Config : Entity {
 
 
   public override string ToString() {
-    if (IdVal == 0) return (ParamType)Param + "\t " + Param + "\t " + StrVal + "\n ";
-    else return (ParamType)Param + "\t " + Param + "\t " + IdVal;
+    return (ParamType)Param + "\t " + Param + "\t " + IdVal;
   }
 
   internal bool IsParam(ParamType t) {

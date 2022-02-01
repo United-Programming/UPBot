@@ -41,6 +41,13 @@ To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_i
 
 
 If we are added to a new server we need to fill all values of setup or we will miserably fail
+Logs should be per-server, we should also put the startup one directly on the logs
+Command to download the logs
+
+Add help for all setup commands
+Add some progress bar for ranking
+
+Ignore all interactions that are not from a guild (no direct messages)
 
 
 ------------- Rank thinking --------------------
@@ -59,13 +66,11 @@ lev = floor(
 ------------- Setup --------------------
 
 Setup Menus to create:
-- appreciation (emojis, where is tracked, who can use)
 - custom commands (who can define, who can use)
 - help pages (who can use)
 - emoji for role (who can use, role/post to use/emoji)
 
 Logic to update:
-- appreciation
 - custom commands
 - help pages
 - emoji for role

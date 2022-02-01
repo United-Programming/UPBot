@@ -14,7 +14,7 @@ public class UnityDocs : BaseCommandModule {
   [Command("unitydocs")]
   [Description("Get links to official Unity scripts documentation.")]
   public async Task UnityDocsCommand(CommandContext ctx, [RemainingText] string what) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.UnityDocs, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.UnityDocs, ctx.Member.Roles)) return;
     await GenerateDocLink(ctx, what);
   }
 

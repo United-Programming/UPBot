@@ -118,8 +118,8 @@ public class CheckSpam : BaseCommandModule {
 
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
     try {
-      if (!SetupModule.SpamProtection.ContainsKey(args.Guild.Id)) return;
-      ulong spam = SetupModule.SpamProtection[args.Guild.Id];
+      if (!Setup.SpamProtection.ContainsKey(args.Guild.Id)) return;
+      ulong spam = Setup.SpamProtection[args.Guild.Id];
       if (spam == 0) return;
       bool edisc = (spam & 1) == 1;
       bool esteam = (spam & 2) == 2;

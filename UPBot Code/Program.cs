@@ -73,6 +73,7 @@ namespace UPBot {
         Database.AddTable<CustomCommand>();
         Database.AddTable<Config>();
         Database.AddTable<Timezone>();
+        Database.AddTable<AdminRole>();
         lw?.WriteLine("Added Tables");
         lw.Flush();
 
@@ -159,7 +160,7 @@ namespace UPBot {
 
       lw?.WriteLine("LoadingParams");
       lw.Flush();
-      SetupModule.LoadParams();
+      Setup.LoadParams();
 
       lw?.WriteLine("Adding action events");
       lw.Flush();
@@ -176,7 +177,7 @@ namespace UPBot {
       lw?.WriteLine("Tracking");
       lw.Flush();
 
-      client.GuildCreated += SetupModule.NewGuildAdded;
+      client.GuildCreated += Setup.NewGuildAdded;
 
       lw?.WriteLine("done");
       lw.Flush();

@@ -15,29 +15,29 @@ public class TimezoneCmd : BaseCommandModule {
   [Aliases("tz")]
   [Description("Get information about a users timezone and allow to set timezones for users.")]
   public async Task TimezoneCommand(CommandContext ctx) { // Basic version without parameters
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles) && !SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles) && !Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
     await Utils.DeleteDelayed(10, await ctx.RespondAsync("Please specify the user to see its timezone, or an user and a timezone value to set it. Use `list` to show all known timezones."));
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member) { // Standard version with a user
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles)) return;
     await GetTimezone(ctx, member);
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member, [Description("The timezone to set (list to show all, remove to remove the timezone)")] string timezone) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
     await SetTimezone(ctx, member, timezone);
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The timezone to set (list to show all, remove to remove the timezone)")] string timezone) {
     if (timezone.Trim().Contains("list", StringComparison.InvariantCultureIgnoreCase)) {
-      if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles)) return;
+      if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx.Member.Roles)) return;
       await GetTimezone(ctx, null);
     } else {
-      if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
+      if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx.Member.Roles)) return;
       await SetTimezone(ctx, ctx.Member, timezone);
     }
   }

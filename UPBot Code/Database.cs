@@ -116,6 +116,7 @@ public class Database {
 
     // Construct the entity
     EntityDef ed = new EntityDef { type = t };
+    List<FieldInfo> keygens = new List<FieldInfo>();
     foreach (FieldInfo field in t.GetFields()) {
       bool blob = false;
       bool ignore = false;
@@ -123,6 +124,7 @@ public class Database {
         if (attr.AttributeType == typeof(Entity.Key)) { theKey = field.Name; ed.key = field;  }
         if (attr.AttributeType == typeof(Entity.Blob)) { blob = true; }
         if (attr.AttributeType == typeof(Entity.NotPersistent)) { ignore = true; }
+        if (attr.AttributeType == typeof(Entity.KeyGen)) { keygens.Add(field); }
       }
       if (ignore) {
         ed.fields[field.Name] = FieldType.IGNORE;
@@ -151,6 +153,7 @@ public class Database {
       }
     }
     if (theKey == null) throw new Exception("Missing key for class " + t);
+    if (keygens.Count > 0) ed.keygen = keygens.ToArray(); else ed.keygen = new FieldInfo[0];
 
     // Build the query strings
     ed.count = "SELECT Count(*) FROM " + t.ToString() + " WHERE " + theKey + "=@param1";
@@ -192,7 +195,8 @@ public class Database {
       EntityDef ed = entities[t];
       // Get the values with this key from the db
       SQLiteCommand cmd = new SQLiteCommand(ed.count, connection);
-      object key = (val as Entity).GetKey().GetValue(val);
+      object key = ed.GenerateKey(val);
+
       cmd.Parameters.Add(new SQLiteParameter("@param1", key));
       // Do we have our value?
       if (Convert.ToInt32(cmd.ExecuteScalar()) > 0) { // Yes -> Update
@@ -339,6 +343,7 @@ public class Database {
   class EntityDef {
     public Type type;
     public FieldInfo key;
+    public FieldInfo[] keygen;
     public Dictionary<string, FieldType> fields = new Dictionary<string, FieldType>();
     public string count;
     public string select;
@@ -346,6 +351,38 @@ public class Database {
     public string update;
     public string delete;
     public string delete2;
+
+
+
+    public FieldInfo GetKey() {
+      if (key != null) return key;
+      foreach (FieldInfo field in GetType().GetFields()) {
+        foreach (CustomAttributeData attr in field.CustomAttributes)
+          if (attr.AttributeType.Equals(typeof(Entity.Key))) {
+            key = field;
+            return key;
+          }
+      }
+      return null;
+    }
+
+    internal object GenerateKey(object val) {
+      if (keygen == null) throw new Exception("Wrong keygen definition found for Entity: " + GetType());
+
+      if (keygen.Length > 0) { // multiple columns key
+        long res = 0;
+        foreach (FieldInfo key in keygen) {
+          object kfv = key.GetValue(val);
+          if (kfv != null) res ^= kfv.GetHashCode();
+        }
+        return res;
+      }
+
+      if (key != null) return key.GetValue(val); // single column key
+
+      throw new Exception("No key found for Entity: " + GetType());
+    }
+
   }
 
   enum FieldType {

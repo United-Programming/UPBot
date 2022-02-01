@@ -27,7 +27,7 @@ public class Delete : BaseCommandModule {
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task DeleteCommand(CommandContext ctx, [Description("How many messages should be deleted?")] int count) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
       await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
@@ -49,7 +49,7 @@ public class Delete : BaseCommandModule {
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task DeleteCommand(CommandContext ctx, [Description("Whose last x messages should get deleted?")] DiscordMember targetUser, [Description("How many messages should get deleted?")] int count) {
-    if (!SetupModule.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx.Member.Roles)) return;
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
       await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);

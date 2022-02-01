@@ -24,28 +24,28 @@ public class AppreciationTracking : BaseCommandModule {
   [Aliases("Ranking")]
   [Description("It shows the statistics for users")]
   public async Task ShowAppreciationCommand(CommandContext ctx) {
-    Utils.LogUserCommand(ctx);
     try {
       ulong gid = ctx.Guild.Id;
-      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+      WhatToTrack wtt = Setup.WhatToTracks[gid];
 
-      if (SetupModule.WhatToTracks[gid] == WhatToTrack.None) return;
+      if (Setup.WhatToTracks[gid] == WhatToTrack.None) return;
+      Utils.LogUserCommand(ctx);
 
       DiscordEmbedBuilder e = Utils.BuildEmbed("Appreciation", "These are the most appreciated people of this server", DiscordColor.Azure);
 
-      List<Reputation> vals = SetupModule.GetReputations(gid).ToList();
+      List<Reputation> vals = Setup.GetReputations(gid).ToList();
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) {
         vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
         e.AddField("Thanks --------------------", "For receving a message with _Thanks_ or _Thank you_", false);
-        
+
         for (int i = 0; i < 10; i++) {
           if (i >= vals.Count) break;
           Reputation r = vals[i];
           if (r.Tnk == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            SetupModule.Reputations[gid].Remove(r.User);
+            Setup.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -56,10 +56,10 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Reputation)) {
         vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
         string emjs = "";
-        foreach (ReputationEmoji emj in SetupModule.RepEmojis[gid].Values) {
+        foreach (ReputationEmoji emj in Setup.RepEmojis[gid].Values) {
           if (emj.HasFlag(WhatToTrack.Reputation))
             emjs += emj.GetEmoji(ctx.Guild);
-        }       
+        }
         e.AddField("Reputation ----------------", "For receving these emojis: " + emjs, false);
 
 
@@ -69,7 +69,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Rep == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            SetupModule.Reputations[gid].Remove(r.User);
+            Setup.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -80,7 +80,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Fun)) {
         vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
         string emjs = "";
-        foreach (ReputationEmoji emj in SetupModule.RepEmojis[gid].Values) {
+        foreach (ReputationEmoji emj in Setup.RepEmojis[gid].Values) {
           if (emj.HasFlag(WhatToTrack.Fun))
             emjs += emj.GetEmoji(ctx.Guild);
         }
@@ -92,7 +92,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Tnk == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            SetupModule.Reputations[gid].Remove(r.User);
+            Setup.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -120,6 +120,30 @@ public class AppreciationTracking : BaseCommandModule {
     }
   }
 
+  [Command("Rank")]
+  [Description("Shows your own rank")]
+  public async Task ShowRankCommand(CommandContext ctx) {
+    await ShowRankCommand(ctx, ctx.Member);
+  }
+
+  [Command("Rank")]
+  [Description("Shows your own rank")]
+  public async Task ShowRankCommand(CommandContext ctx, [Description("Member for the rank")] DiscordMember user) {
+    try {
+      ulong gid = ctx.Guild.Id;
+      if (!Setup.WhatToTracks[gid].HasFlag(WhatToTrack.Rank)) return;
+      Utils.LogUserCommand(ctx);
+
+      List<UserRank> ranks = CalculateRanks(ctx.Guild, user.Id);
+
+      if (ranks.Count == 0) await ctx.Message.RespondAsync("No rank for user: " + user.DisplayName);
+      else await ctx.Message.RespondAsync("rank: " + ranks[0].Score);
+
+    } catch (Exception ex) {
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Rank", ex));
+    }
+  }
+
   private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
@@ -127,7 +151,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (args.Author.IsBot) Task.FromResult(0);
       ulong gid = args.Guild.Id;
       // Are we tracking this guild and is the tracking active?
-      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+      WhatToTrack wtt = Setup.WhatToTracks[gid];
       if (wtt == WhatToTrack.None) return Task.FromResult(0);
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) CheckThanks(args.Message);
@@ -161,7 +185,7 @@ public class AppreciationTracking : BaseCommandModule {
         foreach (DiscordMessage m in msgs) {
           ulong oid = m.Author.Id;
           if (oid != authorId) {
-            Reputation r = SetupModule.GetReputation(gid, oid);
+            Reputation r = Setup.GetReputation(gid, oid);
             r.Tnk++;
             Database.Update(r);
             return;
@@ -170,7 +194,7 @@ public class AppreciationTracking : BaseCommandModule {
       } else if (msg.Reference != null) { // By reference
         ulong oid = msg.Reference.Message.Author.Id;
         if (oid != authorId) {
-          Reputation r = SetupModule.GetReputation(gid, oid);
+          Reputation r = Setup.GetReputation(gid, oid);
           r.Tnk++;
           Database.Update(r);
           return;
@@ -179,7 +203,7 @@ public class AppreciationTracking : BaseCommandModule {
         foreach (var usr in msg.MentionedUsers) {
           ulong oid = usr.Id;
           if (oid != authorId) {
-            Reputation r = SetupModule.GetReputation(gid, oid);
+            Reputation r = Setup.GetReputation(gid, oid);
             r.Tnk++;
             Database.Update(r);
           }
@@ -193,7 +217,7 @@ public class AppreciationTracking : BaseCommandModule {
   static void CheckRanks(ulong gid, DiscordMessage msg) {
     try {
       ulong oid = msg.Author.Id;
-      Reputation r = SetupModule.GetReputation(gid, oid);
+      Reputation r = Setup.GetReputation(gid, oid);
       if (DateTime.Now - r.LastUpdate < aMinute) return;
 
       string txt = msg.Content.Trim().Replace("\t", " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ");
@@ -216,7 +240,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (mr.User.IsBot) return Task.FromResult(0);
       ulong gid = mr.Guild.Id;
       // Are we tracking this guild and is the tracking active?
-      WhatToTrack wtt = SetupModule.WhatToTracks[gid];
+      WhatToTrack wtt = Setup.WhatToTracks[gid];
       if (wtt == WhatToTrack.None || (!wtt.HasFlag(WhatToTrack.Reputation) && !wtt.HasFlag(WhatToTrack.Fun))) return Task.FromResult(0);
 
       ulong emojiId = mr.Emoji.Id;
@@ -234,18 +258,18 @@ public class AppreciationTracking : BaseCommandModule {
       if (authorId == mr.User.Id) return Task.Delay(0); // If member is equal to author ignore (no self emojis)
 
 
-      long key = ReputationEmoji.GetTheKey(gid, emojiId, emojiName);
-      if (!SetupModule.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
-      ReputationEmoji rem = SetupModule.RepEmojis[gid][key];
+      long key = ReputationEmoji.GetKeyValue(gid, emojiId, emojiName);
+      if (!Setup.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
+      ReputationEmoji rem = Setup.RepEmojis[gid][key];
 
       if (wtt.HasFlag(WhatToTrack.Reputation) && rem.HasFlag(WhatToTrack.Reputation)) {
-        Reputation r = SetupModule.GetReputation(gid, authorId);
+        Reputation r = Setup.GetReputation(gid, authorId);
         r.Rep++;
         Database.Update(r);
       }
 
       if (wtt.HasFlag(WhatToTrack.Fun) && rem.HasFlag(WhatToTrack.Fun)) {
-        Reputation r = SetupModule.GetReputation(gid, authorId);
+        Reputation r = Setup.GetReputation(gid, authorId);
         r.Fun++;
         Database.Update(r);
       }
@@ -260,13 +284,14 @@ public class AppreciationTracking : BaseCommandModule {
   List<UserRank> CalculateRanks(DiscordGuild guild, ulong user = 0) {
     List<UserRank> ranks = new List<UserRank>();
 
-    IReadOnlyCollection<Reputation> reps = SetupModule.Reputations[guild.Id].Values;
+    IReadOnlyCollection<Reputation> reps = Setup.Reputations[guild.Id].Values;
     foreach (Reputation r in reps) {
       double lev = Math.Floor(
                       1.25 * Math.Pow(r.Ran, 0.25) +
-                      1.5 * Math.Pow(r.Rep, 0.27) +
-                      1.5 * Math.Pow(r.Fun, 0.27) +
-                      1.5 * Math.Pow(r.Tnk, 0.27));
+                      2.5 * Math.Pow(r.Rep, 0.27) +
+                      2.5 * Math.Pow(r.Fun, 0.27) +
+                      3.5 * Math.Pow(r.Tnk, 0.27)) - 20;
+      if (lev < 0) lev = 0;
       if (r.User == user) {
         DiscordUser usr = guild.GetMemberAsync(r.User).Result;
         if (usr == null) return null;
