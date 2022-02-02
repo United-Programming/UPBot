@@ -74,6 +74,7 @@ namespace UPBot {
         Database.AddTable<Config>();
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
+        Database.AddTable<TrackChannel>();
         lw?.WriteLine("Added Tables");
         lw.Flush();
 

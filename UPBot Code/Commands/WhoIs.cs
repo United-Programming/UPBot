@@ -14,20 +14,20 @@ public class WhoIs : BaseCommandModule {
   [Aliases("userinfo")]
   [Description("Get information about a specific user.")]
   public async Task WhoIsCommand(CommandContext ctx) { // Basic version without parameters
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx)) return;
     await GenerateWhoIs(ctx, null);
   }
 
   [Command("whois")]
   public async Task WhoIsCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member) { // Standard version with a user
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx)) return;
     await GenerateWhoIs(ctx, member);
   }
 
   [Command("whoami")]
   [Description("Get information about your own Discord account.")]
   public async Task WhoAmICommand(CommandContext ctx) { // Alternate version without parameters
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.WhoIs, ctx)) return;
     await GenerateWhoIs(ctx, null);
   }
 

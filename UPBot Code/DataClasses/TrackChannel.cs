@@ -1,9 +1,8 @@
 ﻿using DSharpPlus.Entities;
 
 public class TrackChannel : Entity {
-  [Key] public long TrackChannelKey;
-  [KeyGen] public ulong Guild;
-  [KeyGen] public ulong ChannelId;
+  [Key] public ulong Guild;
+  public ulong ChannelId;
   public bool trackJoin;
   public bool trackLeave;
   public bool trackRoles;
@@ -17,7 +16,6 @@ public class TrackChannel : Entity {
   public TrackChannel(ulong guild, ulong channel) {
     Guild = guild;
     ChannelId = channel;
-    TrackChannelKey = GetKeyValue();
   }
 
 }

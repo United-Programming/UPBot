@@ -81,25 +81,26 @@ public class Database {
         else donefirst = true;
         if (blob) sql += field.Name + " BLOB";
         else switch (field.FieldType.Name.ToLowerInvariant()) {
-          case "int8": sql += field.Name + " SMALLINT"; break;
-          case "uint8": sql += field.Name + " SMALLINT"; break;
-          case "byte": sql += field.Name + " SMALLINT"; break;
-          case "int32": sql += field.Name + " INT"; break;
-          case "int64": sql += field.Name + " BIGINT"; break;
-          case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
-          case "string": {
-              if (comment) sql += field.Name + " TEXT";
-              else sql += field.Name + " VARCHAR(256)";
-              break;
-            }
-          case "bool": sql += field.Name + " TINYINT"; break;
-          case "datetime": sql += field.Name + " NUMERIC"; break;
-          case "single": sql += field.Name + " REAL"; break;
-          case "double": sql += field.Name + " REAL"; break;
-          case "byte[]": sql += field.Name + " BLOB"; break;
-          default:
-            throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
-        }
+            case "int8": sql += field.Name + " SMALLINT"; break;
+            case "uint8": sql += field.Name + " SMALLINT"; break;
+            case "byte": sql += field.Name + " SMALLINT"; break;
+            case "int32": sql += field.Name + " INT"; break;
+            case "int64": sql += field.Name + " BIGINT"; break;
+            case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
+            case "string": {
+                if (comment) sql += field.Name + " TEXT";
+                else sql += field.Name + " VARCHAR(256)";
+                break;
+              }
+            case "bool": sql += field.Name + " TINYINT"; break;
+            case "boolean": sql += field.Name + " TINYINT"; break;
+            case "datetime": sql += field.Name + " NUMERIC"; break;
+            case "single": sql += field.Name + " REAL"; break;
+            case "double": sql += field.Name + " REAL"; break;
+            case "byte[]": sql += field.Name + " BLOB"; break;
+            default:
+              throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+          }
         if (notnull) sql += " NOT NULL";
         if (key) sql += " PRIMARY KEY";
       }
@@ -121,7 +122,7 @@ public class Database {
       bool blob = false;
       bool ignore = false;
       foreach (CustomAttributeData attr in field.CustomAttributes) {
-        if (attr.AttributeType == typeof(Entity.Key)) { theKey = field.Name; ed.key = field;  }
+        if (attr.AttributeType == typeof(Entity.Key)) { theKey = field.Name; ed.key = field; }
         if (attr.AttributeType == typeof(Entity.Blob)) { blob = true; }
         if (attr.AttributeType == typeof(Entity.NotPersistent)) { ignore = true; }
         if (attr.AttributeType == typeof(Entity.KeyGen)) { keygens.Add(field); }
@@ -132,25 +133,26 @@ public class Database {
       }
       if (blob) ed.fields[field.Name] = FieldType.ByteArray;
       else switch (field.FieldType.Name.ToLowerInvariant()) {
-        case "int8": ed.fields[field.Name] = FieldType.Byte; break;
-        case "uint8": ed.fields[field.Name] = FieldType.Byte; break;
-        case "byte": ed.fields[field.Name] = FieldType.Byte; break;
-        case "int32": ed.fields[field.Name] = FieldType.Int; break;
-        case "int64": ed.fields[field.Name] = FieldType.Long; break;
-        case "uint64": ed.fields[field.Name] = FieldType.ULong; break;
-        case "string": {
-          if (blob) ed.fields[field.Name] = FieldType.Blob;
-          else ed.fields[field.Name] = FieldType.String;
-          break;
+          case "int8": ed.fields[field.Name] = FieldType.Byte; break;
+          case "uint8": ed.fields[field.Name] = FieldType.Byte; break;
+          case "byte": ed.fields[field.Name] = FieldType.Byte; break;
+          case "int32": ed.fields[field.Name] = FieldType.Int; break;
+          case "int64": ed.fields[field.Name] = FieldType.Long; break;
+          case "uint64": ed.fields[field.Name] = FieldType.ULong; break;
+          case "string": {
+              if (blob) ed.fields[field.Name] = FieldType.Blob;
+              else ed.fields[field.Name] = FieldType.String;
+              break;
+            }
+          case "bool": ed.fields[field.Name] = FieldType.Bool; break;
+          case "boolean": ed.fields[field.Name] = FieldType.Bool; break;
+          case "datetime": ed.fields[field.Name] = FieldType.Date; break;
+          case "single": ed.fields[field.Name] = FieldType.Float; break;
+          case "double": ed.fields[field.Name] = FieldType.Double; break;
+          case "byte[]": ed.fields[field.Name] = FieldType.ByteArray; break;
+          default:
+            throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
         }
-        case "bool": ed.fields[field.Name] = FieldType.Bool; break;
-        case "datetime": ed.fields[field.Name] = FieldType.Date; break;
-        case "single": ed.fields[field.Name] = FieldType.Float; break;
-        case "double": ed.fields[field.Name] = FieldType.Double; break;
-        case "byte[]": ed.fields[field.Name] = FieldType.ByteArray; break;
-        default:
-          throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
-      }
     }
     if (theKey == null) throw new Exception("Missing key for class " + t);
     if (keygens.Count > 0) ed.keygen = keygens.ToArray(); else ed.keygen = new FieldInfo[0];
@@ -166,8 +168,13 @@ public class Database {
     string update = "UPDATE " + t.ToString() + " SET ";
     donefirst = false;
     foreach (FieldInfo field in t.GetFields()) {
-      if (donefirst) { insert += ", "; insertpost += ", "; update += ", "; }
-      else donefirst = true;
+      bool ignore = false;
+      foreach (CustomAttributeData attr in field.CustomAttributes) {
+        if (attr.AttributeType == typeof(Entity.NotPersistent)) { ignore = true;  break; }
+      }
+      if (ignore) continue;
+
+      if (donefirst) { insert += ", "; insertpost += ", "; update += ", "; } else donefirst = true;
       insert += field.Name;
       insertpost += "@p" + field.Name;
       update += field.Name + "=@p" + field.Name;
@@ -206,8 +213,7 @@ public class Database {
         }
         update.Parameters.Add(new SQLiteParameter("@param1", key));
         update.ExecuteNonQuery();
-      }
-      else { // No - Insert
+      } else { // No - Insert
         SQLiteCommand insert = new SQLiteCommand(ed.insert, connection);
         foreach (FieldInfo field in t.GetFields()) {
           insert.Parameters.Add(new SQLiteParameter("@p" + field.Name, field.GetValue(val)));

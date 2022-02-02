@@ -27,6 +27,7 @@ public class Setup : BaseCommandModule {
   private readonly static Regex emjSnowflakeER = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
   private readonly static Regex emjUnicodeER = new Regex(@"[#*0-9]\uFE0F?\u20E3|©\uFE0F?|[®\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA]\uFE0F?|[\u231A\u231B]|[\u2328\u23CF]\uFE0F?|[\u23E9-\u23EC]|[\u23ED-\u23EF]\uFE0F?|\u23F0|[\u23F1\u23F2]\uFE0F?|\u23F3|[\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC]\uFE0F?|[\u25FD\u25FE]|[\u2600-\u2604\u260E\u2611]\uFE0F?|[\u2614\u2615]|\u2618\uFE0F?|\u261D(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642]\uFE0F?|[\u2648-\u2653]|[\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E]\uFE0F?|\u267F|\u2692\uFE0F?|\u2693|[\u2694-\u2697\u2699\u269B\u269C\u26A0]\uFE0F?|\u26A1|\u26A7\uFE0F?|[\u26AA\u26AB]|[\u26B0\u26B1]\uFE0F?|[\u26BD\u26BE\u26C4\u26C5]|\u26C8\uFE0F?|\u26CE|[\u26CF\u26D1\u26D3]\uFE0F?|\u26D4|\u26E9\uFE0F?|\u26EA|[\u26F0\u26F1]\uFE0F?|[\u26F2\u26F3]|\u26F4\uFE0F?|\u26F5|[\u26F7\u26F8]\uFE0F?|\u26F9(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\u26FA\u26FD]|\u2702\uFE0F?|\u2705|[\u2708\u2709]\uFE0F?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\u270F\uFE0F?|[\u2712\u2714\u2716\u271D\u2721]\uFE0F?|\u2728|[\u2733\u2734\u2744\u2747]\uFE0F?|[\u274C\u274E\u2753-\u2755\u2757]|\u2763\uFE0F?|\u2764(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79)|\uFE0F(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?)?|[\u2795-\u2797]|\u27A1\uFE0F?|[\u27B0\u27BF]|[\u2934\u2935\u2B05-\u2B07]\uFE0F?|[\u2B1B\u2B1C\u2B50\u2B55]|[\u3030\u303D\u3297\u3299]\uFE0F?|\uD83C(?:[\uDC04\uDCCF]|[\uDD70\uDD71\uDD7E\uDD7F]\uFE0F?|[\uDD8E\uDD91-\uDD9A]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDE01|\uDE02\uFE0F?|[\uDE1A\uDE2F\uDE32-\uDE36]|\uDE37\uFE0F?|[\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20]|[\uDF21\uDF24-\uDF2C]\uFE0F?|[\uDF2D-\uDF35]|\uDF36\uFE0F?|[\uDF37-\uDF7C]|\uDF7D\uFE0F?|[\uDF7E-\uDF84]|\uDF85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDF86-\uDF93]|[\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F]\uFE0F?|[\uDFA0-\uDFC1]|\uDFC2(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC3\uDFC4](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFC5\uDFC6]|\uDFC7(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC8\uDFC9]|\uDFCA(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCB\uDFCC](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCD\uDFCE]\uFE0F?|[\uDFCF-\uDFD3]|[\uDFD4-\uDFDF]\uFE0F?|[\uDFE0-\uDFF0]|\uDFF3(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08)|\uFE0F(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?)?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?|[\uDFF5\uDFF7]\uFE0F?|[\uDFF8-\uDFFF])|\uD83D(?:[\uDC00-\uDC07]|\uDC08(?:\u200D\u2B1B)?|[\uDC09-\uDC14]|\uDC15(?:\u200D\uD83E\uDDBA)?|[\uDC16-\uDC3A]|\uDC3B(?:\u200D\u2744\uFE0F?)?|[\uDC3C-\uDC3E]|\uDC3F\uFE0F?|\uDC40|\uDC41(?:\u200D\uD83D\uDDE8\uFE0F?|\uFE0F(?:\u200D\uD83D\uDDE8\uFE0F?)?)?|[\uDC42\uDC43](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC44\uDC45]|[\uDC46-\uDC50](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC51-\uDC65]|[\uDC66\uDC67](?:\uD83C[\uDFFB-\uDFFF])?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC6A|[\uDC6B-\uDC6D](?:\uD83C[\uDFFB-\uDFFF])?|\uDC6E(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDC70\uDC71](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC72(?:\uD83C[\uDFFB-\uDFFF])?|\uDC73(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC74-\uDC76](?:\uD83C[\uDFFB-\uDFFF])?|\uDC77(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC78(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC79-\uDC7B]|\uDC7C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC7D-\uDC80]|[\uDC81\uDC82](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC83(?:\uD83C[\uDFFB-\uDFFF])?|\uDC84|\uDC85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC86\uDC87](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC88-\uDC8E]|\uDC8F(?:\uD83C[\uDFFB-\uDFFF])?|\uDC90|\uDC91(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC92-\uDCA9]|\uDCAA(?:\uD83C[\uDFFB-\uDFFF])?|[\uDCAB-\uDCFC]|\uDCFD\uFE0F?|[\uDCFF-\uDD3D]|[\uDD49\uDD4A]\uFE0F?|[\uDD4B-\uDD4E\uDD50-\uDD67]|[\uDD6F\uDD70\uDD73]\uFE0F?|\uDD74(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\uDD75(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD76-\uDD79]\uFE0F?|\uDD7A(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD87\uDD8A-\uDD8D]\uFE0F?|\uDD90(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDD95\uDD96](?:\uD83C[\uDFFB-\uDFFF])?|\uDDA4|[\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA]\uFE0F?|[\uDDFB-\uDE2D]|\uDE2E(?:\u200D\uD83D\uDCA8)?|[\uDE2F-\uDE34]|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|[\uDE37-\uDE44]|[\uDE45-\uDE47](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDE48-\uDE4A]|\uDE4B(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE4D\uDE4E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE80-\uDEA2]|\uDEA3(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEA4-\uDEB3]|[\uDEB4-\uDEB6](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEB7-\uDEBF]|\uDEC0(?:\uD83C[\uDFFB-\uDFFF])?|[\uDEC1-\uDEC5]|\uDECB\uFE0F?|\uDECC(?:\uD83C[\uDFFB-\uDFFF])?|[\uDECD-\uDECF]\uFE0F?|[\uDED0-\uDED2\uDED5-\uDED7]|[\uDEE0-\uDEE5\uDEE9]\uFE0F?|[\uDEEB\uDEEC]|[\uDEF0\uDEF3]\uFE0F?|[\uDEF4-\uDEFC\uDFE0-\uDFEB])|\uD83E(?:\uDD0C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD0D\uDD0E]|\uDD0F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD10-\uDD17]|[\uDD18-\uDD1C](?:\uD83C[\uDFFB-\uDFFF])?|\uDD1D|[\uDD1E\uDD1F](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD20-\uDD25]|\uDD26(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD27-\uDD2F]|[\uDD30-\uDD34](?:\uD83C[\uDFFB-\uDFFF])?|\uDD35(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD36(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD37-\uDD39](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD3A|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD3D\uDD3E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD3F-\uDD45\uDD47-\uDD76]|\uDD77(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD78\uDD7A-\uDDB4]|[\uDDB5\uDDB6](?:\uD83C[\uDFFB-\uDFFF])?|\uDDB7|[\uDDB8\uDDB9](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDBA|\uDDBB(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDBC-\uDDCB]|[\uDDCD-\uDDCF](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD0|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1|[\uDDAF-\uDDB3\uDDBC\uDDBD]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|[\uDDD2\uDDD3](?:\uD83C[\uDFFB-\uDFFF])?|\uDDD4(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD5(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDD6-\uDDDD](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDE0-\uDDFF\uDE70-\uDE74\uDE78-\uDE7A\uDE80-\uDE86\uDE90-\uDEA8\uDEB0-\uDEB6\uDEC0-\uDEC2\uDED0-\uDED6])", RegexOptions.Compiled);
+  private readonly static Regex chnnelRefRE = new Regex(@"<#([0-9]+)>", RegexOptions.Compiled);
 
   internal static void LoadParams() {
     try {
@@ -183,7 +184,7 @@ public class Setup : BaseCommandModule {
     return null;
   }
 
-  internal static bool Permitted(ulong guild, Config.ParamType t, IEnumerable<DiscordRole> roles) {
+  internal static bool Permitted(ulong guild, Config.ParamType t, CommandContext ctx) {
     if (Configs[guild].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
     List<Config> cfgs = Configs[guild];
     Config.ConfVal cv = GetConfigValue(guild, t);
@@ -191,6 +192,8 @@ public class Setup : BaseCommandModule {
       case Config.ConfVal.NotAllowed: return false;
       case Config.ConfVal.Everybody: return true;
       case Config.ConfVal.OnlyAdmins:
+        if (ctx.Member.IsOwner) return true;
+        IEnumerable<DiscordRole> roles = ctx.Member.Roles;
         foreach (var role in roles) {
           if (IsAdminRole(guild, role)) return true;
         }
@@ -220,8 +223,8 @@ public class Setup : BaseCommandModule {
   }
 
   internal static bool IsAdminRole(ulong guild, DiscordRole role) {
-    if (role.Position == 0 || role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)) return true;
-    return AdminRoles[guild].Contains(role.Id);
+    if (AdminRoles[guild].Contains(role.Id)) return true;
+    return (role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)); // Fall back
   }
 
   readonly DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
@@ -608,7 +611,7 @@ public class Setup : BaseCommandModule {
 
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
-  public async Task SetupCommand(CommandContext ctx, [RemainingText] [Description("The setup command to execute")]string command) {
+  public async Task SetupCommand(CommandContext ctx, [RemainingText][Description("The setup command to execute")] string command) {
     Utils.LogUserCommand(ctx);
     try {
       DiscordGuild g = ctx.Guild;
@@ -739,10 +742,12 @@ public class Setup : BaseCommandModule {
         }
 
         await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
+        return;
       }
 
       // ****************** PING *********************************************************************************************************************************************
-      if (cmds[0].Equals("ping") && cmds.Length > 1) {
+      if (cmds[0].Equals("ping")) {
+      if (cmds.Length > 1) {
         char mode = cmds[1][0];
         Config c = GetConfig(gid, Config.ParamType.Ping);
         if (c == null) {
@@ -754,142 +759,167 @@ public class Setup : BaseCommandModule {
         if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup ping` _mode_ (modes can be: _everybody_, _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** WHOIS *********************************************************************************************************************************************
-      if (cmds[0].Equals("whois") && cmds.Length > 1) {
-        char mode = cmds[1][0];
-        Config c = GetConfig(gid, Config.ParamType.WhoIs);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.WhoIs, 1);
-          Configs[gid].Add(c);
+      if (cmds[0].Equals("whois")) {
+        if (cmds.Length > 1) {
+          char mode = cmds[1][0];
+          Config c = GetConfig(gid, Config.ParamType.WhoIs);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.WhoIs, 1);
+            Configs[gid].Add(c);
+          }
+          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
         }
-        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
+        else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup whois` _mode_ (modes can be: _everybody_, _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** MASSDEL *********************************************************************************************************************************************
-      if (cmds[0].Equals("massdel") && cmds.Length > 1) {
-        char mode = cmds[1][0];
-        Config c = GetConfig(gid, Config.ParamType.MassDel);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.MassDel, 1);
-          Configs[gid].Add(c);
-        }
-        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
+      if (cmds[0].Equals("massdel")) {
+        if (cmds.Length > 1) {
+          char mode = cmds[1][0];
+          Config c = GetConfig(gid, Config.ParamType.MassDel);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.MassDel, 1);
+            Configs[gid].Add(c);
+          }
+          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup massdel` _mode_ (modes can be: _everybody_ (**NOT RECOMMENDED!**), _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** GAMES *********************************************************************************************************************************************
-      if (cmds[0].Equals("games") && cmds.Length > 1) {
-        char mode = cmds[1][0];
-        Config c = GetConfig(gid, Config.ParamType.Games);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.Games, 1);
-          Configs[gid].Add(c);
-        }
-        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
+      if (cmds[0].Equals("games")) {
+        if (cmds.Length > 1) {
+          char mode = cmds[1][0];
+          Config c = GetConfig(gid, Config.ParamType.Games);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.Games, 1);
+            Configs[gid].Add(c);
+          }
+          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup games` _mode_ (modes can be: _everybody_, _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** REFACTOR *********************************************************************************************************************************************
-      if (cmds[0].Equals("refactor") && cmds.Length > 1) {
-        char mode = cmds[1][0];
-        Config c = GetConfig(gid, Config.ParamType.Refactor);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.Refactor, 1);
-          Configs[gid].Add(c);
-        }
-        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
+      if (cmds[0].Equals("refactor")) {
+        if (cmds.Length > 1) {
+          char mode = cmds[1][0];
+          Config c = GetConfig(gid, Config.ParamType.Refactor);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.Refactor, 1);
+            Configs[gid].Add(c);
+          }
+          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup refactor` _mode_ (modes can be: _everybody_, _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** UNITYDOCS *********************************************************************************************************************************************
-      if (cmds[0].Equals("unitydocs") && cmds.Length > 1) {
-        char mode = cmds[1][0];
-        Config c = GetConfig(gid, Config.ParamType.UnityDocs);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.UnityDocs, 1);
-          Configs[gid].Add(c);
-        }
-        if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-        if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-        if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
+      if (cmds[0].Equals("unitydocs")) {
+        if (cmds.Length > 1) {
+          char mode = cmds[1][0];
+          Config c = GetConfig(gid, Config.ParamType.UnityDocs);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.UnityDocs, 1);
+            Configs[gid].Add(c);
+          }
+          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup unitydocs` _mode_ (modes can be: _everybody_, _admins_, _disabled_)"));
+        return;
       }
 
       // ****************** TIMEZONES *********************************************************************************************************************************************
-      if (cmds[0].Equals("timezones") && cmds.Length > 2) {
-        // get|set who
-        // who who
-        char who = cmds[2][0];
-        Config cg = GetConfig(gid, Config.ParamType.TimezoneG);
-        Config cs = GetConfig(gid, Config.ParamType.TimezoneS);
-        if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
-          if (cg == null) {
-            cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-            Configs[gid].Add(cg);
-          }
-          if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
-          if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
-          if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
+      if (cmds[0].Equals("timezones")) {
+        if (cmds.Length > 2) {
+          // get|set who
+          // who who
+          char who = cmds[2][0];
+          Config cg = GetConfig(gid, Config.ParamType.TimezoneG);
+          Config cs = GetConfig(gid, Config.ParamType.TimezoneS);
+          if (cmds[1].Trim().Equals("get", StringComparison.InvariantCultureIgnoreCase)) {
+            if (cg == null) {
+              cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+              Configs[gid].Add(cg);
+            }
+            if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+            if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+            if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
 
-        } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
-          if (cs == null) {
-            cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-            Configs[gid].Add(cs);
-          }
-          if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
-          if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
-          if (who == 'e' || who == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
+          } else if (cmds[1].Trim().Equals("set", StringComparison.InvariantCultureIgnoreCase)) {
+            if (cs == null) {
+              cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+              Configs[gid].Add(cs);
+            }
+            if (who == 'n' || who == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+            if (who == 'a' || who == 'r' || who == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+            if (who == 'e' || who == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
 
-        } else {
-          char whos = cmds[1][0];
-          if (cg == null) {
-            cg = new Config(gid, Config.ParamType.TimezoneG, 1);
-            Configs[gid].Add(cg);
-          }
-          if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
-          if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
-          if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
+          } else {
+            char whos = cmds[1][0];
+            if (cg == null) {
+              cg = new Config(gid, Config.ParamType.TimezoneG, 1);
+              Configs[gid].Add(cg);
+            }
+            if (who == 'n' || who == 'd') cg.IdVal = (int)Config.ConfVal.NotAllowed;
+            if (who == 'a' || who == 'r' || who == 'o') cg.IdVal = (int)Config.ConfVal.OnlyAdmins;
+            if (who == 'e' || who == 'y') cg.IdVal = (int)Config.ConfVal.Everybody;
 
-          if (cs == null) {
-            cs = new Config(gid, Config.ParamType.TimezoneS, 1);
-            Configs[gid].Add(cs);
+            if (cs == null) {
+              cs = new Config(gid, Config.ParamType.TimezoneS, 1);
+              Configs[gid].Add(cs);
+            }
+            if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
+            if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
+            if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
           }
-          if (whos == 'n' || whos == 'd') cs.IdVal = (int)Config.ConfVal.NotAllowed;
-          if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
-          if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
-        }
 
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup timezones` [set|get] _mode_ (modes can be: _everybody_, _admins_, _disabled_, you have to specify who can set (define) and who can read them)"));
+        return;
       }
 
       // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
-      if (cmds[0].Equals("trackingchannel")) {
+      if (cmds[0].Equals("trackingchannel") || cmds[0].Equals("trackchannel")) {
         // trch [empty|help] -> help
         // trch [rem|remove] -> remove
         // trch channel [j] [l] [r] -> set
         // trch [j] [l] [r] -> set on existing
 
-        if (cmds.Length == 1 || cmds[1].Equals("help")) {
-          await Utils.DeleteDelayed(15, ctx.RespondAsync(
-            "Use: `setup trackingchannel` _#channel_ to set a channel\n`j` to track who joins the server, `l` to track who leaves the server, 'r' to track changes on roles (_the flags can be used alone or after a channel definition_.)\n'rem' to remove the tracking channel"));
-        } else if (cmds.Length > 1) {
+        if (cmds.Length > 1) {
           TrackChannel tc = null;
           bool j = false;
           bool l = false;
@@ -915,22 +945,35 @@ public class Setup : BaseCommandModule {
               r = true;
               atLestOne = true;
             } else { // Is it a channel?
+              DiscordChannel ch = null;
               if (cmd[0] == '#') cmd = cmd[1..];
-              foreach (DiscordChannel ch in g.Channels.Values) {
-                if (ch.Name.Equals(cmd, StringComparison.InvariantCultureIgnoreCase)) {
-                  if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) {
-                    tc = new TrackChannel(gid, ch.Id) {  // Create
-                      trackJoin = true,
-                      trackLeave = true,
-                      trackRoles = true,
-                      channel = ch
-                    };
-                    TrackChannels[gid] = tc;
-                  } else {
-                    tc = TrackChannels[gid]; // Grab
-                    tc.channel = ch;
+              Match cm = chnnelRefRE.Match(cmd);
+              if (cm.Success) {
+                if (ulong.TryParse(cm.Groups[1].Value, out ulong cid)) {
+                  DiscordChannel tch = ctx.Guild.GetChannel(cid);
+                  if (tch != null) ch = tch;
+                }
+              }
+              if (ch == null) {
+                foreach (DiscordChannel tch in g.Channels.Values) {
+                  if (tch.Name.Equals(cmd, StringComparison.InvariantCultureIgnoreCase)) {
+                    ch = tch;
+                    break;
                   }
-                  break;
+                }
+              }
+              if (ch != null) {
+                if (!TrackChannels.ContainsKey(gid) || TrackChannels[gid] == null) {
+                  tc = new TrackChannel(gid, ch.Id) {  // Create
+                    trackJoin = true,
+                    trackLeave = true,
+                    trackRoles = true,
+                    channel = ch
+                  };
+                  TrackChannels[gid] = tc;
+                } else {
+                  tc = TrackChannels[gid]; // Grab
+                  tc.channel = ch;
                 }
               }
             }
@@ -946,61 +989,103 @@ public class Setup : BaseCommandModule {
             await Utils.DeleteDelayed(15, ctx.RespondAsync("Tracking Channel updated to " + tc.channel.Mention + " for " +
               ((!j && !l && !r) ? "_no actions_" : "") + (j ? "_Join_ " : "") + (l ? "_Leave_ " : "") + (r ? "_Roles_ " : "")));
           }
-        }
-        _ = Utils.DeleteDelayed(15, ctx.Message);
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+        } else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(
+            "Use: `setup trackingchannel` _#channel_ to set a channel\n`j` to track who joins the server, `l` to track who leaves the server, 'r' to track changes on roles (_the flags can be used alone or after a channel definition_.)\n'rem' to remove the tracking channel"));
+
+        return;
       }
 
       // ****************** ADMINROLES *********************************************************************************************************************************************
-      if (cmds[0].Equals("adminroles") && cmds.Length > 1) {
-        var errs = "";
-        // set them, or remove
-        if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
-          foreach(var r in AdminRoles[gid]) {
-            Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, r));
-          }
-          AdminRoles[gid].Clear();
-        } else {
-          var guildRoles = g.Roles.Values;
-          for (int i = 1; i < cmds.Length; i++) {
-            // Find if we have it (and the id)
-            ulong id = 0;
-            Match rm = roleParser.Match(cmds[i]);
-            if (rm.Success)
-              ulong.TryParse(rm.Groups[1].Value, out id);
-            else {
-              foreach (var r in guildRoles)
-                if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
-                  id = r.Id;
-                  break;
-                }
+      if (cmds[0].Equals("adminroles") || cmds[0].Equals("admins")) {
+        if (cmds.Length > 1) {
+          var errs = "";
+          string msg;
+          // set them, or remove
+          if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
+            foreach (var r in AdminRoles[gid]) {
+              Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, r));
             }
-            if (id == 0) {
-              errs += cmds[i] + " ";
-              continue;
-            } else {
-              if (!AdminRoles[gid].Contains(id)) {
-                AdminRoles[gid].Add(id);
-                Database.Add(new AdminRole(gid, id));
+            AdminRoles[gid].Clear();
+
+            _ = Utils.DeleteDelayed(15, ctx.Message);
+            msg = "**AdminRoles** removed";
+            await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+            return;
+
+          }
+          else if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
+            msg = "**AdminRoles** are: ";
+            if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) {
+              int maxpos = -1;
+              foreach (DiscordRole r in ctx.Guild.Roles.Values) { // Find max position numer
+                if (maxpos < r.Position) maxpos = r.Position;
+              }
+              foreach (DiscordRole r in ctx.Guild.Roles.Values) {
+                if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == maxpos)
+                  msg += "**" + r.Name + "**, ";
+              }
+              msg += "and **_" + ctx.Guild.Owner.DisplayName + "_** (_roles are not defined, default ones are used_)";
+            }
+            else {
+              foreach (var rid in AdminRoles[gid]) {
+                DiscordRole r = g.GetRole(rid);
+                if (r != null) msg += r.Mention + ", ";
+              }
+              msg = msg[0..^2];
+            }
+            if (errs.Length > 0) msg += " _Errors:_ " + errs;
+            _ = Utils.DeleteDelayed(15, ctx.Message);
+            await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+            return;
+
+          }
+          else {
+            var guildRoles = g.Roles.Values;
+            for (int i = 1; i < cmds.Length; i++) {
+              // Find if we have it (and the id)
+              ulong id = 0;
+              Match rm = roleParser.Match(cmds[i]);
+              if (rm.Success)
+                ulong.TryParse(rm.Groups[1].Value, out id);
+              else {
+                foreach (var r in guildRoles)
+                  if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
+                    id = r.Id;
+                    break;
+                  }
+              }
+              if (id == 0) {
+                errs += cmds[i] + " ";
+                continue;
+              }
+              else {
+                if (!AdminRoles[gid].Contains(id)) {
+                  AdminRoles[gid].Add(id);
+                  Database.Add(new AdminRole(gid, id));
+                }
               }
             }
           }
-        }
-        // And show the result
-        string msg;
-
-        if (AdminRoles[gid].Count == 0) msg = "**AdminRoles** removed";
-        else {
-          msg = "**AdminRoles** are: ";
-          foreach (var rid in AdminRoles[gid]) {
-            DiscordRole r = g.GetRole(rid);
-            if (r != null) msg += r.Mention + ", ";
+          // And show the result
+          if (AdminRoles[gid].Count == 0) msg = "No valid **AdminRoles** defined";
+          else {
+            msg = "**AdminRoles** are: ";
+            foreach (var rid in AdminRoles[gid]) {
+              DiscordRole r = g.GetRole(rid);
+              if (r != null) msg += r.Mention + ", ";
+            }
+            msg = msg[0..^2];
           }
-          msg = msg[0..^2];
-        }
-        if (errs.Length > 0) msg += " _Errors:_ " + errs;
+          if (errs.Length > 0) msg += " _Errors:_ " + errs;
 
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+        }
+        else
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup adminroles` _@role1 @role2 @role3_ ... (defined who is an admin for the bot. If no one is spcified then only the server owner and roles flagged as server admins will be considered admins\nUse: `setup adminroles remove` to remove all admin roles specified\nUse: `setup adminroles list` to show who will be considered an admin (in term of roles or specific users.)"));
+        return;
       }
 
       // ****************** SPAMPROTECTION *********************************************************************************************************************************************
@@ -1030,6 +1115,7 @@ public class Setup : BaseCommandModule {
 
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+        return;
       }
 
       // ****************** STATS *********************************************************************************************************************************************
@@ -1045,6 +1131,7 @@ public class Setup : BaseCommandModule {
         if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
+        return;
       }
 
       // ****************** BANNEDWORDS *********************************************************************************************************************************************
@@ -1100,6 +1187,7 @@ public class Setup : BaseCommandModule {
             BannedWords[gid].Clear();
           }
         }
+        return;
       }
 
 
@@ -1249,11 +1337,16 @@ public class Setup : BaseCommandModule {
 
           _ = Utils.DeleteDelayed(15, ctx.Message);
 
+          return;
         }
+
         if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
           await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `rep` or `fun` or `thanks` or `rank` to enable/disable the features\n`rep` (or `fun`) `list` will show the emojis for the categories\n`rep` (or `fun`) `set` will wait for a set of emojis to be used for the category."));
+          return;
         }
       }
+
+      await Utils.DeleteDelayed(15, ctx.RespondAsync("I do not understand the command: " + ctx.Message.Content));
 
     } catch (Exception ex) {
       Utils.Log("Error in Setup by command line: " + ex.Message);

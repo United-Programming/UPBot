@@ -76,4 +76,11 @@ Logic to update:
 - emoji for role
 
 
-------------- Appreciation --------------------
+
+
+Try save
+admin
+bannedw
+config
+track
+tzone

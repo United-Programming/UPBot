@@ -35,7 +35,7 @@ stats all #channel
   [Description("Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
   [Cooldown(1, 60, CooldownBucketType.Channel | CooldownBucketType.User)]
   public async Task DoStats(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx)) return;
     await GenerateStatsInteractive(ctx);
   }
 
@@ -50,7 +50,7 @@ stats all #channel
   }
 
   async Task GenerateStats(CommandContext ctx, string cmd, DiscordChannel ch) { 
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx)) return;
     Utils.LogUserCommand(ctx);
     try { 
     cmd = cmd.Trim().ToLowerInvariant();

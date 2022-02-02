@@ -46,28 +46,28 @@ public class Refactor : BaseCommandModule {
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
   }
 
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx, [Description("The user that posted the message to check")] DiscordMember member) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace a specified post with a reformatted code block using the specified language or the best language")]
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, null, Action.Keep, Langs.NONE);
   }
 
   [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
   public async Task ReformatCommand(CommandContext ctx, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post (only your own posts or if you are an admin), specify a **language** if you want to force one.")] string what) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     if (IsBest(what)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
     else if (IsReplace(what)) await RefactorCode(ctx, null, Action.Replace, Langs.NONE);
     else await RefactorCode(ctx, null, Action.Keep, NormalizeLanguage(what));
@@ -76,7 +76,7 @@ public class Refactor : BaseCommandModule {
   [Command("reformat")]
   [Description("Replace the last post of the specified user or the post you replied to with a formatted code block")]
   public async Task ReformatCommand(CommandContext ctx, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
     else if (IsReplace(cmd1)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd2));
     else if (IsReplace(cmd2)) await RefactorCode(ctx, null, Action.Replace, NormalizeLanguage(cmd1));
@@ -89,13 +89,13 @@ public class Refactor : BaseCommandModule {
 
   [Command("reformat")]
   public async Task ReformatCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member) { // Refactor the last post of the specified user in the channel
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, member, Action.Keep, Langs.NONE);
   }
 
   [Command("reformat")]
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Analyze the language with **Best** or **Analyze**, use **Replace** to replace the refactored post, specify a **language** if you want to force one.")] string what) { // Refactor the last post of the specified user in the channel
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     if (IsBest(what)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(what)) await RefactorCode(ctx, member, Action.Replace, Langs.NONE);
     else await RefactorCode(ctx, member, Action.Keep, NormalizeLanguage(what));
@@ -103,7 +103,7 @@ public class Refactor : BaseCommandModule {
 
   [Command("reformat")]
   public async Task RefacReformatCommandtorCommand(CommandContext ctx, [Description("The user that posted the message to refactor")] DiscordMember member, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or specify a **language** if you want to force one.")] string cmd1, [Description("Use **Replace** to replace the refactored post (only your own posts or if you are an admin), or sa **language** if you want to force one.")] string cmd2) { // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx.Member.Roles)) return;
+    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     if (IsBest(cmd1) || IsBest(cmd2)) await RefactorCode(ctx, member, Action.Analyze, Langs.NONE);
     else if (IsReplace(cmd1)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd2));
     else if (IsReplace(cmd2)) await RefactorCode(ctx, member, Action.Replace, NormalizeLanguage(cmd1));

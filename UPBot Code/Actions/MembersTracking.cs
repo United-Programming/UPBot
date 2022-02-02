@@ -14,6 +14,7 @@ public class MembersTracking {
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
 
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
+      if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
 
       if (tracking.ContainsKey(args.Member.Id) || daysJ < 2) {
         tracking.Remove(args.Member.Id);
@@ -22,7 +23,11 @@ public class MembersTracking {
         Utils.Log(msg);
       }
       else {
-        string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
+        string msgC;
+        if (daysJ >= 0)
+          msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
+        else
+          msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         await trackChannel.channel.SendMessageAsync(msgC);
         Utils.Log(msgL);
