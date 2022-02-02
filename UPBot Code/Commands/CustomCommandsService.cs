@@ -105,7 +105,7 @@ public class CustomCommandsService : BaseCommandModule {
       return;
     }
 
-    Database.DeleteByKey<CustomCommand>(names[0]);
+    Database.DeleteByKeys<CustomCommand>(names[0]);
 
     if (TryGetCommand(names[0], out CustomCommand command)) {
       command.EditCommand(names.Skip(1).ToArray());

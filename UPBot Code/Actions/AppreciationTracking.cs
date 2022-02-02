@@ -258,7 +258,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (authorId == mr.User.Id) return Task.Delay(0); // If member is equal to author ignore (no self emojis)
 
 
-      long key = ReputationEmoji.GetKeyValue(gid, emojiId, emojiName);
+      ulong key = ReputationEmoji.GetKeyValue(gid, emojiId, emojiName);
       if (!Setup.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
       ReputationEmoji rem = Setup.RepEmojis[gid][key];
 

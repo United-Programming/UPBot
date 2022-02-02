@@ -1,9 +1,8 @@
 ﻿using System;
 
 public class Reputation : Entity {
-  [Key] public long RepKey;
-  [KeyGen] public ulong Guild;
-  [KeyGen] public ulong User;
+  [Key] public ulong Guild;
+  [Key] public ulong User;
   public int Rep;
   public int Fun;
   public int Tnk;
@@ -19,7 +18,6 @@ public class Reputation : Entity {
     Tnk = 0;
     Ran = 0;
     LastUpdate = DateTime.Now;
-    RepKey = GetKeyValue(gid, usr);
   }
 }
 

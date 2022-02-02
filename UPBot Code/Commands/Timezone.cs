@@ -91,7 +91,7 @@ public class TimezoneCmd : BaseCommandModule {
     Utils.LogUserCommand(ctx);
     try {
       if (timezone.Trim().Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
-        Database.DeleteByKey<Timezone>(m.Id);
+        Database.DeleteByKeys<Timezone>(m.Id);
         return Utils.DeleteDelayed(10, ctx.RespondAsync("Timezonefor user " + m.Username + " removed.").Result);
       }
 

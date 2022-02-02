@@ -33,7 +33,6 @@ stats all #channel
 
   [Command("stats")]
   [Description("Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
-  [Cooldown(1, 60, CooldownBucketType.Channel | CooldownBucketType.User)]
   public async Task DoStats(CommandContext ctx) {
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx)) return;
     await GenerateStatsInteractive(ctx);
@@ -41,7 +40,6 @@ stats all #channel
 
   [Command("stats")]
   [Description("Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
-  [Cooldown(1, 60, CooldownBucketType.Channel | CooldownBucketType.User)]
   public async Task DoStats(CommandContext ctx, [Description("Specific type of stats to calculate (server, emoji, users, roles, all, full)")] string cmd) {
     await GenerateStats(ctx, cmd, ctx.Channel);
   }
@@ -119,7 +117,7 @@ stats all #channel
     double days = (DateTime.Now - g.CreationTimestamp.UtcDateTime).TotalDays;
     e.AddField("Server created", (int)days + " days ago", true);
     double dailyms = m2 / days;
-    e.AddField("Daily mebers", dailyms.ToString("N1") + " member per day", true);
+    e.AddField("Daily mebers", dailyms.ToString("N1") + " members per day", true);
 
     e.WithTitle("Stats for " + g.Name);
     e.WithThumbnail(g.IconUrl);

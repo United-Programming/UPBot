@@ -20,7 +20,7 @@ public class Setup : BaseCommandModule {
   public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
 
   public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
-  public static Dictionary<ulong, Dictionary<long, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<long, ReputationEmoji>>();
+  public static Dictionary<ulong, Dictionary<ulong, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<ulong, ReputationEmoji>>();
   public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
 
 
@@ -81,7 +81,7 @@ public class Setup : BaseCommandModule {
       if (allEmojis != null) {
         foreach (var r in allEmojis) {
           ulong gid = r.Guild;
-          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
+          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
           if (r.For == 0) {
             Database.Delete(r);
             Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
@@ -130,7 +130,7 @@ public class Setup : BaseCommandModule {
       if (allEmojis != null) {
         foreach (var r in allEmojis) {
           ulong gid = r.Guild;
-          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<long, ReputationEmoji>();
+          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
           if (r.For == 0) {
             Database.Delete(r);
             Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
@@ -154,7 +154,7 @@ public class Setup : BaseCommandModule {
         if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
         if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
         if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
-        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<long, ReputationEmoji>();
+        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
       }
 
       Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
@@ -289,7 +289,7 @@ public class Setup : BaseCommandModule {
         await ctx.Channel.DeleteMessageAsync(msg);
         if (int.TryParse(ir.Id[9..], out int rpos)) {
           ulong rid = AdminRoles[ctx.Guild.Id][rpos]; ;
-          Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, rid));
+          Database.DeleteByKeys<AdminRole>(gid, rid);
           AdminRoles[ctx.Guild.Id].RemoveAt(rpos);
         }
 
@@ -498,7 +498,7 @@ public class Setup : BaseCommandModule {
         } else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatbannedwr") {
           // Get the word by number, remove it. In case there are no more disable the feature
           int.TryParse(ir.Id[13..], out int num);
-          Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, BannedWords[gid][num]));
+          Database.DeleteByKeys<BannedWord>(gid, BannedWords[gid][num]);
           BannedWords[gid].RemoveAt(num);
         }
         msg = CreateBannedWordsInteraction(ctx, msg);
@@ -527,7 +527,7 @@ public class Setup : BaseCommandModule {
           _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
 
         } else {
-          Dictionary<long, ReputationEmoji> eset = new Dictionary<long, ReputationEmoji>();
+          Dictionary<ulong, ReputationEmoji> eset = new Dictionary<ulong, ReputationEmoji>();
 
           // Start by grabbing all values that are snowflakes
           string resp = answer.Result.Content.Trim();
@@ -556,7 +556,7 @@ public class Setup : BaseCommandModule {
 
 
           // Remove all entries that are no more in the list
-          List<long> toRemove = new List<long>();
+          List<ulong> toRemove = new List<ulong>();
           foreach (var ek in RepEmojis[gid].Keys) {
             if (RepEmojis[gid][ek].HasFlag(wtt) && !eset.ContainsKey(ek)) toRemove.Add(ek);
           }
@@ -978,6 +978,8 @@ public class Setup : BaseCommandModule {
               }
             }
           }
+          if (atLestOne && tc == null && TrackChannels[gid] != null)
+            tc = TrackChannels[gid];
           if (tc != null) {
             if (atLestOne) {
               tc.trackJoin = j;
@@ -985,6 +987,9 @@ public class Setup : BaseCommandModule {
               tc.trackRoles = r;
             }
             Database.Add(tc);
+            j = tc.trackJoin;
+            l = tc.trackLeave;
+            r = tc.trackRoles;
 
             await Utils.DeleteDelayed(15, ctx.RespondAsync("Tracking Channel updated to " + tc.channel.Mention + " for " +
               ((!j && !l && !r) ? "_no actions_" : "") + (j ? "_Join_ " : "") + (l ? "_Leave_ " : "") + (r ? "_Roles_ " : "")));
@@ -1005,7 +1010,7 @@ public class Setup : BaseCommandModule {
           // set them, or remove
           if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
             foreach (var r in AdminRoles[gid]) {
-              Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(gid, r));
+              Database.DeleteByKeys<AdminRole>(gid, r);
             }
             AdminRoles[gid].Clear();
 
@@ -1074,7 +1079,7 @@ public class Setup : BaseCommandModule {
             msg = "**AdminRoles** are: ";
             foreach (var rid in AdminRoles[gid]) {
               DiscordRole r = g.GetRole(rid);
-              if (r != null) msg += r.Mention + ", ";
+              if (r != null) msg += "**" + r.Name + "**, ";
             }
             msg = msg[0..^2];
           }
@@ -1084,7 +1089,7 @@ public class Setup : BaseCommandModule {
           await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
         }
         else
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup adminroles` _@role1 @role2 @role3_ ... (defined who is an admin for the bot. If no one is spcified then only the server owner and roles flagged as server admins will be considered admins\nUse: `setup adminroles remove` to remove all admin roles specified\nUse: `setup adminroles list` to show who will be considered an admin (in term of roles or specific users.)"));
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup adminroles` _@role1 @role2 @role3_ ... (adds the roles as admins for the bot.)\nUse: `setup adminroles remove` to remove all admin roles specified\nUse: `setup adminroles list` to show who will be considered an admin (in term of roles or specific users.)"));
         return;
       }
 
@@ -1129,6 +1134,7 @@ public class Setup : BaseCommandModule {
         if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
         if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
         if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        Database.Add(c);
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to " + (Config.ConfVal)c.IdVal));
         return;
@@ -1173,7 +1179,7 @@ public class Setup : BaseCommandModule {
           } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
             string bw = cmds[2].ToLowerInvariant().Trim();
             if (BannedWords[gid].Contains(bw)) {
-              Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, bw));
+              Database.DeleteByKeys<BannedWord>(gid, bw);
               BannedWords[gid].Remove(bw);
               await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
             } else {
@@ -1182,7 +1188,7 @@ public class Setup : BaseCommandModule {
 
           } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
             foreach (var bw in BannedWords[gid]) {
-              Database.DeleteByKey<BannedWord>(BannedWord.GetKeyValue(gid, bw));
+              Database.DeleteByKeys<BannedWord>(gid, bw);
             }
             BannedWords[gid].Clear();
           }
@@ -1227,7 +1233,7 @@ public class Setup : BaseCommandModule {
               await Utils.DeleteDelayed(15, ctx.RespondAsync(emjs));
 
             } else if (cmds.Length > 2 && cmds[2].Trim().ToLowerInvariant() == "del") {
-              List<long> toRemove = new List<long>();
+              List<ulong> toRemove = new List<ulong>();
               foreach (var k in RepEmojis[gid].Keys) {
                 var em = RepEmojis[gid][k];
                 if (em.HasFlag(wtt)) {
@@ -1258,7 +1264,7 @@ public class Setup : BaseCommandModule {
               if (answer.Result == null || answer.Result.Content.Length < 4) {
                 _ = Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("Config timed out"));
               } else {
-                Dictionary<long, ReputationEmoji> eset = new Dictionary<long, ReputationEmoji>();
+                Dictionary<ulong, ReputationEmoji> eset = new Dictionary<ulong, ReputationEmoji>();
 
                 // Start by grabbing all values that are snowflakes
                 string resp = answer.Result.Content.Trim();
@@ -1277,7 +1283,7 @@ public class Setup : BaseCommandModule {
                 });
 
                 // Remove all entries that are no more in the list
-                List<long> toRemove = new List<long>();
+                List<ulong> toRemove = new List<ulong>();
                 foreach (var ek in RepEmojis[gid].Keys) {
                   if (RepEmojis[gid][ek].HasFlag(wtt) && !eset.ContainsKey(ek)) toRemove.Add(ek);
                 }
@@ -1432,7 +1438,7 @@ public class Setup : BaseCommandModule {
     foreach(ulong rid in AdminRoles[ctx.Guild.Id]) {
       DiscordRole role = ctx.Guild.GetRole(rid);
       if (role == null) {
-        Database.DeleteByKey<AdminRole>(AdminRole.GetKeyValue(ctx.Guild.Id, rid));
+        Database.DeleteByKeys<AdminRole>(ctx.Guild.Id, rid);
         continue;
       }
       actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idrolerem" + num, "Remove " + role.Name, false, ko));

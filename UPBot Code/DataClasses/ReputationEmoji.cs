@@ -2,10 +2,9 @@
 using DSharpPlus.Entities;
 
 public class ReputationEmoji : Entity {
-  [Key] public long EmKey;
-  [KeyGen] public ulong Guild;
-  [KeyGen] public ulong Lid;
-  [KeyGen] public string Sid;
+  [Key] public ulong Guild;
+  [Key] public ulong Lid;
+  [Key] public string Sid;
   public int For = 0;
 
   public ReputationEmoji() { }
@@ -15,7 +14,6 @@ public class ReputationEmoji : Entity {
     Lid = lid;
     Sid = sid;
     For = (int)f;
-    EmKey = GetKeyValue(gid, lid, sid);
   }
 
   internal string GetEmoji(DiscordGuild guild) {
@@ -28,6 +26,14 @@ public class ReputationEmoji : Entity {
     }
   }
 
+  internal ulong GetKeyValue() {
+    if (Sid == null) return Guild ^ Lid;
+    else return Guild ^ (ulong)Sid.GetHashCode();
+  }
+  internal static ulong GetKeyValue(ulong gid, ulong lid, string sid) {
+    if (sid == null) return gid ^ lid;
+    else return gid ^ (ulong)sid.GetHashCode();
+  }
 
   internal bool HasFlag(WhatToTrack uf) {
     return ((WhatToTrack)For).HasFlag(uf);

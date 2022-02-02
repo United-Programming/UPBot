@@ -53,21 +53,22 @@ public class Database {
       Console.WriteLine("Table " + tableName + " does NOT exist!");
 
     string theKey = null;
-    bool donefirst;
     if (!exists) {
       string sql = "create table " + tableName + " (";
-      donefirst = false;
       string index = null;
       foreach (FieldInfo field in t.GetFields()) {
         bool comment = false;
         bool blob = false;
         bool notnull = false;
-        bool key = false;
         bool ignore = false;
         foreach (CustomAttributeData attr in field.CustomAttributes) {
           if (attr.AttributeType == typeof(Entity.Blob)) blob = true;
           if (attr.AttributeType == typeof(Entity.Comment)) comment = true;
-          if (attr.AttributeType == typeof(Entity.Key)) { key = true; notnull = true; theKey = field.Name; }
+          if (attr.AttributeType == typeof(Entity.Key)) {
+            notnull = true;
+            if (theKey==null) theKey = field.Name;
+            else theKey += ", " + field.Name;
+          }
           if (attr.AttributeType == typeof(Entity.NotNull)) notnull = true;
           if (attr.AttributeType == typeof(Entity.Index)) {
             if (index == null) index = "CREATE INDEX idx_" + tableName + " ON " + tableName + "(" + field.Name;
@@ -77,8 +78,6 @@ public class Database {
         }
         if (ignore) continue;
 
-        if (donefirst) sql += ", ";
-        else donefirst = true;
         if (blob) sql += field.Name + " BLOB";
         else switch (field.FieldType.Name.ToLowerInvariant()) {
             case "int8": sql += field.Name + " SMALLINT"; break;
@@ -102,10 +101,10 @@ public class Database {
               throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
           }
         if (notnull) sql += " NOT NULL";
-        if (key) sql += " PRIMARY KEY";
+        sql += ", ";
       }
-      sql += ");";
       if (theKey == null) throw new Exception("Missing [Key] for class " + typeof(T));
+      sql += " PRIMARY KEY (" + theKey + "));";
       command.CommandText = sql;
       command.ExecuteNonQuery();
 
@@ -122,10 +121,9 @@ public class Database {
       bool blob = false;
       bool ignore = false;
       foreach (CustomAttributeData attr in field.CustomAttributes) {
-        if (attr.AttributeType == typeof(Entity.Key)) { theKey = field.Name; ed.key = field; }
+        if (attr.AttributeType == typeof(Entity.Key)) { keygens.Add(field); }
         if (attr.AttributeType == typeof(Entity.Blob)) { blob = true; }
         if (attr.AttributeType == typeof(Entity.NotPersistent)) { ignore = true; }
-        if (attr.AttributeType == typeof(Entity.KeyGen)) { keygens.Add(field); }
       }
       if (ignore) {
         ed.fields[field.Name] = FieldType.IGNORE;
@@ -154,19 +152,27 @@ public class Database {
             throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
         }
     }
-    if (theKey == null) throw new Exception("Missing key for class " + t);
-    if (keygens.Count > 0) ed.keygen = keygens.ToArray(); else ed.keygen = new FieldInfo[0];
+    if (keygens.Count == 0) throw new Exception("Missing key for class " + t);
+    ed.keys = keygens.ToArray();
 
     // Build the query strings
-    ed.count = "SELECT Count(*) FROM " + t.ToString() + " WHERE " + theKey + "=@param1";
+    theKey = "";
+    int keynum = 1;
+    foreach (var key in keygens) {
+      if (theKey.Length > 0) theKey += " and ";
+      theKey += key.Name + "=@param" + keynum;
+      keynum++;
+    }
+
+    ed.count = "SELECT Count(*) FROM " + t.ToString() + " WHERE " + theKey;
     ed.select = "SELECT * FROM " + t.ToString();
-    ed.delete = "DELETE FROM " + t.Name + " WHERE " + theKey + "=@param1";
-    ed.delete2 = "DELETE FROM " + t.Name + " WHERE @col1=@param1 And @col2=@param2";
+    ed.delete = "DELETE FROM " + t.Name + " WHERE " + theKey;
+
     // Insert, Update
     string insert = "INSERT INTO " + t.ToString() + " (";
     string insertpost = ") VALUES (";
     string update = "UPDATE " + t.ToString() + " SET ";
-    donefirst = false;
+    bool donefirst = false;
     foreach (FieldInfo field in t.GetFields()) {
       bool ignore = false;
       foreach (CustomAttributeData attr in field.CustomAttributes) {
@@ -180,7 +186,7 @@ public class Database {
       update += field.Name + "=@p" + field.Name;
     }
     ed.insert = insert + insertpost + ");";
-    ed.update = update + " WHERE " + theKey + "=@param1";
+    ed.update = update + " WHERE " + theKey;
     entities.Add(t, ed);
   }
 
@@ -202,16 +208,15 @@ public class Database {
       EntityDef ed = entities[t];
       // Get the values with this key from the db
       SQLiteCommand cmd = new SQLiteCommand(ed.count, connection);
-      object key = ed.GenerateKey(val);
+      AddKeyParams(ed, cmd, val);
 
-      cmd.Parameters.Add(new SQLiteParameter("@param1", key));
       // Do we have our value?
       if (Convert.ToInt32(cmd.ExecuteScalar()) > 0) { // Yes -> Update
         SQLiteCommand update = new SQLiteCommand(ed.update, connection);
         foreach (FieldInfo field in t.GetFields()) {
           update.Parameters.Add(new SQLiteParameter("@p" + field.Name, field.GetValue(val)));
         }
-        update.Parameters.Add(new SQLiteParameter("@param1", key));
+        AddKeyParams(ed, update, val);
         update.ExecuteNonQuery();
       } else { // No - Insert
         SQLiteCommand insert = new SQLiteCommand(ed.insert, connection);
@@ -225,77 +230,41 @@ public class Database {
     }
   }
 
+  private static void AddKeyParams(EntityDef ed, SQLiteCommand cmd, object val) {
+    int num = 1;
+    foreach (var key in ed.keys) {
+      object kv = key.GetValue(val);
+      cmd.Parameters.Add(new SQLiteParameter("@param" + num, kv));
+      num++;
+    }
+  }
+
   public static void Delete<T>(T val) {
     try {
       EntityDef ed = entities[val.GetType()];
       SQLiteCommand cmd = new SQLiteCommand(ed.delete, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", ed.key.GetValue(val)));
+      AddKeyParams(ed, cmd, val);
       cmd.ExecuteNonQuery();
     } catch (Exception ex) {
       Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message);
     }
   }
-  public static void DeleteByKey<T>(object keyvalue) {
+  public static void DeleteByKeys<T>(params object[] keys) {
     try {
       EntityDef ed = entities[typeof(T)];
       SQLiteCommand cmd = new SQLiteCommand(ed.delete, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", keyvalue));
-      cmd.ExecuteNonQuery();
-    } catch (Exception ex) {
-      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
-    }
-  }
-
-  public static void DeleteBy2Keys<T>(string col1, object keyvalue1, string col2, object keyvalue2) {
-    try {
-      EntityDef ed = entities[typeof(T)];
-      string scmd = ed.delete2.Replace("@col1", col1).Replace("@col2", col2);
-      SQLiteCommand cmd = new SQLiteCommand(scmd, connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", keyvalue1));
-      cmd.Parameters.Add(new SQLiteParameter("@param2", keyvalue2));
-      cmd.ExecuteNonQuery();
-    } catch (Exception ex) {
-      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
-    }
-  }
-
-  public static T Get<T>(object keyvalue) {
-    try {
-      Type t = typeof(T);
-      EntityDef ed = entities[t];
-      SQLiteCommand cmd = new SQLiteCommand(ed.select + " WHERE " + ed.key.Name + "=@param1;", connection);
-      cmd.Parameters.Add(new SQLiteParameter("@param1", keyvalue));
-      SQLiteDataReader reader = cmd.ExecuteReader();
-      if (!reader.Read()) return default(T);
-      T res = (T)Activator.CreateInstance(t);
+      if (ed.keys.Length != keys.Length) throw new Exception("Inconsistent number of keys for: " + typeof(T).FullName);
       int num = 0;
-      foreach (FieldInfo field in t.GetFields()) {
-        if (reader.IsDBNull(num)) continue;
-        FieldType ft = ed.fields[field.Name];
-        switch (ft) {
-          case FieldType.Bool: field.SetValue(res, reader.GetByte(num) != 0); break;
-          case FieldType.Byte: field.SetValue(res, reader.GetByte(num)); break;
-          case FieldType.Int: field.SetValue(res, reader.GetInt32(num)); break;
-          case FieldType.Long: field.SetValue(res, reader.GetInt64(num)); break;
-          case FieldType.ULong: field.SetValue(res, (ulong)reader.GetInt64(num)); break;
-          case FieldType.String: field.SetValue(res, reader.GetString(num)); break;
-          case FieldType.Comment: field.SetValue(res, reader.GetString(num)); break;
-          case FieldType.Date: field.SetValue(res, reader.GetDateTime(num)); break;
-          case FieldType.Float: field.SetValue(res, reader.GetFloat(num)); break;
-          case FieldType.Double: field.SetValue(res, reader.GetDouble(num)); break;
-          case FieldType.Blob:
-          case FieldType.ByteArray:
-            field.SetValue(res, (byte[])reader[field.Name]);
-            break;
-        }
+      foreach (var key in ed.keys) {
+        cmd.Parameters.Add(new SQLiteParameter("@param" + (num+1), keys[num]));
         num++;
       }
-      return res;
+      cmd.ExecuteNonQuery();
     } catch (Exception ex) {
-      Utils.Log("Error in Reading data for " + typeof(T) + ": " + ex.Message);
+      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
     }
-    return default(T);
   }
+
 
   public static List<T> GetAll<T>() {
     try {
@@ -348,47 +317,13 @@ public class Database {
 
   class EntityDef {
     public Type type;
-    public FieldInfo key;
-    public FieldInfo[] keygen;
+    public FieldInfo[] keys;
     public Dictionary<string, FieldType> fields = new Dictionary<string, FieldType>();
     public string count;
     public string select;
     public string insert;
     public string update;
     public string delete;
-    public string delete2;
-
-
-
-    public FieldInfo GetKey() {
-      if (key != null) return key;
-      foreach (FieldInfo field in GetType().GetFields()) {
-        foreach (CustomAttributeData attr in field.CustomAttributes)
-          if (attr.AttributeType.Equals(typeof(Entity.Key))) {
-            key = field;
-            return key;
-          }
-      }
-      return null;
-    }
-
-    internal object GenerateKey(object val) {
-      if (keygen == null) throw new Exception("Wrong keygen definition found for Entity: " + GetType());
-
-      if (keygen.Length > 0) { // multiple columns key
-        long res = 0;
-        foreach (FieldInfo key in keygen) {
-          object kfv = key.GetValue(val);
-          if (kfv != null) res ^= kfv.GetHashCode();
-        }
-        return res;
-      }
-
-      if (key != null) return key.GetValue(val); // single column key
-
-      throw new Exception("No key found for Entity: " + GetType());
-    }
-
   }
 
   enum FieldType {

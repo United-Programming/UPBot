@@ -1,8 +1,7 @@
 ﻿
 public class Config : Entity {
-  [Key] public long ConfigKey;
-  [KeyGen] public ulong Guild;
-  [KeyGen] public int Param;
+  [Key] public ulong Guild;
+  [Key] public int Param;
   public ulong IdVal;
 
   [NotPersistent]
@@ -13,14 +12,12 @@ public class Config : Entity {
     Guild = guild;
     Param = (int)param;
     IdVal = val;
-    ConfigKey = GetKeyValue();
   }
 
   public Config(ulong guild, ParamType param, string val) {
     Guild = guild;
     Param = (int)param;
     IdVal = 0;
-    ConfigKey = GetKeyValue();
   }
 
 
