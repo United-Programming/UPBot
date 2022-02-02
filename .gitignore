@@ -388,3 +388,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 /.debug/Database/BotDb.db
+
+# Log files
+*.logs
