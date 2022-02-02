@@ -264,9 +264,11 @@ public class Timezone : Entity {
         name = "UTC";
         return 0; // No offset, it is UTC
       } else if (m.Groups[2].Success) { // if 2 is true
+        name = "UTC" + m.Groups[2].Value;
         int.TryParse(m.Groups[2].Value, out int hours);
         res += hours;
         if (m.Groups[3].Success) { // if 3 is true then also minutes
+          name += m.Groups[3].Value;
           int.TryParse(m.Groups[3].Value[1..], out int mins);
           res += MathF.Sign(hours) * mins / 60f;
         }

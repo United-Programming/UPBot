@@ -184,9 +184,13 @@ public class Setup : BaseCommandModule {
     return null;
   }
 
+  internal static bool Disabled(ulong guild, Config.ParamType t) {
+    if (Configs[guild].Count == 0) return t != Config.ParamType.Ping; // Only ping is available by default
+    return GetConfigValue(guild, t) == Config.ConfVal.NotAllowed;
+  }
+
   internal static bool Permitted(ulong guild, Config.ParamType t, CommandContext ctx) {
     if (Configs[guild].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
-    List<Config> cfgs = Configs[guild];
     Config.ConfVal cv = GetConfigValue(guild, t);
     switch (cv) {
       case Config.ConfVal.NotAllowed: return false;
@@ -918,8 +922,19 @@ public class Setup : BaseCommandModule {
             if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
             if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
           }
-          if (cg != null) Database.Add(cg);
-          if (cs != null) Database.Add(cs);
+
+          if (cg != null || cs != null) {
+            if (cg == null) {
+              cg = new Config(gid, Config.ParamType.TimezoneG, (int)Config.ConfVal.Everybody);
+              Configs[gid].Add(cg);
+            }
+            if (cs == null) {
+              cs = new Config(gid, Config.ParamType.TimezoneG, (int)Config.ConfVal.OnlyAdmins);
+              Configs[gid].Add(cs);
+            }
+            Database.Add(cg);
+            Database.Add(cs);
+          }
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
         } else
