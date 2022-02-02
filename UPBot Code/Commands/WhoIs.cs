@@ -104,7 +104,7 @@ public class WhoIs : BaseCommandModule {
 
       return ctx.RespondAsync(embed.Build());
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("WhoIs", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhoIs", ex));
     }
   }
 }

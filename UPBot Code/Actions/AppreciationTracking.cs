@@ -116,7 +116,7 @@ public class AppreciationTracking : BaseCommandModule {
 
       await ctx.Message.RespondAsync(e.Build());
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Appreciation", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Appreciation", ex));
     }
   }
 
@@ -140,7 +140,7 @@ public class AppreciationTracking : BaseCommandModule {
       else await ctx.Message.RespondAsync("rank: " + ranks[0].Score);
 
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Rank", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Rank", ex));
     }
   }
 
@@ -158,7 +158,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Rank)) CheckRanks(args.Guild.Id, args.Message);
 
     } catch (Exception ex) {
-      Utils.Log("Error in ThanksAdded: " + ex.Message);
+      Utils.Log("Error in ThanksAdded: " + ex.Message, args.Guild.Name);
     }
     return Task.FromResult(0);
   }
@@ -230,7 +230,7 @@ public class AppreciationTracking : BaseCommandModule {
       Database.Update(r);
 
     } catch (Exception ex) {
-      Utils.Log("Error in CheckRanks: " + ex.Message);
+      Utils.Log("Error in CheckRanks: " + ex.Message, msg.Channel.Guild.Name);
     }
   }
 
@@ -275,7 +275,7 @@ public class AppreciationTracking : BaseCommandModule {
       }
 
     } catch (Exception ex) {
-      Utils.Log("Error in ReactionAdded: " + ex.Message);
+      Utils.Log("Error in ReactionAdded: " + ex.Message, mr.Guild.Name);
     }
     return Task.FromResult(0);
   }

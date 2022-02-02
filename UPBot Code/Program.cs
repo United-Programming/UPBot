@@ -11,25 +11,20 @@ using DSharpPlus.Interactivity.Extensions;
 
 namespace UPBot {
   class Program {
-    static StreamWriter lw = null;
     static void Main(string[] args) {
-      lw = File.CreateText(args.Length >= 3 ?  args[2] : "debug.log");
-      lw.WriteLine("Log Started. Woho.");
-      lw.Flush();
+      if (args.Length >= 3) Utils.LogsFolder = args[2];
+      Utils.Log("Log Started. Woho.", null);
       if (args.Length < 1) {
-        lw.WriteLine("You have to specify the bot token as first parameter!");
-        lw.Flush();
+        Utils.Log("You have to specify the bot token as first parameter!", null);
         return;
       }
 
       try {
         MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
       } catch (TaskCanceledException) {
-        lw?.WriteLine("Exit for critical failure");
-        lw.Flush();
+        Utils.Log("Exit for critical failure", null);
       } catch (Exception ex) {
-        lw?.WriteLine("Exit by error: " + ex.Message);
-        lw.Flush();
+        Utils.Log("Exit by error: " + ex.Message, null);
       }
     }
 
@@ -37,35 +32,27 @@ namespace UPBot {
 
     static async Task MainAsync(string token, string prefix) {
       try {
-        lw?.WriteLine("Init MainAsync");
-        lw.Flush();
+        Utils.Log("Init MainAsync", null);
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
           TokenType = TokenType.Bot, // We are a bot
           Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers
         });
-        lw?.WriteLine("discord object");
-        lw.Flush();
-
-
+        Utils.Log("Discord object", null);
 
         client.UseInteractivity(new InteractivityConfiguration() {
           Timeout = TimeSpan.FromSeconds(120),
           ButtonBehavior = DSharpPlus.Interactivity.Enums.ButtonPaginationBehavior.DeleteMessage,
           ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
-        lw?.WriteLine("use interactivity");
-        lw.Flush();
+        Utils.Log("use interactivity", null);
         CustomCommandsService.DiscordClient = client;
-        lw?.WriteLine("CustomCommandsService");
-        lw.Flush();
+        Utils.Log("CustomCommandsService", null);
 
         Utils.InitClient(client);
-        lw?.WriteLine("Utils.InitClient");
-        lw.Flush();
+        Utils.Log("Utils.InitClient", null);
         Database.InitDb();
-        lw?.WriteLine("Database.InitDb");
-        lw.Flush();
+        Utils.Log("Database.InitDb", null);
         Database.AddTable<BannedWord>();
         Database.AddTable<Reputation>();
         Database.AddTable<ReputationEmoji>();
@@ -75,8 +62,7 @@ namespace UPBot {
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
         Database.AddTable<TrackChannel>();
-        lw?.WriteLine("Added Tables");
-        lw.Flush();
+        Utils.Log("Added Tables", null);
 
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
           StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters
@@ -85,27 +71,22 @@ namespace UPBot {
           EnableDms = true,
           EnableMentionPrefix = true
         });
-        lw?.WriteLine("CommandsNextExtension");
-        lw.Flush();
+        Utils.Log("CommandsNextExtension", null);
         commands.CommandErrored += CustomCommandsService.CommandError;
         commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
-        lw?.WriteLine("RegisterCommands");
-        lw.Flush();
+        Utils.Log("RegisterCommands", null);
 
         CustomCommandsService.LoadCustomCommands();
-        lw?.WriteLine("CustomCommandsService.LoadCustomCommands");
-        lw.Flush();
+        Utils.Log("CustomCommandsService.LoadCustomCommands", null);
 
-        lw?.WriteLine("connecting to discord...");
-        lw.Flush();
+        Utils.Log("Connecting to discord...", null);
         client.Ready += Discord_Ready;
 
         await Task.Delay(50);
         await client.ConnectAsync(); // Connect and wait forever
 
       } catch (Exception ex) {
-        lw?.WriteLine("with exception: " + ex.Message);
-        lw.Flush();
+        Utils.Log("with exception: " + ex.Message, null);
       }
 
       // Wait forever
@@ -113,16 +94,13 @@ namespace UPBot {
     }
 
     private static async Task Discord_Ready(DiscordClient client, DSharpPlus.EventArgs.ReadyEventArgs e) {
-      lw?.WriteLine("connected");
-      lw.Flush();
+      Utils.Log("connected", null);
 
-      Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------");
+      Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------", null);
 
       await Task.Delay(500);
 
-      Utils.Log("Setup complete, waiting guilds to be ready");
-      lw?.WriteLine("Setup complete, waiting guilds to be ready");
-      lw.Flush();
+      Utils.Log("Setup complete, waiting guilds to be ready", null);
       _ = WaitForGuildsTask(client);
     }
 
@@ -143,28 +121,26 @@ namespace UPBot {
 
         if (num == toGet) break;
         await Task.Delay(500);
-        if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet);
+        if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
 
         if (times > 120) {
-          if (num > 0) Utils.Log("Stopping the wait, got only " + num + " over " + toGet);
+          if (num > 0) Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
           else {
-            Utils.Log("[CRITICAL] Stopping. We cannot find any valid Discord server.");
+            Utils.Log("[CRITICAL] Stopping. We cannot find any valid Discord server.", null);
             exitToken.Cancel();
             return;
           }
         }
       }
 
-      Utils.Log("Got all guilds after " + times);
+      Utils.Log("Got all guilds after " + times, null);
       foreach (var g in client.Guilds.Values)
-        Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""));
+        Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""), null);
 
-      lw?.WriteLine("LoadingParams");
-      lw.Flush();
+      Utils.Log("LoadingParams", null);
       Setup.LoadParams();
 
-      lw?.WriteLine("Adding action events");
-      lw.Flush();
+      Utils.Log("Adding action events", null);
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
@@ -175,14 +151,11 @@ namespace UPBot {
       client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
       client.MessageCreated += AppreciationTracking.ThanksAdded;
-      lw?.WriteLine("Tracking");
-      lw.Flush();
+      Utils.Log("Tracking", null);
 
       client.GuildCreated += Setup.NewGuildAdded;
 
-      lw?.WriteLine("done");
-      lw.Flush();
-      Utils.Log("--->>> Bot ready <<<---");
+      Utils.Log("--->>> Bot ready <<<---", null);
     }
   }
 

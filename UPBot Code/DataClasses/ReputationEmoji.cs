@@ -21,7 +21,7 @@ public class ReputationEmoji : Entity {
       if (Lid == 0) return Sid;
       else return Utils.GetEmojiSnowflakeID(guild.GetEmojiAsync(Lid).Result);
     } catch (Exception ex) {
-      Utils.Log("Error in getting an emoji: " + ex);
+      Utils.Log("Error in getting an emoji: " + ex, guild.Name);
       return "";
     }
   }

@@ -93,7 +93,7 @@ stats all #channel
         await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Stats", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Stats", ex));
     }
   }
 
@@ -207,7 +207,7 @@ stats all #channel
       }
 
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Stats", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Stats", ex));
     }
   }
 

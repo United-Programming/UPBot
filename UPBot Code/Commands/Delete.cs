@@ -76,7 +76,7 @@ public class Delete : BaseCommandModule {
       }
       await request.Channel.DeleteMessagesAsync(toDelete);
     } catch (Exception ex) {
-      await request.RespondAsync(Utils.GenerateErrorAnswer("DeleteMessages", ex));
+      await request.RespondAsync(Utils.GenerateErrorAnswer(request.Channel.Guild.Name, "DeleteMessages", ex));
     }
 
   }
@@ -98,7 +98,7 @@ public class Delete : BaseCommandModule {
     var message = await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, true);
     await Utils.DeleteDelayed(10, message);
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("Delete", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Delete", ex));
     }
   }
 

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 public static class Utils
 {
   public const int vmajor = 0, vminor = 1, vbuild = 6;
-
+  public static string LogsFolder = "./";
 
   /// <summary>
   /// Common colors
@@ -27,7 +27,7 @@ public static class Utils
   // Fields relevant for InitClient()
   private static DiscordClient client;
   private static DateTimeFormatInfo sortableDateTimeFormat;
-  private static StreamWriter logs;
+  private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
   private static DiscordMember mySelf;
   private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
@@ -69,7 +69,7 @@ public static class Utils
   public static void InitClient(DiscordClient c) {
     client = c;
     thinkingAsError = DiscordEmoji.FromUnicode("🤔");
-    emojiIDs = new [] {
+    emojiIDs = new[] {
       830907665869570088ul, // OK = 0,
       830907684085039124ul, // KO = 1,
       840702597216337990ul, // whatthisguysaid = 2,
@@ -85,16 +85,19 @@ public static class Utils
       876180793213464606ul  // AutoRefactored = 12,
     };
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
-    string logPath = ConstructPath("Logs", "BotLogs " + DateTime.Now.ToString("yyyyMMdd"), ".logs");
-    if (File.Exists(logPath)) logs = new StreamWriter(logPath, append: true);
-    else logs = File.CreateText(logPath);
+  }
+
+  public static void InitLogs(string guild) {
+    string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
+    if (File.Exists(logPath)) logs[guild] = new StreamWriter(logPath, append: true);
+    else logs[guild] = File.CreateText(logPath);
   }
 
   internal static string GetSafeMemberName(CommandContext ctx, ulong userSnoflake) {
     try {
       return ctx.Guild.GetMemberAsync(userSnoflake).Result.DisplayName;
     } catch (Exception e) {
-      Log("Invalid user snowflake: " + userSnoflake + " -> " + e.Message);
+      Log("Invalid user snowflake: " + userSnoflake + " -> " + e.Message, ctx.Guild.Name);
       return null;
     }
   }
@@ -110,22 +113,6 @@ public static class Utils
     return count > 1 ? plural : singular;
   }
 
-  /// <summary>
-  /// This functions constructs a path in the base directory of the current executable
-  /// with a given raw file name and the fileSuffix (file type)
-  /// NOTE: The file suffix must contain a period (e.g. ".txt" or ".png")
-  /// </summary>
-  /// <param name="directoryName">The name of the final folder, in which the file will be saved</param>
-  /// <param name="fileNameRaw">The name of the file (without file type)</param>
-  /// <param name="fileSuffix">The file-suffix (file-type, e.g. ".txt" or ".png")</param>
-  public static string ConstructPath(string directoryName, string fileNameRaw, string fileSuffix)
-  {
-    string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryName);
-    if (!Directory.Exists(Path.Combine(directoryPath)))
-      Directory.CreateDirectory(directoryPath);
-    
-    return Path.Combine(directoryPath, fileNameRaw.Trim().ToLowerInvariant() + fileSuffix);
-  }
 
   /// <summary>
   /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
@@ -164,13 +151,13 @@ public static class Utils
   /// </summary>
   /// <param name="error">The error to display</param>
   /// <returns></returns>
-  internal static DiscordEmbed GenerateErrorAnswer(string cmd, Exception exception) {
+  internal static DiscordEmbed GenerateErrorAnswer(string guild, string cmd, Exception exception) {
     DiscordEmbedBuilder e = new DiscordEmbedBuilder {
       Color = Red,
       Title = "Error in " + cmd,
       Description = exception.Message
     };
-    Log("Error in " + cmd + ": " + exception.Message);
+    Log("Error in " + cmd + ": " + exception.Message, guild);
     return e.Build();
   }
 
@@ -255,7 +242,7 @@ public static class Utils
   /// <param name="ctx"></param>
   /// <returns></returns>
   internal static void LogUserCommand(CommandContext ctx) {
-    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName + " (" + ctx.Guild.Name + ")");
+    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + "=> " + ctx.Command.Name + " FROM " + ctx.Member.DisplayName + " (" + ctx.Guild.Name + ")", ctx.Guild.Name);
   }
 
   /// <summary>
@@ -263,11 +250,13 @@ public static class Utils
   /// </summary>
   /// <param name="msg"></param>
   /// <returns></returns>
-  internal static void Log(string msg) {
-    Console.WriteLine(msg);
+  internal static void Log(string msg, string guild) {
+    if (guild == null) guild = "GLOBAL";
+    Console.WriteLine(guild + ": " + msg);
     try {
-      logs.WriteLine(msg);
-      logs.FlushAsync();
+      if (!logs.ContainsKey(guild)) InitLogs(guild);
+      logs[guild].WriteLine(msg);
+      logs[guild].FlushAsync();
     } catch (Exception e) {
       _ = e.Message;
     }

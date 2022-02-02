@@ -226,7 +226,7 @@ public class Database {
         insert.ExecuteNonQuery();
       }
     } catch (Exception ex) {
-      Utils.Log("Error in Adding data for " + val.GetType() + ": " + ex.Message);
+      Utils.Log("Error in Adding data for " + val.GetType() + ": " + ex.Message, null);
     }
   }
 
@@ -246,7 +246,7 @@ public class Database {
       AddKeyParams(ed, cmd, val);
       cmd.ExecuteNonQuery();
     } catch (Exception ex) {
-      Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message);
+      Utils.Log("Error in Deleting data for " + val.GetType() + ": " + ex.Message, null);
     }
   }
   public static void DeleteByKeys<T>(params object[] keys) {
@@ -261,7 +261,7 @@ public class Database {
       }
       cmd.ExecuteNonQuery();
     } catch (Exception ex) {
-      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message);
+      Utils.Log("Error in Deleting data for " + typeof(T) + ": " + ex.Message, null);
     }
   }
 
@@ -302,7 +302,7 @@ public class Database {
       }
       return res;
     } catch (Exception ex) {
-      Utils.Log(" " + typeof(T) + ": " + ex.Message);
+      Utils.Log(" " + typeof(T) + ": " + ex.Message, null);
     }
     return null;
   }

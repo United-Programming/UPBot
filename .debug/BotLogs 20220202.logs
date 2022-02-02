@@ -1,0 +1,21 @@
+Log Started. Woho.
+Init MainAsync
+Discord object
+use interactivity
+CustomCommandsService
+Utils.InitClient
+Database.InitDb
+Added Tables
+CommandsNextExtension
+RegisterCommands
+CustomCommandsService.LoadCustomCommands
+connected
+Logging [re]Started at: 2022/02/02 15:25:02 --------------------------------
+Setup complete, waiting guilds to be ready
+Got all guilds after 2
+>> United Programming
+>> TestServerForBots
+Found 0 banned words from all servers
+Params fully loaded. 2 Discord servers found
+Adding action events
+Tracking

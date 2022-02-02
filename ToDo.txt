@@ -79,8 +79,21 @@ Logic to update:
 
 
 Try save
-admin
+!admin
+!track
+!config.Stats
+!config.Ping
+
 bannedw
-config
-track
 tzone
+config.WhoIs
+config.MassDel
+config.Games
+config.Refactor
+config.TimezoneS
+config.TimezoneG
+config.UnityDocs
+config.SpamProtection
+config.BannedWords
+config.Scores
+

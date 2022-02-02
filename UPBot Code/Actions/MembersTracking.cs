@@ -20,7 +20,7 @@ public class MembersTracking {
         tracking.Remove(args.Member.Id);
         string msg = "User " + args.Member.DisplayName + " did a kiss and go. (" + args.Guild.MemberCount + " members total)";
         await trackChannel.channel.SendMessageAsync(msg);
-        Utils.Log(msg);
+        Utils.Log(msg, args.Guild.Name);
       }
       else {
         string msgC;
@@ -30,10 +30,10 @@ public class MembersTracking {
           msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + " User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         await trackChannel.channel.SendMessageAsync(msgC);
-        Utils.Log(msgL);
+        Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
-      Utils.Log("Error in DiscordMemberRemoved: " + ex.Message);
+      Utils.Log("Error in DiscordMemberRemoved: " + ex.Message, args.Guild.Name);
     }
 
     await Task.Delay(50);
@@ -48,7 +48,7 @@ public class MembersTracking {
       tracking[args.Member.Id] = DateTime.Now;
     _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     } catch (Exception ex) {
-      Utils.Log("Error in DiscordMemberAdded: " + ex.Message);
+      Utils.Log("Error in DiscordMemberAdded: " + ex.Message, args.Guild.Name);
     }
     await Task.Delay(10);
   }
@@ -84,10 +84,10 @@ public class MembersTracking {
           msgL += r.Name;
         }
         await trackChannel.channel.SendMessageAsync(msgC);
-        Utils.Log(msgL);
+        Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
-      Utils.Log("Error in DiscordMemberUpdated: " + ex.Message);
+      Utils.Log("Error in DiscordMemberUpdated: " + ex.Message, args.Guild.Name);
     }
 
     await Task.Delay(10);
@@ -100,7 +100,7 @@ public class MembersTracking {
       string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + " User " + mention + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
       string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
       await trackChannel.SendMessageAsync(msgC);
-      Utils.Log(msgL);
+      Utils.Log(msgL, trackChannel.Guild.Name);
       tracking.Remove(id);
     }
   }

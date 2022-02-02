@@ -60,7 +60,7 @@ public class Setup : BaseCommandModule {
 
       // Banned Words
       List<BannedWord> words = Database.GetAll<BannedWord>();
-      Utils.Log("Found " + words.Count + " banned words from all servers");
+      Utils.Log("Found " + words.Count + " banned words from all servers", null);
       foreach (BannedWord word in words) {
         ulong gid = word.Guild;
         if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
@@ -84,7 +84,7 @@ public class Setup : BaseCommandModule {
           if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
           if (r.For == 0) {
             Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.", null);
             continue;
           }
           try {
@@ -92,7 +92,7 @@ public class Setup : BaseCommandModule {
 
           } catch (ArgumentException aex) {
             Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message, null);
           }
         }
       }
@@ -117,7 +117,7 @@ public class Setup : BaseCommandModule {
           if (!Guilds.ContainsKey(r.Guild) && TryGetGuild(r.Guild) == null) continue; // Guild is missing
           DiscordChannel ch = Guilds[r.Guild].GetChannel(r.ChannelId);
           if (ch == null) {
-            Utils.Log("Missing track channel id " + r.ChannelId + " from Guild " + Guilds[r.Guild].Name);
+            Utils.Log("Missing track channel id " + r.ChannelId + " from Guild " + Guilds[r.Guild].Name, Guilds[r.Guild].Name);
             TrackChannels[r.Guild] = null;
           }
           else {
@@ -133,7 +133,7 @@ public class Setup : BaseCommandModule {
           if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
           if (r.For == 0) {
             Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.");
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.", Guilds[r.Guild].Name);
             continue;
           }
           try {
@@ -141,7 +141,7 @@ public class Setup : BaseCommandModule {
 
           } catch (ArgumentException aex) {
             Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message);
+            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message, Guilds[r.Guild].Name);
           }
         }
       }
@@ -157,9 +157,9 @@ public class Setup : BaseCommandModule {
         if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
       }
 
-      Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found");
+      Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found", null);
     } catch (Exception ex) {
-      Utils.Log("Error in SetupLoadParams:" + ex.Message);
+      Utils.Log("Error in SetupLoadParams:" + ex.Message, null);
     }
   }
 
@@ -169,11 +169,11 @@ public class Setup : BaseCommandModule {
 
     Task.Delay(1000);
     int t = 0;
-    while (Utils.GetClient() == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no client)"); }
+    while (Utils.GetClient() == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no client)", null); }
     t = 0;
-    while (Utils.GetClient().Guilds == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no guilds)"); }
+    while (Utils.GetClient().Guilds == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no guilds)", null); }
 
-    while (Utils.GetClient().Guilds.Count == 0) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (guilds count is zero"); }
+    while (Utils.GetClient().Guilds.Count == 0) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (guilds count is zero", null); }
 
     IReadOnlyDictionary<ulong, DiscordGuild> cguilds = Utils.GetClient().Guilds;
     foreach (var guildId in cguilds.Keys) {
@@ -757,6 +757,7 @@ public class Setup : BaseCommandModule {
         if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
         if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
         if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+        Database.Add(c);
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync("Ping command changed to " + (Config.ConfVal)c.IdVal));
         } else
@@ -776,6 +777,7 @@ public class Setup : BaseCommandModule {
           if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
           if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
           if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          Database.Add(c);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("WhoIs command changed to " + (Config.ConfVal)c.IdVal));
         }
@@ -796,6 +798,7 @@ public class Setup : BaseCommandModule {
           if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
           if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
           if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          Database.Add(c);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
         } else
@@ -815,6 +818,7 @@ public class Setup : BaseCommandModule {
           if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
           if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
           if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          Database.Add(c);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("Games command changed to " + (Config.ConfVal)c.IdVal));
         } else
@@ -834,6 +838,7 @@ public class Setup : BaseCommandModule {
           if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
           if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
           if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          Database.Add(c);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("Code Refactor command changed to " + (Config.ConfVal)c.IdVal));
         } else
@@ -853,6 +858,7 @@ public class Setup : BaseCommandModule {
           if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
           if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
           if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+          Database.Add(c);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("UnityDocs command changed to " + (Config.ConfVal)c.IdVal));
         } else
@@ -904,7 +910,8 @@ public class Setup : BaseCommandModule {
             if (whos == 'a' || whos == 'r' || whos == 'o') cs.IdVal = (int)Config.ConfVal.OnlyAdmins;
             if (whos == 'e' || whos == 'y') cs.IdVal = (int)Config.ConfVal.Everybody;
           }
-
+          if (cg != null) Database.Add(cg);
+          if (cs != null) Database.Add(cs);
           _ = Utils.DeleteDelayed(15, ctx.Message);
           await Utils.DeleteDelayed(15, ctx.RespondAsync("Timezones command changed to  SET = " + (Config.ConfVal)cs.IdVal + "  GET = " + (Config.ConfVal)cg.IdVal));
         } else
@@ -1108,7 +1115,6 @@ public class Setup : BaseCommandModule {
           c = new Config(gid, Config.ParamType.SpamProtection, val);
           Configs[gid].Add(c);
         } else c.IdVal = val;
-        Database.Add(c);
         SpamProtection[gid] = val;
 
         string msg = "SpamProtection command changed to ";
@@ -1118,6 +1124,7 @@ public class Setup : BaseCommandModule {
             ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
             ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
 
+        Database.Add(c);
         _ = Utils.DeleteDelayed(15, ctx.Message);
         await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
         return;
@@ -1229,6 +1236,8 @@ public class Setup : BaseCommandModule {
                   missing = false;
                 }
               if (missing) emjs += " (_No emojis defined!_)  ";
+
+              Database.Add(c);
               _ = Utils.DeleteDelayed(15, ctx.Message);
               await Utils.DeleteDelayed(15, ctx.RespondAsync(emjs));
 
@@ -1355,7 +1364,7 @@ public class Setup : BaseCommandModule {
       await Utils.DeleteDelayed(15, ctx.RespondAsync("I do not understand the command: " + ctx.Message.Content));
 
     } catch (Exception ex) {
-      Utils.Log("Error in Setup by command line: " + ex.Message);
+      Utils.Log("Error in Setup by command line: " + ex.Message, ctx.Guild.Name);
     }
   }
 

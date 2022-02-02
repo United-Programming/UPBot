@@ -83,7 +83,7 @@ public class TimezoneCmd : BaseCommandModule {
       return Utils.DeleteDelayed(10, ctx.RespondAsync(msg).Result);
 
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("GetTimezone", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "GetTimezone", ex));
     }
   }
 
@@ -103,7 +103,7 @@ public class TimezoneCmd : BaseCommandModule {
       return Utils.DeleteDelayed(10, ctx.RespondAsync("TimeZone for user " + m.Mention + " set to " + name).Result);
 
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("SetTimezone", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "SetTimezone", ex));
     }
   }
 

@@ -238,7 +238,7 @@ public class Refactor : BaseCommandModule {
       await Task.Delay(150);
       return ctx.RespondAsync("");
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Refactor", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Refactor", ex));
     }
   }
 

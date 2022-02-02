@@ -75,7 +75,7 @@ public class HelpLanguagesModel : BaseCommandModule {
     bool course = typeOfHelp.ToLowerInvariant() != "video";
     await GenerateHelpfulAnswer(ctx, lang, course);
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("WhoIs", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhoIs", ex));
     }
   }
 
@@ -142,7 +142,7 @@ public class HelpLanguagesModel : BaseCommandModule {
 
     await Utils.BuildEmbedAndExecute(title, msg, languages[language].Color, ctx, true);
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("HelpLanguage", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "HelpLanguage", ex));
     }
   }
 

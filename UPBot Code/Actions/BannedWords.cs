@@ -37,14 +37,14 @@ public class BannedWords : BaseCommandModule {
         if (pos > 0 && letters.IsMatch(msg[pos - 1].ToString())) continue;
         if (pos + word.Length < msg.Length && letters.IsMatch(msg[pos + word.Length].ToString())) continue;
 
-        Utils.Log("Removed word \"" + word + "\" from " + user.Username + " in: " + msg);
+        Utils.Log("Removed word \"" + word + "\" from " + user.Username + " in: " + msg, args.Guild.Name);
         DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Moderate your language, " + user.Mention + ".");
         await args.Message.DeleteAsync("Bad words: " + word);
         Utils.DeleteDelayed(10000, warning).Wait();
         return;
       }
     } catch (Exception ex) {
-      await args.Message.RespondAsync(Utils.GenerateErrorAnswer("BannedWords.CheckMessage", ex));
+      await args.Message.RespondAsync(Utils.GenerateErrorAnswer(args.Guild.Name, "BannedWords.CheckMessage", ex));
     }
   }
 

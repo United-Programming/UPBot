@@ -1,0 +1,86 @@
+Log Started. Woho.
+Init MainAsync
+Discord object
+use interactivity
+CustomCommandsService
+Utils.InitClient
+Database.InitDb
+Added Tables
+CommandsNextExtension
+RegisterCommands
+CustomCommandsService.LoadCustomCommands
+connected
+Setup complete, waiting guilds to be ready
+Got all guilds after 2
+>> TestServerForBots
+Found 0 banned words from all servers
+Params fully loaded. 2 Discord servers found
+Adding action events
+Tracking
+--->>> Bot ready <<<---
+Log Started. Woho.
+Init MainAsync
+Discord object
+use interactivity
+CustomCommandsService
+Utils.InitClient
+Database.InitDb
+Added Tables
+CommandsNextExtension
+RegisterCommands
+CustomCommandsService.LoadCustomCommands
+Connecting to discord...
+connected
+Logging [re]Started at: 2022/02/02 15:31:02 --------------------------------
+Setup complete, waiting guilds to be ready
+Got all guilds after 2
+>> United Programming
+>> TestServerForBots
+LoadingParams
+Found 0 banned words from all servers
+Params fully loaded. 2 Discord servers found
+Adding action events
+Tracking
+--->>> Bot ready <<<---
+Log Started. Woho.
+Init MainAsync
+Discord object
+use interactivity
+Utils.InitClient
+Database.InitDb
+Added Tables
+CommandsNextExtension
+RegisterCommands
+CustomCommandsService.LoadCustomCommands
+Connecting to discord...
+connected
+Logging [re]Started at: 2022/02/02 15:35:02 --------------------------------
+Setup complete, waiting guilds to be ready
+Got all guilds after 2
+>> United Programming
+>> TestServerForBots
+LoadingParams
+Found 0 banned words from all servers
+Params fully loaded. 2 Discord servers found
+Adding action events
+Tracking
+--->>> Bot ready <<<---
+Log Started. Woho.
+Init MainAsync
+Discord object
+use interactivity
+CustomCommandsService
+Utils.InitClient
+Database.InitDb
+Added Tables
+CommandsNextExtension
+RegisterCommands
+CustomCommandsService.LoadCustomCommands
+Connecting to discord...
+connected
+Logging [re]Started at: 2022/02/02 15:36:02 --------------------------------
+Setup complete, waiting guilds to be ready
+Got all guilds after 2
+Adding action events
+Tracking
+--->>> Bot ready <<<---

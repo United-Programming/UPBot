@@ -75,7 +75,7 @@ public class PingModule : BaseCommandModule {
       DiscordMessage answer = ctx.RespondAsync(msg).Result;
       return Utils.DeleteDelayed(30, ctx.Message, answer); // We want to remove the ping and the answer after a minute
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("Ping", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
     }
   }
 

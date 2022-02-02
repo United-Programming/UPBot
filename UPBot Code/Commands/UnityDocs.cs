@@ -102,7 +102,7 @@ public class UnityDocs : BaseCommandModule {
         return ctx.RespondAsync(e.Build());
       }
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer("UnityDocs", ex));
+      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
     }
   }
 

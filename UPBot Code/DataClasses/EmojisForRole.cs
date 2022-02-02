@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 public class EmojisForRole : BaseCommandModule {
   static List<EmojiForRoleValue> values = null;
 
-  static void GetValues() {
+  static void GetValues() { // FIXME this should be changed and made multi-guild compatible
     if (values != null) return;
     values = Database.GetAll<EmojiForRoleValue>();
-    Utils.Log("Found " + values.Count + " EmojiForRoles entries");
+    Utils.Log("Found " + values.Count + " EmojiForRoles entries", null /* FIXME */);
   }
 
   [Command("WhatRole")]
@@ -43,7 +43,7 @@ public class EmojisForRole : BaseCommandModule {
         await Task.FromResult(0);
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("WhatRole", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatRole", ex));
     }
   }
 
@@ -74,7 +74,7 @@ public class EmojisForRole : BaseCommandModule {
         await Task.FromResult(0);
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("WhatRole", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatRole", ex));
     }
   }
 
@@ -100,13 +100,13 @@ public class EmojisForRole : BaseCommandModule {
       else {
         values.Remove(toRemove);
         Database.Delete(toRemove);
-        Utils.Log("Memeber " + ctx.Member.DisplayName + " removed EmojiForRoles with code " + code + " https://discord.com/channels/" + ctx.Guild.Id + "/" + toRemove.Channel + "/" + toRemove.Message);
+        Utils.Log("Memeber " + ctx.Member.DisplayName + " removed EmojiForRoles with code " + code + " https://discord.com/channels/" + ctx.Guild.Id + "/" + toRemove.Channel + "/" + toRemove.Message, ctx.Guild.Name);
         DiscordMessage answer = await Utils.BuildEmbedAndExecute("EmojiForRoles removal", "Entry with code " + code + " has been removed", Utils.Red, ctx, true);
         await Utils.DeleteDelayed(30, answer);
         await Task.FromResult(0);
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("WhatRole", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatRole", ex));
     }
   }
 
@@ -132,11 +132,11 @@ public class EmojisForRole : BaseCommandModule {
         else {
           msg = "The message referenced (_" + msg + "_) will not grant anymore the role *" + role.Name + "* when adding the emoji: " + emoji.GetDiscordName();
         }
-        Utils.Log(msg);
+        Utils.Log(msg, null /* FIXME */);
         await ctx.RespondAsync(msg);
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("EmojiForRole", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "EmojiForRole", ex));
     }
   }
 
@@ -165,11 +165,11 @@ public class EmojisForRole : BaseCommandModule {
         else {
           msg = "The message referenced (_" + msg + "_) will not grant anymore the role *" + role.Name + "* when adding an emoji";
         }
-        Utils.Log(msg);
+        Utils.Log(msg, ctx.Guild.Name);
         await ctx.RespondAsync(msg);
       }
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer("EmojiForRole", ex));
+      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "EmojiForRole", ex));
     }
   }
 
@@ -192,7 +192,7 @@ public class EmojisForRole : BaseCommandModule {
       string emojiName = a.Emoji.Name;
       HandleAddingEmojiForRole(a.Message.ChannelId, emojiId, emojiName, a.User, a.Message.Id);
     } catch (Exception ex) {
-      Utils.Log("Error in EmojisForRole.ReactionAdded: " + ex.Message);
+      Utils.Log("Error in EmojisForRole.ReactionAdded: " + ex.Message, a.Guild.Name);
     }
     return Task.FromResult(0);
   }
@@ -203,7 +203,7 @@ public class EmojisForRole : BaseCommandModule {
       string emojiName = a.Emoji.Name;
       HandleRemovingEmojiForRole(a.Message.ChannelId, emojiId, emojiName, a.User, a.Message.Id);
     } catch (Exception ex) {
-      Utils.Log("Error in EmojisForRole.ReactionRemoved: " + ex.Message);
+      Utils.Log("Error in EmojisForRole.ReactionRemoved: " + ex.Message, a.Guild.Name);
     }
     return Task.FromResult(0);
   }
@@ -259,12 +259,12 @@ public class EmojisForRole : BaseCommandModule {
         if (cId == v.Channel && msgId == v.Message && (v.EmojiId == 0 && v.EmojiName == "!") || (eId != 0 && v.EmojiId == eId) || (eId == 0 && eN.Equals(v.EmojiName))) {
           if (v.dRole == null) v.dRole = dm.Guild.GetRole(v.Role);
           dm.GrantRoleAsync(v.dRole).Wait();
-          Utils.Log("Role " + v.dRole.Name + " was granted to " + user.Username + " by emoji " + eId);
+          Utils.Log("Role " + v.dRole.Name + " was granted to " + user.Username + " by emoji " + eId, null /* FIXME */);
           return;
         }
       }
     } catch (Exception e) {
-      Utils.Log("ERROR: problems in HandleAddingEmojiForRole: " + e.Message);
+      Utils.Log("ERROR: problems in HandleAddingEmojiForRole: " + e.Message, null /* FIXME */);
     }
   }
 
@@ -277,12 +277,12 @@ public class EmojisForRole : BaseCommandModule {
         if (cId == v.Channel && msgId == v.Message && (v.EmojiId == 0 && v.EmojiName == "!") || (eId != 0 && v.EmojiId == eId) || (eId == 0 && eN.Equals(v.EmojiName))) {
           if (v.dRole == null) v.dRole = dm.Guild.GetRole(v.Role);
           dm.RevokeRoleAsync(v.dRole).Wait();
-          Utils.Log("Role " + v.dRole.Name + " was removed from " + user.Username + " by emoji " + eId);
+          Utils.Log("Role " + v.dRole.Name + " was removed from " + user.Username + " by emoji " + eId, null /* FIXME */);
           return;
         }
       }
     } catch (Exception e) {
-      Utils.Log("ERROR: problems in HandleRemovingEmojiForRole: " + e.Message);
+      Utils.Log("ERROR: problems in HandleRemovingEmojiForRole: " + e.Message, null /* FIXME */);
     }
   }
 
