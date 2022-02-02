@@ -15,6 +15,7 @@ public class BannedWords : BaseCommandModule {
   readonly static Regex letters = new Regex(@"[a-zA-Z0-9]");
 
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
+    if (args.Guild == null) return;
     try {
       // Is it from a guild we care?
       if (!Setup.BannedWords.ContainsKey(args.Guild.Id)) return;

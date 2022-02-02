@@ -121,6 +121,7 @@ public class CustomCommandsService : BaseCommandModule {
   [Aliases("listcc")]
   [Description("Get a list of all Custom Commands (CC's).")]
   public async Task ListCC(CommandContext ctx) {
+    if (ctx.Guild == null) return;
     Utils.LogUserCommand(ctx);
     if (Commands.Count <= 0) {
       await Utils.ErrorCallback(CommandErrors.NoCustomCommands, ctx);

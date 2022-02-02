@@ -239,6 +239,10 @@ public class Setup : BaseCommandModule {
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
   public async Task SetupCommand(CommandContext ctx) {
+    if (ctx.Guild == null) {
+      await ctx.RespondAsync("I cannot be used in Direct Messages.");
+      return;
+    }
     Utils.LogUserCommand(ctx);
     ulong gid = ctx.Guild.Id;
     var interact = ctx.Client.GetInteractivity();
@@ -612,6 +616,10 @@ public class Setup : BaseCommandModule {
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
   public async Task SetupCommand(CommandContext ctx, [RemainingText][Description("The setup command to execute")] string command) {
+    if (ctx.Guild == null) {
+      await ctx.RespondAsync("I cannot be used in Direct Messages.");
+      return;
+    }
     Utils.LogUserCommand(ctx);
     try {
       DiscordGuild g = ctx.Guild;

@@ -17,6 +17,10 @@ public class PingModule : BaseCommandModule {
   [Aliases("upbot")]
   [Description("Checks if the bot is alive")]
   public async Task PongCommand(CommandContext ctx) {
+    if (ctx.Guild == null) {
+      await ctx.RespondAsync("I cannot be used in Direct Messages.");
+      return;
+    }
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Ping, ctx)) return;
     await GeneratePong(ctx);
   }

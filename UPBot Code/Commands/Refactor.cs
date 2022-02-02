@@ -46,6 +46,7 @@ public class Refactor : BaseCommandModule {
   [Command("checklanguage")]
   [Description("Checks what language is in the post you replied to, or the last post of a specified user or just the last post.")]
   public async Task CheckLanguage(CommandContext ctx) { // Refactors the previous post, if it is code
+    if (ctx.Guild == null) return;
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, null, Action.Analyze, Langs.NONE);
   }
@@ -60,6 +61,7 @@ public class Refactor : BaseCommandModule {
   [Command("reformat")]
   [Description("Replace a specified post with a reformatted code block using the specified language or the best language")]
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
+    if (ctx.Guild == null) return;
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Refactor, ctx)) return;
     await RefactorCode(ctx, null, Action.Keep, Langs.NONE);
   }

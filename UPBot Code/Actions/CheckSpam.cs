@@ -117,6 +117,7 @@ public class CheckSpam : BaseCommandModule {
 
 
   internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
+    if (args.Guild == null) return;
     try {
       if (!Setup.SpamProtection.ContainsKey(args.Guild.Id)) return;
       ulong spam = Setup.SpamProtection[args.Guild.Id];

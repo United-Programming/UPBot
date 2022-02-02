@@ -24,6 +24,7 @@ public class AppreciationTracking : BaseCommandModule {
   [Aliases("Ranking")]
   [Description("It shows the statistics for users")]
   public async Task ShowAppreciationCommand(CommandContext ctx) {
+    if (ctx.Guild == null) return;
     try {
       ulong gid = ctx.Guild.Id;
       WhatToTrack wtt = Setup.WhatToTracks[gid];
@@ -123,6 +124,7 @@ public class AppreciationTracking : BaseCommandModule {
   [Command("Rank")]
   [Description("Shows your own rank")]
   public async Task ShowRankCommand(CommandContext ctx) {
+    if (ctx.Guild == null) return;
     await ShowRankCommand(ctx, ctx.Member);
   }
 
@@ -147,6 +149,7 @@ public class AppreciationTracking : BaseCommandModule {
   private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
 
   internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
+    if (args.Guild == null) return Task.FromResult(0);
     try {
       if (args.Author.IsBot) Task.FromResult(0);
       ulong gid = args.Guild.Id;

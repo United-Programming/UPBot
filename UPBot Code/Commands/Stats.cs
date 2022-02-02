@@ -34,6 +34,7 @@ stats all #channel
   [Command("stats")]
   [Description("Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
   public async Task DoStats(CommandContext ctx) {
+    if (ctx.Guild == null) return;
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Stats, ctx)) return;
     await GenerateStatsInteractive(ctx);
   }
