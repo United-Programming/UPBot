@@ -80,17 +80,17 @@ Try save
 !track
 !config.Stats
 !config.Ping
+!tzone
+!config.WhoIs
+!bannedw
+!config.TimezoneS
+!config.TimezoneG
+!config.MassDel
+!config.Games
+!config.Refactor
+!config.UnityDocs
+!config.SpamProtection
 
-bannedw
-tzone
-config.WhoIs
-config.MassDel
-config.Games
-config.Refactor
-config.TimezoneS
-config.TimezoneG
-config.UnityDocs
-config.SpamProtection
-config.BannedWords
+
 config.Scores
 

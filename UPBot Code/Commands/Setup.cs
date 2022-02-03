@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -229,6 +230,24 @@ public class Setup : BaseCommandModule {
   internal static bool IsAdminRole(ulong guild, DiscordRole role) {
     if (AdminRoles[guild].Contains(role.Id)) return true;
     return (role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)); // Fall back
+  }
+  internal static bool HasAdminRole(ulong guild, IEnumerable<DiscordRole> roles) {
+    foreach(var r in roles)
+      if (AdminRoles[guild].Contains(r.Id)) return true;
+    foreach (var r in roles)
+      if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Permissions.HasFlag(DSharpPlus.Permissions.ManageMessages)) return true;
+    return false;
+  }
+
+  internal static string GetAdminsMentions(ulong gid) {
+    if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) return "";
+    string res = "";
+    foreach (var rid in AdminRoles[gid]) {
+      DiscordRole r = Guilds[gid].GetRole(rid);
+      if (r != null) res += r.Mention + " ";
+    }
+    if (res.Length > 0) return res[0..^1];
+    return "";
   }
 
   readonly DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
@@ -839,7 +858,7 @@ public class Setup : BaseCommandModule {
       }
 
       // ****************** REFACTOR *********************************************************************************************************************************************
-      if (cmds[0].Equals("refactor")) {
+      if (cmds[0].Equals("refactor") || cmds[0].Equals("reformat")) {
         if (cmds.Length > 1) {
           char mode = cmds[1][0];
           Config c = GetConfig(gid, Config.ParamType.Refactor);
@@ -1124,32 +1143,38 @@ public class Setup : BaseCommandModule {
       }
 
       // ****************** SPAMPROTECTION *********************************************************************************************************************************************
-      if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection")) && cmds.Length > 1) {
-        bool edisc = false, esteam = false, eepic = false;
-        for (int i = 1; i < cmds.Length; i++) {
-          char mode = cmds[1][0];
-          if (mode == 'd') edisc = true;
-          if (mode == 's') esteam = true;
-          if (mode == 'e') eepic = true;
+      if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection"))) {
+        if (cmds.Length == 1 || cmds[1].Equals("?") || cmds[1].Equals("help")) {
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `spamprotection` [d] [s] [e] (checks spam links for _Discrod_, _Steam_, _EpicGameStore_, and removed them.)"));
         }
-        ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
-        Config c = GetConfig(gid, Config.ParamType.SpamProtection);
-        if (c == null) {
-          c = new Config(gid, Config.ParamType.SpamProtection, val);
-          Configs[gid].Add(c);
-        } else c.IdVal = val;
-        SpamProtection[gid] = val;
+        else {
+          bool edisc = false, esteam = false, eepic = false;
+          for (int i = 1; i < cmds.Length; i++) {
+            char mode = cmds[i][0];
+            if (mode == 'd') edisc = true;
+            if (mode == 's') esteam = true;
+            if (mode == 'e') eepic = true;
+          }
+          ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
+          Config c = GetConfig(gid, Config.ParamType.SpamProtection);
+          if (c == null) {
+            c = new Config(gid, Config.ParamType.SpamProtection, val);
+            Configs[gid].Add(c);
+          }
+          else c.IdVal = val;
+          SpamProtection[gid] = val;
 
-        string msg = "SpamProtection command changed to ";
-        if (val == 0) msg += "_disabled_\n";
-        else msg += "enabled for" +
-            ((val & 1ul) == 1 ? " _Discord_" : "") +
-            ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-            ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
+          string msg = "SpamProtection command changed to ";
+          if (val == 0) msg += "_disabled_\n";
+          else msg += "enabled for" +
+              ((val & 1ul) == 1 ? " _Discord_" : "") +
+              ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+              ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
 
-        Database.Add(c);
-        _ = Utils.DeleteDelayed(15, ctx.Message);
-        await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+          Database.Add(c);
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
+        }
         return;
       }
 

@@ -19,13 +19,11 @@ public class Delete : BaseCommandModule {
   /// <summary>
   /// Delete the last x messages of any user
   /// </summary>
-  [Command("delete")]
+  [Command("massdel")]
   [Aliases("clear", "purge")]
-  [Description("Deletes the last x messages in the channel, the command was invoked in (e.g. `\\delete 10`)." +
-               "\nIt contains an overload to delete the last x messages of a specified user (e.g. `\\delete @User 10`)." +
-               "\nThis command can only be invoked by a Helper or Mod.")]
+  [Description("Deletes the last x messages in the channel, the command was invoked in (e.g. `massdel 10`)." +
+               "\nIt contains an overload to delete the last x messages of a specified user (e.g. `massdel @User 10`).")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task DeleteCommand(CommandContext ctx, [Description("How many messages should be deleted?")] int count) {
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx)) return;
     Utils.LogUserCommand(ctx);
@@ -45,9 +43,8 @@ public class Delete : BaseCommandModule {
   /// <summary>
   /// Delete the last x messages of the specified user
   /// </summary>
-  [Command("delete")]
+  [Command("massdel")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  [RequireRoles(RoleCheckMode.Any, "Helper", "Mod", "Owner")] // Restrict this command to "Helper", "Mod" and "Owner" roles only
   public async Task DeleteCommand(CommandContext ctx, [Description("Whose last x messages should get deleted?")] DiscordMember targetUser, [Description("How many messages should get deleted?")] int count) {
     if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx)) return;
     Utils.LogUserCommand(ctx);

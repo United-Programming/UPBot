@@ -37,9 +37,6 @@ public class Refactor : BaseCommandModule {
   /refactor <usr> best
   /refactor <usr> keep
    
-   normal users can reformat their own posts
-  admins can reformat messages from other users
-   
    */
 
 
@@ -59,6 +56,7 @@ public class Refactor : BaseCommandModule {
   }
 
   [Command("reformat")]
+  [Aliases("refactor")]
   [Description("Replace a specified post with a reformatted code block using the specified language or the best language")]
   public async Task RefactorCommand(CommandContext ctx) { // Refactors the previous post, if it is code
     if (ctx.Guild == null) return;
@@ -145,8 +143,8 @@ public class Refactor : BaseCommandModule {
       }
 
       if (toRefactor == null) return ctx.RespondAsync("Nothing to refactor found");
-      // FIXME If we are not an admin, and the message is not from ourselves, do not accept the replace option.
-      if (action == Action.Replace && !Utils.IsAdmin(ctx.Member) && toRefactor.Author.Id != ctx.Member.Id) action = Action.Keep;
+      // If we are not an admin, and the message is not from ourselves, do not accept the replace option.
+      if (action == Action.Replace && !Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles) && toRefactor.Author.Id != ctx.Member.Id) action = Action.Keep;
 
       // Is the message some code, or at least somethign we recognize?
       string code = toRefactor.Content;
