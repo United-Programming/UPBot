@@ -231,11 +231,11 @@ public class Setup : BaseCommandModule {
     if (AdminRoles[guild].Contains(role.Id)) return true;
     return (role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)); // Fall back
   }
-  internal static bool HasAdminRole(ulong guild, IEnumerable<DiscordRole> roles) {
+  internal static bool HasAdminRole(ulong guild, IEnumerable<DiscordRole> roles, bool withManageMessages) {
     foreach(var r in roles)
       if (AdminRoles[guild].Contains(r.Id)) return true;
     foreach (var r in roles)
-      if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Permissions.HasFlag(DSharpPlus.Permissions.ManageMessages)) return true;
+      if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || (withManageMessages && r.Permissions.HasFlag(DSharpPlus.Permissions.ManageMessages))) return true;
     return false;
   }
 
@@ -268,6 +268,12 @@ public class Setup : BaseCommandModule {
     }
     Utils.LogUserCommand(ctx);
     ulong gid = ctx.Guild.Id;
+
+    if (!HasAdminRole(gid, ctx.Member.Roles, false)) {
+      await ctx.RespondAsync("Only admins can setup the bot.");
+      return;
+    }
+
     var interact = ctx.Client.GetInteractivity();
     if (ok == null) {
       ok = new DiscordComponentEmoji(Utils.GetEmoji(EmojiEnum.OK));
@@ -644,9 +650,15 @@ public class Setup : BaseCommandModule {
       return;
     }
     Utils.LogUserCommand(ctx);
+
     try {
       DiscordGuild g = ctx.Guild;
       ulong gid = g.Id;
+      if (!HasAdminRole(gid, ctx.Member.Roles, false)) {
+        await ctx.RespondAsync("Only admins can setup the bot.");
+        return;
+      }
+
       string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
 
       // ****************** LIST *********************************************************************************************************************************************
@@ -707,7 +719,11 @@ public class Setup : BaseCommandModule {
         cfg = GetConfig(gid, Config.ParamType.TimezoneS);
         Config cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
         if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
-        else msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + " Read = " + (Config.ConfVal)cfg2.IdVal + "\n";
+        else {
+          msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + "; Read = " + (Config.ConfVal)cfg2.IdVal;
+          if ((Config.ConfVal)cfg.IdVal != Config.ConfVal.Everybody && (Config.ConfVal)cfg2.IdVal == Config.ConfVal.Everybody) msg += " (_everybody can set its own timezone_)";
+          msg += "\n";
+        }
 
         // UnityDocs ******************************************************
         cfg = GetConfig(gid, Config.ParamType.UnityDocs);

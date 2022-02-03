@@ -39,12 +39,12 @@ unitydocs       |    X    |         |           |    X      |          |        
 
 To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
 
-
+Remove old static functions from the Utils for the emojis and roles. They should not be used anymore
 If we are added to a new server we need to fill all values of setup or we will miserably fail
 Command to download the logs
 
 Add some progress bar for ranking
-
+Make sure setup is locked to just admins
 
 
 ------------- Rank thinking --------------------

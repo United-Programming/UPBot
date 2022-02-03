@@ -144,7 +144,7 @@ public class Refactor : BaseCommandModule {
 
       if (toRefactor == null) return ctx.RespondAsync("Nothing to refactor found");
       // If we are not an admin, and the message is not from ourselves, do not accept the replace option.
-      if (action == Action.Replace && !Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles) && toRefactor.Author.Id != ctx.Member.Id) action = Action.Keep;
+      if (action == Action.Replace && !Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false) && toRefactor.Author.Id != ctx.Member.Id) action = Action.Keep;
 
       // Is the message some code, or at least somethign we recognize?
       string code = toRefactor.Content;
