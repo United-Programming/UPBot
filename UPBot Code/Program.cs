@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -62,6 +62,7 @@ namespace UPBot {
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
         Database.AddTable<TrackChannel>();
+        Database.AddTable<TagBase>();
         Utils.Log("Added Tables", null);
 
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
@@ -160,4 +161,3 @@ namespace UPBot {
   }
 
 }
-
