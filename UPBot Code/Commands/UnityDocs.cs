@@ -40,7 +40,7 @@ public class UnityDocs : BaseCommandModule {
 
       foreach (string item in UnityDocItems) {
         string key = item.ToLowerInvariant();
-        int dist = Distance(what, key);
+        int dist = StringDistance.Distance(what, key);
         if (key.IndexOf(what) != -1) dist /= 2;
         for (int i = 0; i < numResults; i++) {
           if (dist < mins[i] && !bests.Contains(item)) {
@@ -56,7 +56,7 @@ public class UnityDocs : BaseCommandModule {
         int lastdot = what.LastIndexOf('.');
         if (lastdot != -1) {
           string last = what.Substring(lastdot + 1);
-          dist = Distance(last, key);
+          dist = StringDistance.Distance(last, key);
           if (key.IndexOf(last) != -1) dist /= 4;
           for (int i = 0; i < numResults; i++) {
             if (dist < mins[i] && !bests.Contains(item)) {
@@ -106,15 +106,8 @@ public class UnityDocs : BaseCommandModule {
     }
   }
 
-  int Distance(string a, string b) {
-    if (a == b) return 0;
-    float len = Math.Min(a.Length, b.Length);
-    double jw = StringDistance.JWDistance(a, b);
-    float dl = StringDistance.DLDistance(a, b) / len;
-    float xtra = (10 + Math.Abs(a.Length - b.Length)) / len;
-    float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
-    return (int)(1000 * jw * dl * xtra * cont);
-  }
+
+
 
   string[] UnityDocItems = {
 "AccelerationEvent",

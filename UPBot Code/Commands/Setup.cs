@@ -19,6 +19,7 @@ public class Setup : BaseCommandModule {
   public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
   public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
   public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
+  public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
 
   public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
   public static Dictionary<ulong, Dictionary<ulong, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<ulong, ReputationEmoji>>();
@@ -109,7 +110,6 @@ public class Setup : BaseCommandModule {
 
       }
 
-
       // Tracking channels
       List<TrackChannel> allTrackChannels = Database.GetAll<TrackChannel>();
       if (allTrackChannels != null) {
@@ -127,25 +127,17 @@ public class Setup : BaseCommandModule {
         }
       }
 
-      // ReputationEmojis
-      if (allEmojis != null) {
-        foreach (var r in allEmojis) {
-          ulong gid = r.Guild;
-          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
-          if (r.For == 0) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.", Guilds[r.Guild].Name);
-            continue;
-          }
-          try {
-            RepEmojis[gid].Add(r.GetKeyValue(), r);
-
-          } catch (ArgumentException aex) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message, Guilds[r.Guild].Name);
-          }
+      // Tags
+      List<TagBase> allTags = Database.GetAll<TagBase>();
+      if (allTags != null) {
+        foreach (var t in allTags) {
+          ulong gid = t.Guild;
+          if (!Tags.ContainsKey(gid)) Tags[gid] = new List<TagBase>();
+          Tags[gid].Add(t);
         }
       }
+
+
 
       // Fill all missing guilds
       foreach (var g in Guilds.Keys) {
@@ -156,6 +148,7 @@ public class Setup : BaseCommandModule {
         if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
         if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
         if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
+        if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
       }
 
       Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found", null);
@@ -494,6 +487,18 @@ public class Setup : BaseCommandModule {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
 
+      } else if (ir.Id == "idfeattags" || ir.Id == "idfeattagss0" || ir.Id == "idfeattagss1" || ir.Id == "idfeattagss2" || ir.Id == "idfeattagsg0" || ir.Id == "idfeattagsg1" || ir.Id == "idfeattagsg2") {
+        // ********* Config Tags ***********************************************************************
+        if (ir.Id == "idfeattagss0") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed);
+        if (ir.Id == "idfeattagss1") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattagss2") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.Everybody);
+        if (ir.Id == "idfeattagsg0") { SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed); }
+        if (ir.Id == "idfeattagsg1") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.OnlyAdmins);
+        if (ir.Id == "idfeattagsg2") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.Everybody);
+        msg = CreateTagsInteraction(ctx, msg);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+        ir = result.Result;
+
       } else if (ir.Id == "idfeatstats" || ir.Id == "idfeatstats0" || ir.Id == "idfeatstats1" || ir.Id == "idfeatstats2") { // ********* Config Stats ***********************************************************************
         if (ir.Id == "idfeatstats0") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
         if (ir.Id == "idfeatstats1") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.OnlyAdmins);
@@ -664,6 +669,7 @@ public class Setup : BaseCommandModule {
       // ****************** LIST *********************************************************************************************************************************************
       if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
         // list
+        Config cfg, cfg2;
 
         string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
         string part = "";
@@ -691,7 +697,7 @@ public class Setup : BaseCommandModule {
         }
 
         // Ping ******************************************************
-        Config cfg = GetConfig(gid, Config.ParamType.Ping);
+        cfg = GetConfig(gid, Config.ParamType.Ping);
         if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
         else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
 
@@ -717,7 +723,7 @@ public class Setup : BaseCommandModule {
 
         // Timezones ******************************************************
         cfg = GetConfig(gid, Config.ParamType.TimezoneS);
-        Config cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
+        cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
         if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
         else {
           msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + "; Read = " + (Config.ConfVal)cfg2.IdVal;
@@ -787,6 +793,18 @@ public class Setup : BaseCommandModule {
           if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
           msg += "\n";
         }
+
+        // Tags ******************************************************
+        cfg = GetConfig(gid, Config.ParamType.TagsDefine);
+        cfg2 = GetConfig(gid, Config.ParamType.TagsUse);
+        if (cfg == null || cfg2 == null) msg += "**Tags**: _not defined (disabled by default)_\n";
+        else {
+          msg += "**Tags**: Set = " + (Config.ConfVal)cfg.IdVal + "; Use = " + (Config.ConfVal)cfg2.IdVal + "\n";
+        }
+
+
+
+
 
         await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
         return;
@@ -1647,9 +1665,12 @@ public class Setup : BaseCommandModule {
     builder.AddComponents(actions);
 
     // ranking
+    // tags
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Scores);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatscores", "Scores", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattags", "Tags", false, er));
     builder.AddComponents(actions);
 
 
@@ -2109,8 +2130,6 @@ public class Setup : BaseCommandModule {
     return builder.SendAsync(ctx.Channel).Result;
   }
 
-
-
   private DiscordMessage CreateBannedWordsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
@@ -2159,6 +2178,58 @@ public class Setup : BaseCommandModule {
       }
     }
     if (actions.Count > 0) builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateTagsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Tags"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cvs = GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsDefine);
+    Config.ConfVal cvg = GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The **tag** command allows to define some contant and post it quickly with a keyword.\n" +
+      "You can use `list` to have a list to all known tags.\n" +
+      "You can use `add`, `remove`, and `edit` to alter the list of tags.\n\n";
+    if (cvs == Config.ConfVal.NotAllowed) eb.Description += "**Set Tags** is _Disabled_";
+    if (cvs == Config.ConfVal.OnlyAdmins) eb.Description += "**Set Tags** is _Enabled_ for Admins (_recommended_)";
+    if (cvs == Config.ConfVal.Everybody) eb.Description += "**Set Tags** is _Enabled_ for Everybody";
+    if (cvg == Config.ConfVal.NotAllowed) eb.Description += "**Use Tags** is _Disabled_";
+    if (cvg == Config.ConfVal.OnlyAdmins) eb.Description += "**Use Tags** is _Enabled_ for Admins";
+    if (cvg == Config.ConfVal.Everybody) eb.Description += "**Use Tags** is _Enabled_ for Everybody";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabs", "Set tags", true));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattagss0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattagss1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattagss2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
+
+    actions = new List<DiscordButtonComponent>();
+    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabg", "Use tags", true));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattagsg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattagsg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
+    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattagsg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
+    builder.AddComponents(actions);
 
     // - Exit
     // - Back

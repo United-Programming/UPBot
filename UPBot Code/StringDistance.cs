@@ -148,4 +148,15 @@ public static class StringDistance {
     return matrix[bounds.Height - 1, bounds.Width - 1];
   }
 
+
+  public static int Distance(string a, string b) {
+    if (a == b) return 0;
+    float len = Math.Min(a.Length, b.Length);
+    double jw = JWDistance(a, b);
+    float dl = DLDistance(a, b) / len;
+    float xtra = (10 + Math.Abs(a.Length - b.Length)) / len;
+    float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
+    return (int)(1000 * jw * dl * xtra * cont);
+  }
+
 }

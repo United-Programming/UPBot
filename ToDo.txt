@@ -3,11 +3,12 @@ Check that all comands work on the current server
 Add wikis for each command on GitHub
 Add cppref
 Add ranking?
-Add games with buttons
 I am not saving the right types for appreciation emojis when they are ids.
 [in progress] Show full config as text file
 [in progress] Allow to alter the config by command line
-Allow config only by admins (but give a way to make it possible on new servers)
+[future] add a way to alter tables (like adding a new column)
+[future] add a shortcut to set all on
+[future] add something to save/load a config
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -15,16 +16,11 @@ MemberTracking  |         |         |           |    X      |          |        
 Appreciation    |         |         |           |    X      |    X     |    X     |
 EmojiForRole    |         |         |           |    X      |    X     |    X     |
 BannedWords     |         |    X    |           |    X      |    X     |    X     |
-newcc           |         |         |           |           |    X     |          |
-ccdel           |         |         |           |           |    X     |          |
-ccedit          |         |         |           |           |    X     |          |
-cceditname      |         |         |           |           |    X     |          |
-cclist          |         |         |           |           |    X     |          |
+tag             |    X    |    X    |     X     |    X      |    X     |    X     |
 delete          |    X    |    X    |           |    X      |    X     |          |
 game            |         |         |           |           |    X     |          |
 bool            |         |         |           |           |    X     |          |
 rps             |         |         |           |           |    X     |          |
-helplanguage    |         |         |     X     |    X      |    X     |          |
 ping            |         |    X    |           |    X      |    X     |          |
 checklanguage   |         |         |           |    X      |    X     |          |
 reformat        |         |         |           |    X      |    X     |          |
@@ -63,34 +59,17 @@ lev = floor(
 ------------- Setup --------------------
 
 Setup Menus to create:
-- custom commands (who can define, who can use)
-- help pages (who can use)
+- tags
 - emoji for role (who can use, role/post to use/emoji)
 
 Logic to update:
-- custom commands
-- help pages
 - emoji for role
 
 
 
 
 Try save
-!admin
-!track
-!config.Stats
-!config.Ping
-!tzone
-!config.WhoIs
-!bannedw
-!config.TimezoneS
-!config.TimezoneG
-!config.MassDel
-!config.Games
-!config.Refactor
-!config.UnityDocs
-!config.SpamProtection
-
 
 config.Scores
-
+emoji4roles
+tags
