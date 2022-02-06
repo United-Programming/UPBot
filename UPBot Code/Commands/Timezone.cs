@@ -15,8 +15,7 @@ public class TimezoneCmd : BaseCommandModule {
   [Aliases("tz")]
   [Description("Get information about a users timezone and allow to set timezones for users.")]
   public async Task TimezoneCommand(CommandContext ctx) { // Basic version without parameters
-    if (ctx.Guild == null) return;
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx) && !Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx) && !Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneS, ctx)) return;
     await Utils.DeleteDelayed(10, await ctx.RespondAsync("Please specify the user to see its timezone, or an user and a timezone value to set it. Use `list` to show all known timezones."));
     await TimezoneCommand(ctx, "list");
   }
@@ -25,35 +24,31 @@ public class TimezoneCmd : BaseCommandModule {
   [Aliases("tzs")]
   [Description("Get the list of known time zones")]
   public async Task TimezonesCommand(CommandContext ctx) {
-    if (ctx.Guild == null) return;
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) return;
     await TimezoneCommand(ctx, "list");
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member) { // Standard version with a user
-    if (ctx.Guild == null) return;
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) return;
     await GetTimezone(ctx, member);
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member, [Description("The timezone to set (list to show all, remove to remove the timezone)")] string timezone) {
-    if (ctx.Guild == null) return; 
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneS, ctx)) return;
     await SetTimezone(ctx, member, timezone);
   }
 
   [Command("timezone")]
   public async Task TimezoneCommand(CommandContext ctx, [Description("The timezone to set (list to show all, remove to remove the timezone)")] string timezone) {
-    if (ctx.Guild == null) return;
     if (timezone.Trim().Contains("list", StringComparison.InvariantCultureIgnoreCase)) {
-      if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneG, ctx)) return;
+      if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) return;
       await GetTimezone(ctx, null);
     } else {
 
       // We can set our own timezone if the command is not disabled
-      if (Setup.Disabled(ctx.Guild.Id, Config.ParamType.TimezoneS) && !Setup.Permitted(ctx.Guild.Id, Config.ParamType.TimezoneS, ctx)) return;
+      if (Setup.Disabled(ctx.Guild.Id, Config.ParamType.TimezoneS) && !Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneS, ctx)) return;
       await SetTimezone(ctx, ctx.Member, timezone);
     }
   }

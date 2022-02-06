@@ -21,7 +21,7 @@ public class PingModule : BaseCommandModule {
       await ctx.RespondAsync("I cannot be used in Direct Messages.");
       return;
     }
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.Ping, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Ping, ctx)) return;
     await GeneratePong(ctx);
   }
 

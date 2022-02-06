@@ -17,7 +17,7 @@ public class Tag : BaseCommandModule {
 
   [Command("tag")]
   public async Task TagMainCommand(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsUse, ctx) && !Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsDefine, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx) && !Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
     try {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
       embed.Title = "Error in usage!";
@@ -33,12 +33,12 @@ public class Tag : BaseCommandModule {
 
   [Command("tag")]
   public async Task TagMainCommand(CommandContext ctx, [Description("Topic to be shown.")] string topic) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsUse, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) return;
     try {
       Utils.LogUserCommand(ctx);
       topic = topic.Trim().ToLowerInvariant();
       if (topic == "list") {
-        if (Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsDefine, ctx)) await ShowAllInformation(ctx);
+        if (Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) await ShowAllInformation(ctx);
         return;
       }
       await ShowTopic(ctx, topic);
@@ -49,7 +49,7 @@ public class Tag : BaseCommandModule {
 
   [Command("tag")]
   public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit.)")] string command, [Description("Topic to be shown.")] string topic) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsDefine, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
     try {
       Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
@@ -90,7 +90,7 @@ public class Tag : BaseCommandModule {
 
   [Command("tag")]
   public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit.)")] string command, [Description("Topic to be shown.")] string topic, [Description("Alias for the topic")] string alias) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.TagsDefine, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
     try {
       Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();

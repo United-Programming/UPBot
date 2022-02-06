@@ -183,9 +183,10 @@ public class Setup : BaseCommandModule {
     return GetConfigValue(guild, t) == Config.ConfVal.NotAllowed;
   }
 
-  internal static bool Permitted(ulong guild, Config.ParamType t, CommandContext ctx) {
-    if (Configs[guild].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
-    Config.ConfVal cv = GetConfigValue(guild, t);
+  internal static bool Permitted(DiscordGuild guild, Config.ParamType t, CommandContext ctx) {
+    if (guild == null) return false;
+    if (Configs[guild.Id].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
+    Config.ConfVal cv = GetConfigValue(guild.Id, t);
     switch (cv) {
       case Config.ConfVal.NotAllowed: return false;
       case Config.ConfVal.Everybody: return true;
@@ -193,7 +194,7 @@ public class Setup : BaseCommandModule {
         if (ctx.Member.IsOwner) return true;
         IEnumerable<DiscordRole> roles = ctx.Member.Roles;
         foreach (var role in roles) {
-          if (IsAdminRole(guild, role)) return true;
+          if (IsAdminRole(guild.Id, role)) return true;
         }
         break;
     }

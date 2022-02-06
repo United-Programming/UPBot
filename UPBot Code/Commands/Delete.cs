@@ -25,7 +25,7 @@ public class Delete : BaseCommandModule {
                "\nIt contains an overload to delete the last x messages of a specified user (e.g. `massdel @User 10`).")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   public async Task DeleteCommand(CommandContext ctx, [Description("How many messages should be deleted?")] int count) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx)) return;
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
       await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
@@ -46,7 +46,7 @@ public class Delete : BaseCommandModule {
   [Command("massdel")]
   [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
   public async Task DeleteCommand(CommandContext ctx, [Description("Whose last x messages should get deleted?")] DiscordMember targetUser, [Description("How many messages should get deleted?")] int count) {
-    if (!Setup.Permitted(ctx.Guild.Id, Config.ParamType.MassDel, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx)) return;
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
       await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
