@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
-  public const int vmajor = 0, vminor = 1, vbuild = 6;
+  public const int vmajor = 0, vminor = 2, vbuild = 0;
   public static string LogsFolder = "./";
 
   /// <summary>
@@ -32,7 +32,7 @@ public static class Utils
   private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/01/28";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/06";
   }
 
   /// <summary>

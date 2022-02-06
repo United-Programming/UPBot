@@ -34,6 +34,8 @@ public class Config : Entity {
     SpamProtection = 10,
     BannedWords = 11,
     Scores = 12,
+    TagsUse = 13,
+    TagsDefine = 14,
     //VideosAbout
   }
 

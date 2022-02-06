@@ -46,8 +46,6 @@ namespace UPBot {
           ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
         Utils.Log("use interactivity", null);
-        CustomCommandsService.DiscordClient = client;
-        Utils.Log("CustomCommandsService", null);
 
         Utils.InitClient(client);
         Utils.Log("Utils.InitClient", null);
@@ -57,7 +55,6 @@ namespace UPBot {
         Database.AddTable<Reputation>();
         Database.AddTable<ReputationEmoji>();
         Database.AddTable<EmojiForRoleValue>();
-        Database.AddTable<CustomCommand>();
         Database.AddTable<Config>();
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
@@ -73,12 +70,8 @@ namespace UPBot {
           EnableMentionPrefix = true
         });
         Utils.Log("CommandsNextExtension", null);
-        commands.CommandErrored += CustomCommandsService.CommandError;
         commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
         Utils.Log("RegisterCommands", null);
-
-        CustomCommandsService.LoadCustomCommands();
-        Utils.Log("CustomCommandsService.LoadCustomCommands", null);
 
         Utils.Log("Connecting to discord...", null);
         client.Ready += Discord_Ready;
