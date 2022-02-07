@@ -626,6 +626,7 @@ public class Setup : BaseCommandModule {
         if (ir.Id == "idfeatscorese1") val ^= (ulong)WhatToTrack.Fun;
         if (ir.Id == "idfeatscorese2") val ^= (ulong)WhatToTrack.Thanks;
         if (ir.Id == "idfeatscorese3") val ^= (ulong)WhatToTrack.Rank;
+        if (ir.Id == "idfeatscorese4") val ^= (ulong)WhatToTrack.Mention;
         if (val != old) {
           if (c == null) {
             c = new Config(gid, Config.ParamType.Scores, val);
@@ -792,6 +793,7 @@ public class Setup : BaseCommandModule {
           }
           if (wtt.HasFlag(WhatToTrack.Thanks)) msg += " **Thanks**";
           if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
+          if (wtt.HasFlag(WhatToTrack.Mention)) msg += " **Mentions**";
           msg += "\n";
         }
 
@@ -1290,7 +1292,7 @@ public class Setup : BaseCommandModule {
       // ****************** SCORES *********************************************************************************************************************************************
       if (cmds[0].Equals("scores")) {
         if (cmds.Length > 1) {
-          // [rep*|fun|thank*|rank*] (val) -> enable disable
+          // [rep*|fun|thank*|rank*|mention*] (val) -> enable disable
           // [rep*|fun] set -> set emojis
           // [rep*|fun] list -> list emojis
 
@@ -1418,10 +1420,12 @@ public class Setup : BaseCommandModule {
               else
                 await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _disabled_"));
             }
-          } else if ((what == "tha" || what == "ran") && cmds.Length > 2) {
+          } else if ((what == "tha" || what == "ran" || what == "men") && cmds.Length > 2) {
             if (c == null) { c = new Config(gid, Config.ParamType.Scores, 0); Configs[gid].Add(c); }
-            WhatToTrack wtt = (what == "tha") ? WhatToTrack.Thanks : WhatToTrack.Rank;
-            string wtts = (what == "tha") ? "Thanks" : "Rank";
+            WhatToTrack wtt = WhatToTrack.Thanks;
+            string wtts = "Thanks";
+            if (what == "ran") { wtt = WhatToTrack.Rank; wtts = "Rank"; }
+            if (what == "men") { wtt = WhatToTrack.Mention; wtts = "Mentions"; }
 
             char mode = cmds[2].ToLowerInvariant()[0];
             if (mode == 'n' || mode == 'd' || mode == '-') c.IdVal &= ~(ulong)wtt;
@@ -1439,7 +1443,7 @@ public class Setup : BaseCommandModule {
         }
 
         if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `rep` or `fun` or `thanks` or `rank` to enable/disable the features\n`rep` (or `fun`) `list` will show the emojis for the categories\n`rep` (or `fun`) `set` will wait for a set of emojis to be used for the category."));
+          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `rep` or `fun` or `thanks` or `rank` or `mention` to enable/disable the features\n`rep` (or `fun`) `list` will show the emojis for the categories\n`rep` (or `fun`) `set` will wait for a set of emojis to be used for the category."));
           return;
         }
       }
@@ -2064,12 +2068,14 @@ public class Setup : BaseCommandModule {
     bool valf = wtt.HasFlag(WhatToTrack.Fun);
     bool valt = wtt.HasFlag(WhatToTrack.Thanks);
     bool valr = wtt.HasFlag(WhatToTrack.Rank);
+    bool valm = wtt.HasFlag(WhatToTrack.Mention);
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "The **Scores** feature provides some tracking of the users in 4 possible areas:\n" +
       "-> _Reputation_ increases by receiving particular emojis (they can be defined.)\n" +
       "-> _Fun_ increases by receiving particular emojis (they can be defined.)\n" +
       "-> _Thanks_ increases by receiving a **thank you** message.\n" +
       "-> _Rank_ increases by posting (1 minutes delay between posts to avoid spam).\n\n" +
+      "-> _Mentions_ increases by being mentioned.\n\n" +
       "The users can call the command to see the status of the whole server or just to get the own ranking.\n" +
       "Each scoring can be enabled and disabled individually.\n\n";
     if (wtt == WhatToTrack.None) eb.Description += "**Scores** is _Disabled_"; else eb.Description += "_Enabled_ **Scores** are:\n";
@@ -2099,6 +2105,7 @@ public class Setup : BaseCommandModule {
     }
     if (valt) eb.Description += "- **Thanks**\n";
     if (valr) eb.Description += "- **Rank**\n";
+    if (valm) eb.Description += "- **Mentions**\n";
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
@@ -2112,6 +2119,7 @@ public class Setup : BaseCommandModule {
     actions.Add(new DiscordButtonComponent(valf ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese1", "Fun", false, valf ? ey : en));
     actions.Add(new DiscordButtonComponent(valt ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese2", "Thanks", false, valt ? ey : en));
     actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese3", "Ranking", false, valr ? ey : en));
+    actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese4", "Mentions", false, valr ? ey : en));
     builder.AddComponents(actions);
 
     actions = new List<DiscordButtonComponent>();

@@ -77,7 +77,7 @@ public class AppreciationTracking : BaseCommandModule {
             Database.Delete(r);
             continue;
           }
-          e.AddField(u, "Reputation: _" + r.Rep + "_");
+          e.AddField(u, "Reputation: _" + r.Rep + "_", true);
         }
       }
 
@@ -100,7 +100,7 @@ public class AppreciationTracking : BaseCommandModule {
             Database.Delete(r);
             continue;
           }
-          e.AddField(u, "Fun: _" + r.Tnk + "_");
+          e.AddField(u, "Fun: _" + r.Tnk + "_", true);
         }
       }
 
@@ -114,6 +114,24 @@ public class AppreciationTracking : BaseCommandModule {
           UserRank r = ranks[i];
           if (r.Lev == 0) break;
           e.AddField(r.Name, $"Rank: #_{i+1}_ xp_{r.Exp}_", true);
+        }
+      }
+
+      if (wtt.HasFlag(WhatToTrack.Mention)) {
+        vals.Sort((a, b) => { return b.Men.CompareTo(a.Men); });
+        e.AddField("Mentions --------------------", "For being mentioned (not in replys)", false);
+
+        for (int i = 0; i < 10; i++) {
+          if (i >= vals.Count) break;
+          Reputation r = vals[i];
+          if (r.Men == 0) break;
+          string u = Utils.GetSafeMemberName(ctx, r.User);
+          if (u == null) { // Remove
+            Setup.Reputations[gid].Remove(r.User);
+            Database.Delete(r);
+            continue;
+          }
+          e.AddField(u, "Mentions: _" + r.Men + "_", true);
         }
       }
 
@@ -186,6 +204,7 @@ public class AppreciationTracking : BaseCommandModule {
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) CheckThanks(args.Message);
       if (wtt.HasFlag(WhatToTrack.Rank) && !args.Author.IsBot) CheckRanks(args.Guild.Id, args.Message);
+      if (wtt.HasFlag(WhatToTrack.Mention) && !args.Author.IsBot) CheckMentions(args.Guild.Id, args.Message);
 
     } catch (Exception ex) {
       Utils.Log("Error in ThanksAdded: " + ex.Message, args.Guild.Name);
@@ -266,6 +285,25 @@ public class AppreciationTracking : BaseCommandModule {
     }
   }
 
+  static void CheckMentions(ulong gid, DiscordMessage msg) {
+    try {
+      ulong oid = msg.Author.Id;
+      ulong rid = 0;
+      if (msg.Reference != null) rid = msg.Reference.Message.Author.Id;
+      foreach (var m in msg.MentionedUsers) {
+        if (m.Id == oid || m.IsBot || m.Id == rid) continue;
+        Reputation r = Setup.GetReputation(gid, m.Id);
+        r.Men++;
+        Database.Add(r);
+      }
+
+    } catch (Exception ex) {
+      Utils.Log("Error in CheckMentions: " + ex.Message, msg.Channel.Guild.Name);
+    }
+  }
+
+
+
 
   internal static Task ReactionAdded(DiscordClient sender, MessageReactionAddEventArgs mr) {
     try {
@@ -318,8 +356,8 @@ public class AppreciationTracking : BaseCommandModule {
 
     IReadOnlyCollection<Reputation> reps = Setup.Reputations[guild.Id].Values;
     foreach (Reputation r in reps) {
-      int exp = (int)Math.Round(1.25 * r.Ran + 2.5 * r.Rep + 2.5 * r.Fun + 3.5 * r.Tnk);
-      int lev = (int)Math.Floor(Math.Pow(exp-9.0, .25));
+      int exp = (int)Math.Round(1.25 * r.Ran + 2.5 * r.Rep + 2.5 * r.Fun + 3.5 * r.Tnk + 3 * r.Men);
+      int lev = (int)Math.Floor(Math.Pow(exp - 9.0, .25));
       if (lev < 0) lev = 0;
       DiscordUser du = guild.GetMemberAsync(r.User).Result;
       if (du == null) continue;
@@ -489,6 +527,7 @@ public enum WhatToTrack {
   Reputation = 2,
   Fun = 4,
   Rank = 8,
+  Mention = 16
 }
 
 public class UserRank {
