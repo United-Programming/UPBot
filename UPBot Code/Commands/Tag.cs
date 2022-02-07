@@ -268,6 +268,19 @@ public class Tag : BaseCommandModule {
       await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
       return;
     }
+    // Check if we do nto have the alias already
+    if (toAlias.Topic == alias || toAlias.Alias1 == alias || toAlias.Alias2 == alias || toAlias.Alias3 == alias) {
+      embed.Title = "Alias already existing";
+      embed.Color = DiscordColor.Yellow;
+      embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
+      if (toAlias.Alias3 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_, _**{toAlias.Alias3}**_)";
+      else if (toAlias.Alias2 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_)";
+      else if (toAlias.Alias1 != null) embed.Description += $" (_**{toAlias.Alias1}**_)";
+      embed.Timestamp = DateTime.Now;
+      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
+      return;
+    }
+
     // Find the first empty alias slot
     if (toAlias.Alias1 == null) toAlias.Alias1 = alias;
     else if (toAlias.Alias2 == null) toAlias.Alias2 = alias;

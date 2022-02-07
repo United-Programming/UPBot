@@ -1435,6 +1435,7 @@ public class Setup : BaseCommandModule {
               await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _enabled_"));
             else
               await Utils.DeleteDelayed(15, ctx.RespondAsync("Scores " + wtts + " changed to _disabled_"));
+            WhatToTracks[gid] = (WhatToTrack)c.IdVal;
           }
 
           _ = Utils.DeleteDelayed(15, ctx.Message);
@@ -2119,7 +2120,7 @@ public class Setup : BaseCommandModule {
     actions.Add(new DiscordButtonComponent(valf ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese1", "Fun", false, valf ? ey : en));
     actions.Add(new DiscordButtonComponent(valt ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese2", "Thanks", false, valt ? ey : en));
     actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese3", "Ranking", false, valr ? ey : en));
-    actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese4", "Mentions", false, valr ? ey : en));
+    actions.Add(new DiscordButtonComponent(valm ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese4", "Mentions", false, valm ? ey : en));
     builder.AddComponents(actions);
 
     actions = new List<DiscordButtonComponent>();
