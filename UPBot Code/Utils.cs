@@ -312,6 +312,22 @@ public static class Utils
   }
 
   /// <summary>
+  /// Used to delete a file after a while
+  /// </summary>
+  /// <param name="msg1"></param>
+  public static Task DeleteFileDelayed(int seconds, string path) {
+    Task.Run(() => {
+      try {
+        Task.Delay(seconds * 1000).Wait();
+        File.Delete(path);
+      } catch (Exception ex) {
+        Console.WriteLine("Cannot delete file: " + path + ": " + ex.Message);
+      }
+    });
+    return Task.FromResult(0);
+  }
+
+  /// <summary>
   /// Used to delete some messages after a while
   /// </summary>
   /// <param name="msg1"></param>

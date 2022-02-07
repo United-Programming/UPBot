@@ -6,7 +6,6 @@ Add ranking?
 I am not saving the right types for appreciation emojis when they are ids.
 [in progress] Show full config as text file
 [in progress] Allow to alter the config by command line
-[future] add a way to alter tables (like adding a new column)
 [future] add a shortcut to set all on
 [future] add something to save/load a config
 
@@ -31,6 +30,7 @@ unitydocs       |    X    |         |           |    X      |          |        
 
 
 
+Add mentions to the ranking. And increase it every time somebody is mentioned
 
 
 To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
@@ -39,7 +39,6 @@ Remove old static functions from the Utils for the emojis and roles. They should
 If we are added to a new server we need to fill all values of setup or we will miserably fail
 Command to download the logs
 
-Add some progress bar for ranking
 Make sure setup is locked to just admins
 
 

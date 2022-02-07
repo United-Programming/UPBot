@@ -7,6 +7,7 @@ public class Reputation : Entity {
   public int Fun;
   public int Tnk;
   public int Ran;
+  public int Men;
   public DateTime LastUpdate;
 
   public Reputation() { }
@@ -17,6 +18,7 @@ public class Reputation : Entity {
     Fun = 0;
     Tnk = 0;
     Ran = 0;
+    Men = 0;
     LastUpdate = DateTime.Now;
   }
 }

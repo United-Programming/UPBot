@@ -5,6 +5,9 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,7 +24,7 @@ public class AppreciationTracking : BaseCommandModule {
   readonly static Regex thank4n = new Regex("(^|[^a-z0-9_])thanks{0,1}\\s{0,1}for\\s{0,1}nothing($|[^a-z0-9_])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   [Command("Appreciation")]
-  [Aliases("Ranking")]
+  [Aliases("Ranking", "Ranks")]
   [Description("It shows the statistics for users")]
   public async Task ShowAppreciationCommand(CommandContext ctx) {
     if (ctx.Guild == null) return;
@@ -109,8 +112,8 @@ public class AppreciationTracking : BaseCommandModule {
         for (int i = 0; i < 10; i++) {
           if (i >= ranks.Count) break;
           UserRank r = ranks[i];
-          if (r.Score == 0) break;
-          e.AddField(r.Name, "Rank: #_" + r.Score + "_");
+          if (r.Lev == 0) break;
+          e.AddField(r.Name, $"Rank: #_{i+1}_ xp_{r.Exp}_", true);
         }
       }
 
@@ -136,10 +139,34 @@ public class AppreciationTracking : BaseCommandModule {
       if (!Setup.WhatToTracks[gid].HasFlag(WhatToTrack.Rank)) return;
       Utils.LogUserCommand(ctx);
 
-      List<UserRank> ranks = CalculateRanks(ctx.Guild, user.Id);
+      List<UserRank> ranks = CalculateRanks(ctx.Guild);
+      // Let find ourself and our position
+      int pos = 0;
+      UserRank rank = null;
+      foreach (UserRank r in ranks) {
+        if (r.Id == ctx.Member.Id) {
+          rank = r;
+          break;
+        }
+        pos++;
+      }
 
-      if (ranks.Count == 0) await ctx.Message.RespondAsync("No rank for user: " + user.DisplayName);
-      else await ctx.Message.RespondAsync("rank: " + ranks[0].Score);
+      if (rank == null) await ctx.Message.RespondAsync("No rank for user: " + user.DisplayName);
+      else {
+        long exp = ranks[pos].Exp;
+        long lev = ranks[pos].Lev;
+        long nextlev = lev + 1;
+        long minExp4Lev = ((lev * lev * lev * lev) + 9);
+        long maxExp4Lev = ((nextlev * nextlev * nextlev * nextlev) + 9);
+        if (minExp4Lev < 10) minExp4Lev = 0;
+
+        string file = GenerateRankImage(user.DisplayName, lev, exp, minExp4Lev, maxExp4Lev, pos + 1);
+        using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read)) {
+          await Utils.DeleteFileDelayed(10, file);
+          await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithFiles(new Dictionary<string, Stream>() { { file, fs } }));
+        }
+      }
+
 
     } catch (Exception ex) {
       await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Rank", ex));
@@ -158,7 +185,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt == WhatToTrack.None) return Task.FromResult(0);
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) CheckThanks(args.Message);
-      if (wtt.HasFlag(WhatToTrack.Rank)) CheckRanks(args.Guild.Id, args.Message);
+      if (wtt.HasFlag(WhatToTrack.Rank) && !args.Author.IsBot) CheckRanks(args.Guild.Id, args.Message);
 
     } catch (Exception ex) {
       Utils.Log("Error in ThanksAdded: " + ex.Message, args.Guild.Name);
@@ -186,6 +213,7 @@ public class AppreciationTracking : BaseCommandModule {
         IReadOnlyList<DiscordMessage> msgs = msg.Channel.GetMessagesBeforeAsync(msg.Id, 3).Result;
         msg = null;
         foreach (DiscordMessage m in msgs) {
+          if (m.Author.IsBot) continue;
           ulong oid = m.Author.Id;
           if (oid != authorId) {
             Reputation r = Setup.GetReputation(gid, oid);
@@ -194,7 +222,7 @@ public class AppreciationTracking : BaseCommandModule {
             return;
           }
         }
-      } else if (msg.Reference != null) { // By reference
+      } else if (msg.Reference != null && !msg.Reference.Message.Author.IsBot) { // By reference
         ulong oid = msg.Reference.Message.Author.Id;
         if (oid != authorId) {
           Reputation r = Setup.GetReputation(gid, oid);
@@ -204,6 +232,7 @@ public class AppreciationTracking : BaseCommandModule {
         }
       } else { // Mentioned
         foreach (var usr in msg.MentionedUsers) {
+          if (usr.IsBot) continue;
           ulong oid = usr.Id;
           if (oid != authorId) {
             Reputation r = Setup.GetReputation(gid, oid);
@@ -284,28 +313,19 @@ public class AppreciationTracking : BaseCommandModule {
   }
 
 
-  List<UserRank> CalculateRanks(DiscordGuild guild, ulong user = 0) {
+  internal static List<UserRank> CalculateRanks(DiscordGuild guild) {
     List<UserRank> ranks = new List<UserRank>();
 
     IReadOnlyCollection<Reputation> reps = Setup.Reputations[guild.Id].Values;
     foreach (Reputation r in reps) {
-      double lev = Math.Floor(
-                      1.25 * Math.Pow(r.Ran, 0.25) +
-                      2.5 * Math.Pow(r.Rep, 0.27) +
-                      2.5 * Math.Pow(r.Fun, 0.27) +
-                      3.5 * Math.Pow(r.Tnk, 0.27)) - 20;
+      int exp = (int)Math.Round(1.25 * r.Ran + 2.5 * r.Rep + 2.5 * r.Fun + 3.5 * r.Tnk);
+      int lev = (int)Math.Floor(Math.Pow(exp-9.0, .25));
       if (lev < 0) lev = 0;
-      if (r.User == user) {
-        DiscordUser usr = guild.GetMemberAsync(r.User).Result;
-        if (usr == null) return null;
-        ranks.Add(new UserRank() { Name = usr.Username, Id = r.User, Score = (int)lev });
-        return ranks;
-      }
       DiscordUser du = guild.GetMemberAsync(r.User).Result;
       if (du == null) continue;
-      ranks.Add(new UserRank() { Name = du.Username, Id = r.User, Score = (int)lev });
+      ranks.Add(new UserRank() { Name = du.Username, Id = r.User, Exp = exp, Lev = lev });
     }
-    ranks.Sort((a,b) => {  return b.Score.CompareTo(a.Score); });
+    ranks.Sort((a,b) => {  return b.Exp.CompareTo(a.Exp); });
     return ranks;
   }
 
@@ -321,6 +341,111 @@ public class AppreciationTracking : BaseCommandModule {
       last = memberid;
     }
   }
+
+
+
+
+
+
+
+  string GenerateRankImage(string user, long lev, long exp, long minlev, long maxlev, int pos) {
+    try {
+      using (Bitmap b = new Bitmap(400, 150)) {
+        using (Graphics g = Graphics.FromImage(b)) {
+          Font f = new Font("Times New Roman", 20, FontStyle.Bold, GraphicsUnit.Pixel);
+          Font f2 = new Font("Times New Roman", 16, FontStyle.Bold, GraphicsUnit.Pixel);
+
+          g.Clear(Color.Transparent);
+          Pen back = new Pen(Color.FromArgb(30, 30, 28));
+          Pen lines = new Pen(Color.FromArgb(70, 70, 72));
+          Brush fill = new SolidBrush(back.Color);
+          Brush txtl = new SolidBrush(Color.FromArgb(150, 150, 102));
+          Brush txte = new SolidBrush(Color.FromArgb(170, 182, 150));
+          Brush txty = new SolidBrush(Color.FromArgb(204, 212, 170));
+          Brush txtb = new SolidBrush(Color.FromArgb(50, 50, 107));
+
+          Brush expfillg = new SolidBrush(Color.FromArgb(106, 188, 96));
+          Pen explineg = new Pen(Color.FromArgb(106, 248, 169));
+          Brush expfillb = new SolidBrush(Color.FromArgb(100, 96, 180));
+          Pen explineb = new Pen(Color.FromArgb(106, 169, 248));
+
+          /*
+               ----------------------------------------
+              | Rank for <NAME>                        |
+              |   Level: <rank>                        |
+              |   Experience <abcd>/<defg>             |
+              |   #<position>/<total counted>          |
+               ----------------------------------------
+
+          <rank> is the calculated level
+          <abcd> is the number we calculate
+          <defg> is the number for the next level
+          */
+
+
+          DrawBox(g, fill, lines, 0, 0, 400, 150);
+
+          g.DrawString("Rank for", f, txtl, 16, 16);
+          g.DrawString(user, f, txty, 105, 16);
+
+          g.DrawString("Level:", f, txtl, 32, 48);
+          g.DrawString(lev.ToString(), f, txte, 160, 48);
+
+          int perc = (int)(222 * (1.0 * exp - minlev) / (maxlev - minlev));
+
+
+          g.FillRectangle(expfillg, new Rectangle(160, 80, 224, 24));
+          g.DrawRectangle(explineg, new Rectangle(160, 80, 224, 24));
+          g.FillRectangle(expfillb, new Rectangle(161, 81, perc, 22));
+          g.DrawRectangle(explineb, new Rectangle(161, 81, perc, 22));
+
+          g.DrawString("Experience:", f, txtl, 32, 80);
+          g.DrawString(exp + " / " + maxlev, f2, txtb, 192, 84);
+
+          g.DrawString("Position:", f, txtl, 32, 112);
+          g.DrawString("#" + pos, f, txte, 160, 112);
+        }
+        string rndName = "RankImage" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".png";
+        b.Save(rndName, System.Drawing.Imaging.ImageFormat.Png);
+        return rndName;
+      }
+    } catch (Exception ex) {
+      Console.WriteLine(ex.Message);
+      throw ex;
+    }
+  }
+
+  void DrawBox(Graphics g, Brush fill, Pen border, int t, int l, int r, int b) {
+    int w = r - l;
+    int h = b - t;
+    int sw = w / 12;
+    int sh = h / 10;
+    Rectangle box = new Rectangle(t, l, t + sw, l + sh);
+    GraphicsPath path = new GraphicsPath();
+    box.X = l; box.Y = t;
+    path.AddArc(box, 180, 90); // top left arc  
+
+    box.X = w - sw - 1; box.Y = t;
+    path.AddArc(box, 270, 90); // top right arc  
+
+    box.X = w - sw - 1; box.Y = h - sh - 1;
+    path.AddArc(box, 0, 90); // bottom right arc
+
+    box.X = t; box.Y = h - sh - 1;
+    path.AddArc(box, 90, 90); // bottom left arc 
+
+    path.CloseFigure();
+    g.FillPath(fill, path);
+    g.DrawPath(border, path);
+  }
+
+
+
+
+
+
+
+
 
 
 }
@@ -369,5 +494,6 @@ public enum WhatToTrack {
 public class UserRank {
   public string Name;
   public ulong Id;
-  public int Score;
+  public int Exp;
+  public int Lev;
 }
