@@ -12,8 +12,7 @@ using DSharpPlus.EventArgs;
 public class CheckSpam : BaseCommandModule {
   readonly static Regex linkRE = new Regex(@"http[s]?://([^/]+)/");
   readonly static Regex wwwRE = new Regex(@"^w[^\.]{0,3}.\.");
-
-  string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
+  readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",
     "discorx.gift", "dljscord.com", "disboard.org", "dischrdapp.com","discord-cpp.com", "discord-nitro.ru.com","discörd.com","disçordapp.com","dlscord.space",
@@ -116,7 +115,7 @@ public class CheckSpam : BaseCommandModule {
 
 
 
-  internal static async Task CheckMessage(DiscordClient client, MessageCreateEventArgs args) {
+  internal static async Task CheckMessage(DiscordClient _, MessageCreateEventArgs args) {
     if (args.Guild == null) return;
     try {
       if (!Setup.SpamProtection.ContainsKey(args.Guild.Id)) return;

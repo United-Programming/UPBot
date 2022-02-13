@@ -1,13 +1,11 @@
-﻿[in progress] Have all settings stored per server/guild
-Check that all comands work on the current server
-Add wikis for each command on GitHub
-Add cppref
-Add ranking?
-I am not saving the right types for appreciation emojis when they are ids.
-[in progress] Show full config as text file
-[in progress] Allow to alter the config by command line
+﻿[todo] Add wikis for each command on GitHub
+[future] Add cppref
 [future] add a shortcut to set all on
 [future] add something to save/load a config
+[todo] Remove old static functions from the Utils for the emojis and roles. They should not be used anymore
+[fix] If we are added to a new server we need to fill all values of setup or we will miserably fail
+[todo] Command to download the logs
+[todo] emoji for roles
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -30,45 +28,11 @@ unitydocs       |    X    |         |           |    X      |          |        
 
 
 
-Add mentions to the ranking. And increase it every time somebody is mentioned
 
 
 To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
 
-Remove old static functions from the Utils for the emojis and roles. They should not be used anymore
-If we are added to a new server we need to fill all values of setup or we will miserably fail
-Command to download the logs
-
-Make sure setup is locked to just admins
-
-
-------------- Rank thinking --------------------
-Number of words for each message
-Excluding text from codeblocks
-Receiving any kind of emoji, especially on codeblocks
-Receiving thanks and appreciations
-Use some low exponential grow function
-
-lev = floor(
-    1.25 * numword ^ 0.25 + 
-    1.5 * numappr ^ 0.27
-    1.5 * numthanks ^ 0.27
-)
-
-------------- Setup --------------------
-
-Setup Menus to create:
-- tags
-- emoji for role (who can use, role/post to use/emoji)
-
-Logic to update:
-- emoji for role
-
-
-
-
-Try save
-
-config.Scores
-emoji4roles
-tags
+emj4role
+--- list definitions (link to post + show emojis + show role)
+--- add definition (post link, post emoji, mention role)
+--- delete definition

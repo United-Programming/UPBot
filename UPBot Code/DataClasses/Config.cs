@@ -14,11 +14,6 @@ public class Config : Entity {
     IdVal = val;
   }
 
-  public Config(ulong guild, ParamType param, string val) {
-    Guild = guild;
-    Param = (int)param;
-    IdVal = 0;
-  }
 
 
   public enum ParamType {
@@ -36,6 +31,7 @@ public class Config : Entity {
     Scores = 12,
     TagsUse = 13,
     TagsDefine = 14,
+    Emoji4Role = 15,
     //VideosAbout
   }
 

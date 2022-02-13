@@ -138,7 +138,7 @@ stats all #channel
       (g.SystemChannel == null ? "" : "\nSystem channel: " + g.SystemChannel.Mention) +
       (g.RulesChannel == null ? "" : "\nRules channel: " + g.RulesChannel.Mention), false);
 
-    string emojis = "";
+    string emojis;
     if (g.Emojis.Count > 0) {
       emojis = g.Emojis.Count + " custom emojis: ";
       foreach (var emj in g.Emojis.Values) emojis += Utils.GetEmojiSnowflakeID(emj) + " ";
@@ -155,11 +155,12 @@ stats all #channel
       var b = new DiscordMessageBuilder();
       b.AddEmbed(GenerateStatsEmbed(ctx).Build());
 
-      var actions = new List<DiscordButtonComponent>();
-      actions.Add(new DiscordButtonComponent(ButtonStyle.Primary, "idusedemojis", "Used emojis", false));
-      actions.Add(new DiscordButtonComponent(ButtonStyle.Primary, "idmentionedusers", "Mentioned people", false));
-      actions.Add(new DiscordButtonComponent(ButtonStyle.Primary, "idmentionedroles", "Mentioned roles", false));
-      actions.Add(new DiscordButtonComponent(ButtonStyle.Success, "idall", "All 3", false));
+      var actions = new List<DiscordButtonComponent> {
+        new DiscordButtonComponent(ButtonStyle.Primary, "idusedemojis", "Used emojis", false),
+        new DiscordButtonComponent(ButtonStyle.Primary, "idmentionedusers", "Mentioned people", false),
+        new DiscordButtonComponent(ButtonStyle.Primary, "idmentionedroles", "Mentioned roles", false),
+        new DiscordButtonComponent(ButtonStyle.Success, "idall", "All 3", false)
+      };
       b.AddComponents(actions);
 
       var msg = await b.SendAsync(ctx.Channel);

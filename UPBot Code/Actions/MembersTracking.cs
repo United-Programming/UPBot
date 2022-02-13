@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 public class MembersTracking {
   static Dictionary<ulong, DateTime> tracking = null;
 
-  public static async Task DiscordMemberRemoved(DiscordClient client, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
+  public static async Task DiscordMemberRemoved(DiscordClient _, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];
@@ -46,14 +46,14 @@ public class MembersTracking {
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
 
       tracking[args.Member.Id] = DateTime.Now;
-    _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
+      _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     } catch (Exception ex) {
       Utils.Log("Error in DiscordMemberAdded: " + ex.Message, args.Guild.Name);
     }
     await Task.Delay(10);
   }
 
-  public static async Task DiscordMemberUpdated(DiscordClient client, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
+  public static async Task DiscordMemberUpdated(DiscordClient _, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];

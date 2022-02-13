@@ -27,9 +27,9 @@ public static class Utils
   // Fields relevant for InitClient()
   private static DiscordClient client;
   private static DateTimeFormatInfo sortableDateTimeFormat;
-  private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
+  readonly private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
   private static DiscordMember mySelf;
-  private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
+  readonly private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
   public static string GetVersion() {
     return vmajor + "." + vminor + "." + vbuild + " - 2022/02/06";

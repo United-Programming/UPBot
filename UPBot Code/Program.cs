@@ -28,7 +28,7 @@ namespace UPBot {
       }
     }
 
-    private static CancellationTokenSource exitToken = new CancellationTokenSource();
+    readonly private static CancellationTokenSource exitToken = new CancellationTokenSource();
 
     static async Task MainAsync(string token, string prefix) {
       try {

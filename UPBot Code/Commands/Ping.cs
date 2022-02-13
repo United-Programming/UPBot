@@ -132,7 +132,7 @@ public class PingModule : BaseCommandModule {
         for (int i = 0; i < requestTimes.Length - 1; i++) {
           requestTimes[i] = requestTimes[i + 1];
         }
-        requestTimes[requestTimes.Length - 1] = DateTime.Now;
+        requestTimes[^1] = DateTime.Now;
         num = requestTimes.Length;
       }
 

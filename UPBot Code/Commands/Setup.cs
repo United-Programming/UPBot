@@ -2,28 +2,53 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity.Extensions;
+
+public class TempSetRole {
+  public DiscordRole role;
+  public CancellationTokenSource cancel;
+  public ulong user;
+  internal ulong channel;
+  internal ulong message;
+  internal ulong emojiid;
+  internal string emojiname;
+
+  public TempSetRole(ulong usr, DiscordRole r) {
+    user = usr;
+    role = r;
+    cancel = new CancellationTokenSource();
+    channel = 0;
+    message = 0;
+    emojiid = 0;
+    emojiname = null;
+  }
+}
 
 /// <summary>
 /// This command is used to configure the bot, so roles and messages can be set for other servers.
 /// author: CPU
 /// </summary>
 public class Setup : BaseCommandModule {
-  private static Dictionary<ulong, DiscordGuild> Guilds = new Dictionary<ulong, DiscordGuild>();
-  private static Dictionary<ulong, List<Config>> Configs = new Dictionary<ulong, List<Config>>();
-  public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
-  public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
-  public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
-  public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
-  public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
+  readonly private static Dictionary<ulong, DiscordGuild> Guilds = new Dictionary<ulong, DiscordGuild>();
+  readonly private static Dictionary<ulong, List<Config>> Configs = new Dictionary<ulong, List<Config>>();
+  readonly public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
+  readonly public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
+  readonly public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
+  readonly public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
+  readonly public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
 
-  public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
-  public static Dictionary<ulong, Dictionary<ulong, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<ulong, ReputationEmoji>>();
-  public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
+  readonly public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
+  readonly public static Dictionary<ulong, Dictionary<ulong, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<ulong, ReputationEmoji>>();
+  readonly public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
+  readonly public static Dictionary<ulong, List<EmojiForRoleValue>> Em4Roles = new Dictionary<ulong, List<EmojiForRoleValue>>();
+
+  readonly public static Dictionary<ulong, TempSetRole> TempRoleSelected = new Dictionary<ulong, TempSetRole>();
 
 
   private readonly static Regex emjSnowflakeER = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -107,7 +132,6 @@ public class Setup : BaseCommandModule {
           if (!AdminRoles.ContainsKey(gid)) AdminRoles[gid] = new List<ulong>();
           AdminRoles[gid].Add(r.Role);
         }
-
       }
 
       // Tracking channels
@@ -137,6 +161,15 @@ public class Setup : BaseCommandModule {
         }
       }
 
+      // Emoji for role
+      List<EmojiForRoleValue> allEmj4rs = Database.GetAll<EmojiForRoleValue>();
+      if (allEmj4rs != null) {
+        foreach (var e in allEmj4rs) {
+          ulong gid = e.Guild;
+          if (!Em4Roles.ContainsKey(gid)) Em4Roles[gid] = new List<EmojiForRoleValue>();
+          Em4Roles[gid].Add(e);
+        }
+      }
 
 
       // Fill all missing guilds
@@ -149,6 +182,7 @@ public class Setup : BaseCommandModule {
         if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
         if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
         if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
+        if (!Em4Roles.ContainsKey(g)) Em4Roles[g] = new List<EmojiForRoleValue>();
       }
 
       Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found", null);
@@ -216,7 +250,7 @@ public class Setup : BaseCommandModule {
     return Reputations[gid].Values;
   }
 
-  internal static Task NewGuildAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildCreateEventArgs e) {
+  internal static Task NewGuildAdded(DSharpPlus.DiscordClient _, GuildCreateEventArgs e) {
     // FIXME handle this to fill all values for a new guild added
     return Task.FromResult(0);
   }
@@ -638,6 +672,97 @@ public class Setup : BaseCommandModule {
         msg = CreateScoresInteraction(ctx, msg);
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
         ir = result.Result;
+
+      } else if (ir.Id.Length > 9 && ir.Id[0..10] == "idfeatem4r") { // ********* Emoji for roles ***********************************************************************
+        if (ir.Id == "idfeatem4red") {
+          if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.Everybody);
+          else SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.NotAllowed);
+        }
+        else if (ir.Id == "idfeatem4radd") {
+          // Select the role you want to add
+          msg = CreateEmoji4RoleInteractionRoleSelect(ctx, msg);
+          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+          ir = result.Result;
+
+          // Add a reaction to the message that should give the role, with the emoji you want to use. You have 5 minutes to complete.
+          // After this come back here and select the role you want to add
+        }
+        else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatem4raddr") { // Role selected, do the message to add the emoji to the post
+          TempRoleSelected[gid] = null;
+          int.TryParse(ir.Id[14..], out int rnum);
+          var roles = ctx.Guild.Roles.Values;
+          int num = 0;
+          foreach (var r in roles) {
+            if (r.IsManaged || r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == 0) continue;
+            if (num == rnum) {
+              TempRoleSelected[gid] = new TempSetRole(ctx.User.Id, r);
+              break;
+            }
+            num++;
+          }
+
+          // FIXME handle if the TempRoleSelected[gid] is not defined
+
+          msg = CreateEmoji4RoleInteractionEmojiSelect(ctx, msg);
+          var waitem = await interact.WaitForButtonAsync(msg, TempRoleSelected[gid].cancel.Token);
+
+          if (TempRoleSelected[gid].cancel.IsCancellationRequested) { // We should have what we need here
+            int maybegood = 1;
+            EmojiForRoleValue em = new EmojiForRoleValue {
+              Guild = gid,
+              Role = TempRoleSelected[gid].role.Id,
+              Channel = 0,
+              Message = 0,
+              EmojiId = 0,
+              EmojiName = null
+            };
+            Em4Roles[gid].Add(em);
+            //Database.Add(em);
+            TempRoleSelected[gid] = null;
+          }
+
+          if (waitem.Result == null) {
+            int failer = 1; // Timed out just close
+          }
+          else {
+            // Button pressed, handle
+            int buttonpressed = 1;
+          }
+
+          msg = CreateEmoji4RoleInteraction(ctx, msg);
+          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+          ir = result.Result;
+        }
+        else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatem4rlist") {
+          int.TryParse(ir.Id[14..], out int num);
+          EmojiForRoleValue em = Em4Roles[gid][num];
+          // Details
+          // Do you want to delete it? Yes/No
+
+          msg = CreateEmoji4RoleRemoveInteraction(ctx, msg, em);
+          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+          ir = result.Result;
+
+          if (ir.Id == "idfeatem4rdel") {
+            Em4Roles[gid].Remove(em);
+            Database.Delete(em);
+            msg = CreateEmoji4RoleInteraction(ctx, msg);
+            result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+            ir = result.Result;
+
+          }
+          else if (ir.Id == "idfeatem4rback") {
+            msg = CreateEmoji4RoleInteraction(ctx, msg);
+            result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+            ir = result.Result;
+
+          }
+        }
+        else {
+          msg = CreateEmoji4RoleInteraction(ctx, msg);
+          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+          ir = result.Result;
+        }
 
       } else {
         result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
@@ -1476,16 +1601,17 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
     //- Set tracking
     //- Set Admins
     //- Enable features:
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idconfigfeats", "Configure features", false, er));
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idconfigfeats", "Configure features", false, er)
+    };
     builder.AddComponents(actions);
 
     //-Exit
@@ -1551,9 +1677,10 @@ public class Setup : BaseCommandModule {
 
     // - Exit
     // - Back
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
@@ -1578,14 +1705,15 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
 
     // - Change channel
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idchangetrackch", "Change channel", false, ok));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idchangetrackch", "Change channel", false, ok)
+    };
     if (TrackChannels[ctx.Guild.Id] != null)
       actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idremtrackch", "Remove channel", false, ko));
     builder.AddComponents(actions);
@@ -1604,16 +1732,17 @@ public class Setup : BaseCommandModule {
 
     // - Exit
     // - Back
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateFeaturesInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Features"
@@ -1624,16 +1753,16 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
 
-    // ping
-    // whois
-    // mass delete
-    // games
-    // refactor code
+    // Ping
+    // Whois
+    // Mass delete
+    // Games
+    // Refactor code
     actions = new List<DiscordButtonComponent>();
     Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Ping);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatping", "Ping", false, er));
@@ -1652,11 +1781,11 @@ public class Setup : BaseCommandModule {
 
     builder.AddComponents(actions);
 
-    // timezones
-    // unitydocs
+    // Timezones
+    // UnityDocs
     // Spam protection
     // Stats
-    // Banned words
+    // Tags
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TimezoneG);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattz", "Timezone", false, er));
@@ -1666,25 +1795,29 @@ public class Setup : BaseCommandModule {
     actions.Add(new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er));
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Stats);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatstats0", "Stats", false, er));
-    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatbannedw", "Banned Words", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattags", "Tags", false, er));
     builder.AddComponents(actions);
 
-    // ranking
-    // tags
+    // Ranking/Scores
+    // Banned words
+    // Emogi for roles
     actions = new List<DiscordButtonComponent>();
     cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Scores);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatscores", "Scores", false, er));
-    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattags", "Tags", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatbannedw", "Banned Words", false, er));
+    cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
+    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatem4r", "Emoji for Role", false, er));
     builder.AddComponents(actions);
 
 
     // - Exit
     // - Back
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
@@ -1692,7 +1825,7 @@ public class Setup : BaseCommandModule {
 
 
   private DiscordMessage CreatePingInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Ping"
@@ -1707,30 +1840,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatping0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatping1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatping2", "Everybody", false,   GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatping0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatping1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatping2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateWhoIsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - WhoIs"
@@ -1745,30 +1880,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatwhois0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatwhois1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatwhois2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatwhois0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatwhois1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatwhois2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateMassDelInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Mass Delete"
@@ -1783,30 +1920,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatmassdel0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatmassdel1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatmassdel2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatmassdel0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatmassdel1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatmassdel2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateGamesInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Games"
@@ -1821,30 +1960,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatgames0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatgames1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatgames0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatgames1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatgames2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateStatsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Stats"
@@ -1859,30 +2000,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatstats0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatstats1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatstats2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatstats0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatstats1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatstats2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateUnityDocsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - UnityDocs"
@@ -1898,30 +2041,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatreunitydocs0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatreunitydocs1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatreunitydocs2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatreunitydocs0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatreunitydocs1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatreunitydocs2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateRefactorInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Refactor"
@@ -1938,30 +2083,32 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatrefactor0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatrefactor1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatrefactor2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatrefactor0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatrefactor1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatrefactor2", "Everybody", false, GetYN(cv, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateTimezoneInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Timezone"
@@ -1983,38 +2130,41 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabs", "Set values", true));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattzs0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattzs1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattzs2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabs", "Set values", true),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattzs0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattzs1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattzs2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabg", "Read values", true));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattzg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattzg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattzg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattzlabg", "Read values", true),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattzg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattzg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattzg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateSpamProtectInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Spam Protection"
@@ -2034,23 +2184,25 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en));
-    actions.Add(new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Steam", false, esteam ? ey : en));
-    actions.Add(new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en),
+      new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Steam", false, esteam ? ey : en),
+      new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en)
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
@@ -2110,31 +2262,34 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(vala ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese0", "Reputation", false, vala ? ey : en));
-    actions.Add(new DiscordButtonComponent(valf ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese1", "Fun", false, valf ? ey : en));
-    actions.Add(new DiscordButtonComponent(valt ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese2", "Thanks", false, valt ? ey : en));
-    actions.Add(new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese3", "Ranking", false, valr ? ey : en));
-    actions.Add(new DiscordButtonComponent(valm ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese4", "Mentions", false, valm ? ey : en));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(vala ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese0", "Reputation", false, vala ? ey : en),
+      new DiscordButtonComponent(valf ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese1", "Fun", false, valf ? ey : en),
+      new DiscordButtonComponent(valt ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese2", "Thanks", false, valt ? ey : en),
+      new DiscordButtonComponent(valr ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese3", "Ranking", false, valr ? ey : en),
+      new DiscordButtonComponent(valm ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatscorese4", "Mentions", false, valm ? ey : en)
+    };
     builder.AddComponents(actions);
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresere", "Define Reputation emojis", false, er));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresefe", "Define Fun emojis", false, er));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresere", "Define Reputation emojis", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresefe", "Define Fun emojis", false, er)
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
@@ -2164,16 +2319,16 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(
+    actions = new List<DiscordButtonComponent> {
       cv == Config.ConfVal.NotAllowed ?
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatbannedwed", "Enable", false, ey) :
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwadd", "Add", false, er));
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwadd", "Add", false, er)
+    };
 
     // Goups of 5, but we start at 1 for the global enable/disable
     int num = 1;
@@ -2192,17 +2347,18 @@ public class Setup : BaseCommandModule {
     // - Exit
     // - Back
     // - Back to features
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;
   }
 
   private DiscordMessage CreateTagsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
       Title = "UPBot Configuration - Tags"
@@ -2223,31 +2379,229 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabs", "Set tags", true));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattagss0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattagss1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattagss2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabs", "Set tags", true),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattagss0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattagss1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattagss2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
-    actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabg", "Use tags", true));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattagsg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattagsg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)));
-    actions.Add(new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattagsg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody)));
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabg", "Use tags", true),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattagsg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattagsg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattagsg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody))
+    };
     builder.AddComponents(actions);
 
     // - Exit
     // - Back
     // - Back to features
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+  private DiscordMessage CreateEmoji4RoleInteraction(CommandContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Emoji for Role"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "The bot allows to track emojis on specific messages to grant and remove roles.\n\n";
+    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Emoji for roles** are _Disabled_";
+    else eb.Description += "**Emoji for roles** are _Enabled_";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    // List existing (role name, emoji, for channel (part of name))
+    // Add one (add emoji to a channel to pick the channel and then type the role)
+
+
+    actions = new List<DiscordButtonComponent> {
+      cv == Config.ConfVal.NotAllowed ?
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4red", "Enable", false, ey) :
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4red", "Disable", false, en),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4radd", "Add new", false, ey)
+    };
+    builder.AddComponents(actions);
+
+
+    int num = 0;
+    int pos = 0;
     actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el));
+    foreach (var em4r in Em4Roles[ctx.Guild.Id]) {
+      DiscordRole r = ctx.Guild.GetRole(em4r.Role);
+      DiscordChannel c = ctx.Guild.GetChannel(em4r.Channel);
+      DiscordMessage m = null;
+      try {
+        m = c?.GetMessageAsync(em4r.Message).Result; // This may fail
+      } catch (Exception) {}
+      string name = "";
+      if (r == null || c == null || m == null) name = "..._invalid_...";
+      else name = m.Content[0..12] + " (" + c.Name + ") -> " + r.Name;
+      DiscordComponentEmoji em;
+      if (em4r.EmojiId == 0) em = new DiscordComponentEmoji(em4r.EmojiName);
+      else em = new DiscordComponentEmoji(em4r.EmojiId);
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatem4rlist"+num, name, false, em));
+      pos++;
+      num++;
+      if (pos == 5) {
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
+        pos = 0;
+      }
+    }
+    if (pos!=0) builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateEmoji4RoleInteractionRoleSelect(CommandContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Emoji for Role"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "Select the role you want to add by adding an emoji to a message.\n\n";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions;
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    var roles = ctx.Guild.Roles.Values;
+    actions = new List<DiscordButtonComponent>();
+    int pos = 0;
+    int num = 0;
+    foreach (var r in roles) {
+      if (r.IsManaged || r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == 0) continue;
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4raddr" + num, r.Name, false));
+      pos++;
+      num++;
+      if (pos == 5) {
+        pos = 0;
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
+      }
+    }
+    if (pos != 0) builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+  private DiscordMessage CreateEmoji4RoleInteractionEmojiSelect(CommandContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Emoji for Role"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    eb.Description = "Role is selected to **" + TempRoleSelected[ctx.Guild.Id].role.Name + "**\n\nAdd the emoji you want for this role to the message you want to monitor.\n\n";
+
+    List<DiscordButtonComponent> actions;
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return builder.SendAsync(ctx.Channel).Result;
+  }
+
+
+  private DiscordMessage CreateEmoji4RoleRemoveInteraction(CommandContext ctx, DiscordMessage prevMsg, EmojiForRoleValue em) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordChannel c = null;
+    DiscordMessage m = null;
+    DiscordRole r = null;
+    try {
+      c = ctx.Guild.GetChannel(em.Channel);
+      m = c.GetMessageAsync(em.Message).Result;
+      r = ctx.Guild.GetRole(em.Role);
+    } catch (Exception) { }
+    var emj = em.EmojiName;
+    if (em.EmojiId != 0) emj = Utils.GetEmojiSnowflakeID(ctx.Guild.GetEmojiAsync(em.EmojiId).Result);
+
+    string msgcontent = m == null ? "_Invalid_" : m.Content;
+    if (msgcontent.Length > 200) msgcontent = msgcontent[0..200] + "...";
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration - Emoji for Role"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
+    eb.Description = "\n\n**For the message**:\n" + msgcontent + "\n" +
+      "**in the channel**:\n" + c?.Name + "\n" +
+      "**The emoji**: " + emj + "\n**Will grant the role**: " + r?.Name + "\n\n\n";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatem4rdel", "Delete", false, en),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rback", "Back", false, el)
+    };
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    // - Back to features
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;

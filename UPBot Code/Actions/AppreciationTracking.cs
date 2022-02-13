@@ -179,10 +179,9 @@ public class AppreciationTracking : BaseCommandModule {
         if (minExp4Lev < 10) minExp4Lev = 0;
 
         string file = GenerateRankImage(user.DisplayName, lev, exp, minExp4Lev, maxExp4Lev, pos + 1);
-        using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read)) {
-          await Utils.DeleteFileDelayed(10, file);
-          await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithFiles(new Dictionary<string, Stream>() { { file, fs } }));
-        }
+        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read);
+        await Utils.DeleteFileDelayed(10, file);
+        await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithFiles(new Dictionary<string, Stream>() { { file, fs } }));
       }
 
 
@@ -388,65 +387,64 @@ public class AppreciationTracking : BaseCommandModule {
 
   string GenerateRankImage(string user, long lev, long exp, long minlev, long maxlev, int pos) {
     try {
-      using (Bitmap b = new Bitmap(400, 150)) {
-        using (Graphics g = Graphics.FromImage(b)) {
-          Font f = new Font("Times New Roman", 20, FontStyle.Bold, GraphicsUnit.Pixel);
-          Font f2 = new Font("Times New Roman", 16, FontStyle.Bold, GraphicsUnit.Pixel);
+      using Bitmap b = new Bitmap(400, 150);
+      using (Graphics g = Graphics.FromImage(b)) {
+        Font f = new Font("Times New Roman", 20, FontStyle.Bold, GraphicsUnit.Pixel);
+        Font f2 = new Font("Times New Roman", 16, FontStyle.Bold, GraphicsUnit.Pixel);
 
-          g.Clear(Color.Transparent);
-          Pen back = new Pen(Color.FromArgb(30, 30, 28));
-          Pen lines = new Pen(Color.FromArgb(70, 70, 72));
-          Brush fill = new SolidBrush(back.Color);
-          Brush txtl = new SolidBrush(Color.FromArgb(150, 150, 102));
-          Brush txte = new SolidBrush(Color.FromArgb(170, 182, 150));
-          Brush txty = new SolidBrush(Color.FromArgb(204, 212, 170));
-          Brush txtb = new SolidBrush(Color.FromArgb(50, 50, 107));
+        g.Clear(Color.Transparent);
+        Pen back = new Pen(Color.FromArgb(30, 30, 28));
+        Pen lines = new Pen(Color.FromArgb(70, 70, 72));
+        Brush fill = new SolidBrush(back.Color);
+        Brush txtl = new SolidBrush(Color.FromArgb(150, 150, 102));
+        Brush txte = new SolidBrush(Color.FromArgb(170, 182, 150));
+        Brush txty = new SolidBrush(Color.FromArgb(204, 212, 170));
+        Brush txtb = new SolidBrush(Color.FromArgb(50, 50, 107));
 
-          Brush expfillg = new SolidBrush(Color.FromArgb(106, 188, 96));
-          Pen explineg = new Pen(Color.FromArgb(106, 248, 169));
-          Brush expfillb = new SolidBrush(Color.FromArgb(100, 96, 180));
-          Pen explineb = new Pen(Color.FromArgb(106, 169, 248));
+        Brush expfillg = new SolidBrush(Color.FromArgb(106, 188, 96));
+        Pen explineg = new Pen(Color.FromArgb(106, 248, 169));
+        Brush expfillb = new SolidBrush(Color.FromArgb(100, 96, 180));
+        Pen explineb = new Pen(Color.FromArgb(106, 169, 248));
 
-          /*
-               ----------------------------------------
-              | Rank for <NAME>                        |
-              |   Level: <rank>                        |
-              |   Experience <abcd>/<defg>             |
-              |   #<position>/<total counted>          |
-               ----------------------------------------
+        /*
+             ----------------------------------------
+            | Rank for <NAME>                        |
+            |   Level: <rank>                        |
+            |   Experience <abcd>/<defg>             |
+            |   #<position>/<total counted>          |
+             ----------------------------------------
 
-          <rank> is the calculated level
-          <abcd> is the number we calculate
-          <defg> is the number for the next level
-          */
-
-
-          DrawBox(g, fill, lines, 0, 0, 400, 150);
-
-          g.DrawString("Rank for", f, txtl, 16, 16);
-          g.DrawString(user, f, txty, 105, 16);
-
-          g.DrawString("Level:", f, txtl, 32, 48);
-          g.DrawString(lev.ToString(), f, txte, 160, 48);
-
-          int perc = (int)(222 * (1.0 * exp - minlev) / (maxlev - minlev));
+        <rank> is the calculated level
+        <abcd> is the number we calculate
+        <defg> is the number for the next level
+        */
 
 
-          g.FillRectangle(expfillg, new Rectangle(160, 80, 224, 24));
-          g.DrawRectangle(explineg, new Rectangle(160, 80, 224, 24));
-          g.FillRectangle(expfillb, new Rectangle(161, 81, perc, 22));
-          g.DrawRectangle(explineb, new Rectangle(161, 81, perc, 22));
+        DrawBox(g, fill, lines, 0, 0, 400, 150);
 
-          g.DrawString("Experience:", f, txtl, 32, 80);
-          g.DrawString(exp + " / " + maxlev, f2, txtb, 192, 84);
+        g.DrawString("Rank for", f, txtl, 16, 16);
+        g.DrawString(user, f, txty, 105, 16);
 
-          g.DrawString("Position:", f, txtl, 32, 112);
-          g.DrawString("#" + pos, f, txte, 160, 112);
-        }
-        string rndName = "RankImage" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".png";
-        b.Save(rndName, System.Drawing.Imaging.ImageFormat.Png);
-        return rndName;
+        g.DrawString("Level:", f, txtl, 32, 48);
+        g.DrawString(lev.ToString(), f, txte, 160, 48);
+
+        int perc = (int)(222 * (1.0 * exp - minlev) / (maxlev - minlev));
+
+
+        g.FillRectangle(expfillg, new Rectangle(160, 80, 224, 24));
+        g.DrawRectangle(explineg, new Rectangle(160, 80, 224, 24));
+        g.FillRectangle(expfillb, new Rectangle(161, 81, perc, 22));
+        g.DrawRectangle(explineb, new Rectangle(161, 81, perc, 22));
+
+        g.DrawString("Experience:", f, txtl, 32, 80);
+        g.DrawString(exp + " / " + maxlev, f2, txtb, 192, 84);
+
+        g.DrawString("Position:", f, txtl, 32, 112);
+        g.DrawString("#" + pos, f, txte, 160, 112);
       }
+      string rndName = "RankImage" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".png";
+      b.Save(rndName, System.Drawing.Imaging.ImageFormat.Png);
+      return rndName;
     } catch (Exception ex) {
       Console.WriteLine(ex.Message);
       throw ex;

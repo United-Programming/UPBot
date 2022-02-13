@@ -38,8 +38,9 @@ public class Database {
 
     // Check if we have the table in the db
     string tableName = t.ToString();
-    SQLiteCommand command = new SQLiteCommand(connection);
-    command.CommandText = "SELECT count(*) FROM " + tableName + ";";
+    SQLiteCommand command = new SQLiteCommand(connection) {
+      CommandText = "SELECT count(*) FROM " + tableName + ";"
+    };
     bool exists = true; // Check if table exists
     try {
       SQLiteDataReader reader = command.ExecuteReader();
@@ -137,8 +138,7 @@ public class Database {
         command.ExecuteNonQuery();
       }
     }
-
-    if (missing.Count != 0) {
+    else if (missing.Count != 0) { // Existing but with missing columns
       foreach (FieldInfo field in missing) {
         string sql = "ALTER TABLE " + tableName + " ADD COLUMN ";
         bool comment = false;

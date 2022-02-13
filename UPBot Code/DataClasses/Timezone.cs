@@ -280,5 +280,5 @@ public class Timezone : Entity {
     return res;
   }
 
-  static Regex utcRE = new Regex(@"^utc(([+\-]\s*[0-9]{0,2})(:[0-9][0-9])?)?$");
+  readonly static Regex utcRE = new Regex(@"^utc(([+\-]\s*[0-9]{0,2})(:[0-9][0-9])?)?$");
 }

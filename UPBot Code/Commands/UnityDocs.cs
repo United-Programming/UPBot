@@ -55,7 +55,7 @@ public class UnityDocs : BaseCommandModule {
         }
         int lastdot = what.LastIndexOf('.');
         if (lastdot != -1) {
-          string last = what.Substring(lastdot + 1);
+          string last = what[(lastdot + 1)..];
           dist = StringDistance.Distance(last, key);
           if (key.IndexOf(last) != -1) dist /= 4;
           for (int i = 0; i < numResults; i++) {
@@ -109,7 +109,7 @@ public class UnityDocs : BaseCommandModule {
 
 
 
-  string[] UnityDocItems = {
+  readonly string[] UnityDocItems = {
 "AccelerationEvent",
 "AccelerationEvent-acceleration",
 "AccelerationEvent-deltaTime",

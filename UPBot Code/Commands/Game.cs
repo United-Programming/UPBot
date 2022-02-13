@@ -175,10 +175,11 @@ public class GameModule : BaseCommandModule {
 
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idrock", "Rock!", false, er));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idpaper", "Paper!", false, ep));
-    actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idscissors", "Scissors!", false, es));
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idrock", "Rock!", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idpaper", "Paper!", false, ep),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idscissors", "Scissors!", false, es)
+    };
     builder.AddComponents(actions);
 
     return builder.SendAsync(ctx.Channel).Result;

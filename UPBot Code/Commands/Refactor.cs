@@ -306,7 +306,7 @@ public class Refactor : BaseCommandModule {
     if (weightCp > w) { w = weightCp; res = Langs.cpp; }
     if (weightJs > w) { w = weightJs; res = Langs.js; }
     if (weightJv > w) { w = weightJv; res = Langs.java; }
-    if (weightPy > w) { w = weightPy; res = Langs.python; }
+    if (weightPy > w) { res = Langs.python; }
     return res;
   }
 
