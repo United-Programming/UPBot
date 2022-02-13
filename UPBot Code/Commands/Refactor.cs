@@ -177,7 +177,7 @@ public class Refactor : BaseCommandModule {
       Match codeMatch = codeBlock.Match(code);
       if (codeMatch.Success) {
         if (codeMatch.Groups[3].Value.IndexOf(';') != -1)
-          code = codeMatch.Groups[3].Value.Substring(3) + codeMatch.Groups[6].Value;
+          code = codeMatch.Groups[3].Value[3..] + codeMatch.Groups[6].Value;
         else
           code = codeMatch.Groups[6].Value;
       }
@@ -203,9 +203,9 @@ public class Refactor : BaseCommandModule {
       DiscordMessage replacement;
       while (code.Length > 1995) { // Split in multiple messages
         int newlinePos = code.LastIndexOf('\n', 1995);
-        string code1 = code.Substring(0, newlinePos).Trim(' ', '\t', '\r', '\n') + "\n```";
+        string code1 = code[..newlinePos].Trim(' ', '\t', '\r', '\n') + "\n```";
         await ctx.Channel.SendMessageAsync(code1);
-        code = "```" + lmd + "\n" + code.Substring(newlinePos + 1).Trim('\r', '\n');
+        code = "```" + lmd + "\n" + code[(newlinePos + 1)..].Trim('\r', '\n');
       }
       // Post the last part as is
       replacement = await ctx.Channel.SendMessageAsync(code);

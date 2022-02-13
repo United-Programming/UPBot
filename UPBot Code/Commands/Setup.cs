@@ -50,9 +50,8 @@ public class Setup : BaseCommandModule {
 
   readonly public static Dictionary<ulong, TempSetRole> TempRoleSelected = new Dictionary<ulong, TempSetRole>();
 
-
-  private readonly static Regex emjSnowflakeER = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-  private readonly Regex roleParser = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
+  private readonly static Regex emjSnowflakeRE = new Regex(@"<:[a-z0-9_]+:([0-9]+)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+  private readonly Regex roleSnowflakeER = new Regex("<@[^0-9]+([0-9]*)>", RegexOptions.Compiled);
   private readonly static Regex emjUnicodeER = new Regex(@"[#*0-9]\uFE0F?\u20E3|©\uFE0F?|[®\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA]\uFE0F?|[\u231A\u231B]|[\u2328\u23CF]\uFE0F?|[\u23E9-\u23EC]|[\u23ED-\u23EF]\uFE0F?|\u23F0|[\u23F1\u23F2]\uFE0F?|\u23F3|[\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC]\uFE0F?|[\u25FD\u25FE]|[\u2600-\u2604\u260E\u2611]\uFE0F?|[\u2614\u2615]|\u2618\uFE0F?|\u261D(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642]\uFE0F?|[\u2648-\u2653]|[\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E]\uFE0F?|\u267F|\u2692\uFE0F?|\u2693|[\u2694-\u2697\u2699\u269B\u269C\u26A0]\uFE0F?|\u26A1|\u26A7\uFE0F?|[\u26AA\u26AB]|[\u26B0\u26B1]\uFE0F?|[\u26BD\u26BE\u26C4\u26C5]|\u26C8\uFE0F?|\u26CE|[\u26CF\u26D1\u26D3]\uFE0F?|\u26D4|\u26E9\uFE0F?|\u26EA|[\u26F0\u26F1]\uFE0F?|[\u26F2\u26F3]|\u26F4\uFE0F?|\u26F5|[\u26F7\u26F8]\uFE0F?|\u26F9(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\u26FA\u26FD]|\u2702\uFE0F?|\u2705|[\u2708\u2709]\uFE0F?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\u270F\uFE0F?|[\u2712\u2714\u2716\u271D\u2721]\uFE0F?|\u2728|[\u2733\u2734\u2744\u2747]\uFE0F?|[\u274C\u274E\u2753-\u2755\u2757]|\u2763\uFE0F?|\u2764(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79)|\uFE0F(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?)?|[\u2795-\u2797]|\u27A1\uFE0F?|[\u27B0\u27BF]|[\u2934\u2935\u2B05-\u2B07]\uFE0F?|[\u2B1B\u2B1C\u2B50\u2B55]|[\u3030\u303D\u3297\u3299]\uFE0F?|\uD83C(?:[\uDC04\uDCCF]|[\uDD70\uDD71\uDD7E\uDD7F]\uFE0F?|[\uDD8E\uDD91-\uDD9A]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDE01|\uDE02\uFE0F?|[\uDE1A\uDE2F\uDE32-\uDE36]|\uDE37\uFE0F?|[\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20]|[\uDF21\uDF24-\uDF2C]\uFE0F?|[\uDF2D-\uDF35]|\uDF36\uFE0F?|[\uDF37-\uDF7C]|\uDF7D\uFE0F?|[\uDF7E-\uDF84]|\uDF85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDF86-\uDF93]|[\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F]\uFE0F?|[\uDFA0-\uDFC1]|\uDFC2(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC3\uDFC4](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFC5\uDFC6]|\uDFC7(?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC8\uDFC9]|\uDFCA(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCB\uDFCC](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDFCD\uDFCE]\uFE0F?|[\uDFCF-\uDFD3]|[\uDFD4-\uDFDF]\uFE0F?|[\uDFE0-\uDFF0]|\uDFF3(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08)|\uFE0F(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?)?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?|[\uDFF5\uDFF7]\uFE0F?|[\uDFF8-\uDFFF])|\uD83D(?:[\uDC00-\uDC07]|\uDC08(?:\u200D\u2B1B)?|[\uDC09-\uDC14]|\uDC15(?:\u200D\uD83E\uDDBA)?|[\uDC16-\uDC3A]|\uDC3B(?:\u200D\u2744\uFE0F?)?|[\uDC3C-\uDC3E]|\uDC3F\uFE0F?|\uDC40|\uDC41(?:\u200D\uD83D\uDDE8\uFE0F?|\uFE0F(?:\u200D\uD83D\uDDE8\uFE0F?)?)?|[\uDC42\uDC43](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC44\uDC45]|[\uDC46-\uDC50](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC51-\uDC65]|[\uDC66\uDC67](?:\uD83C[\uDFFB-\uDFFF])?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92])|\uD83E[\uDDAF-\uDDB3\uDDBC\uDDBD])|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF]|\uDC8B\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFF])|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|\uDC6A|[\uDC6B-\uDC6D](?:\uD83C[\uDFFB-\uDFFF])?|\uDC6E(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDC70\uDC71](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC72(?:\uD83C[\uDFFB-\uDFFF])?|\uDC73(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC74-\uDC76](?:\uD83C[\uDFFB-\uDFFF])?|\uDC77(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC78(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC79-\uDC7B]|\uDC7C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC7D-\uDC80]|[\uDC81\uDC82](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDC83(?:\uD83C[\uDFFB-\uDFFF])?|\uDC84|\uDC85(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC86\uDC87](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDC88-\uDC8E]|\uDC8F(?:\uD83C[\uDFFB-\uDFFF])?|\uDC90|\uDC91(?:\uD83C[\uDFFB-\uDFFF])?|[\uDC92-\uDCA9]|\uDCAA(?:\uD83C[\uDFFB-\uDFFF])?|[\uDCAB-\uDCFC]|\uDCFD\uFE0F?|[\uDCFF-\uDD3D]|[\uDD49\uDD4A]\uFE0F?|[\uDD4B-\uDD4E\uDD50-\uDD67]|[\uDD6F\uDD70\uDD73]\uFE0F?|\uDD74(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|\uDD75(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?|\uFE0F(?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD76-\uDD79]\uFE0F?|\uDD7A(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD87\uDD8A-\uDD8D]\uFE0F?|\uDD90(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDD95\uDD96](?:\uD83C[\uDFFB-\uDFFF])?|\uDDA4|[\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA]\uFE0F?|[\uDDFB-\uDE2D]|\uDE2E(?:\u200D\uD83D\uDCA8)?|[\uDE2F-\uDE34]|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|[\uDE37-\uDE44]|[\uDE45-\uDE47](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDE48-\uDE4A]|\uDE4B(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE4D\uDE4E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDE4F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDE80-\uDEA2]|\uDEA3(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEA4-\uDEB3]|[\uDEB4-\uDEB6](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDEB7-\uDEBF]|\uDEC0(?:\uD83C[\uDFFB-\uDFFF])?|[\uDEC1-\uDEC5]|\uDECB\uFE0F?|\uDECC(?:\uD83C[\uDFFB-\uDFFF])?|[\uDECD-\uDECF]\uFE0F?|[\uDED0-\uDED2\uDED5-\uDED7]|[\uDEE0-\uDEE5\uDEE9]\uFE0F?|[\uDEEB\uDEEC]|[\uDEF0\uDEF3]\uFE0F?|[\uDEF4-\uDEFC\uDFE0-\uDFEB])|\uD83E(?:\uDD0C(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD0D\uDD0E]|\uDD0F(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD10-\uDD17]|[\uDD18-\uDD1C](?:\uD83C[\uDFFB-\uDFFF])?|\uDD1D|[\uDD1E\uDD1F](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD20-\uDD25]|\uDD26(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD27-\uDD2F]|[\uDD30-\uDD34](?:\uD83C[\uDFFB-\uDFFF])?|\uDD35(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD36(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD37-\uDD39](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDD3A|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD3D\uDD3E](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDD3F-\uDD45\uDD47-\uDD76]|\uDD77(?:\uD83C[\uDFFB-\uDFFF])?|[\uDD78\uDD7A-\uDDB4]|[\uDDB5\uDDB6](?:\uD83C[\uDFFB-\uDFFF])?|\uDDB7|[\uDDB8\uDDB9](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDBA|\uDDBB(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDBC-\uDDCB]|[\uDDCD-\uDDCF](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD0|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1|[\uDDAF-\uDDB3\uDDBC\uDDBD]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|[\uDDAF-\uDDB3\uDDBC\uDDBD])))?))?|[\uDDD2\uDDD3](?:\uD83C[\uDFFB-\uDFFF])?|\uDDD4(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|\uDDD5(?:\uD83C[\uDFFB-\uDFFF])?|[\uDDD6-\uDDDD](?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF](?:\u200D[\u2640\u2642]\uFE0F?)?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDE0-\uDDFF\uDE70-\uDE74\uDE78-\uDE7A\uDE80-\uDE86\uDE90-\uDEA8\uDEB0-\uDEB6\uDEC0-\uDEC2\uDED0-\uDED6])", RegexOptions.Compiled);
   private readonly static Regex chnnelRefRE = new Regex(@"<#([0-9]+)>", RegexOptions.Compiled);
 
@@ -286,6 +285,7 @@ public class Setup : BaseCommandModule {
   DiscordComponentEmoji ok = null;
   DiscordComponentEmoji ko = null;
 
+
   /**************************** Interaction *********************************/
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
@@ -311,22 +311,24 @@ public class Setup : BaseCommandModule {
     // Basic intro message
     var msg = CreateMainConfigPage(ctx, null);
     var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-    var ir = result.Result;
+    var interRes = result.Result;
 
-    while (ir != null && ir.Id != "idexitconfig") {
-      ir.Handled = true;
-      
-      if (ir.Id == "idback") { // ******************************************************************** Back *************************************************************************
+    while (interRes != null && interRes.Id != "idexitconfig") {
+      interRes.Handled = true;
+      string cmdId = interRes.Id;
+
+      // ******************************************************************** Back *************************************************************************
+      if (cmdId == "idback") {
         msg = CreateMainConfigPage(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "iddefineadmins") { // ***************************************************** DefAdmins ***********************************************************************************
+      // ***************************************************** DefAdmins ***********************************************************************************
+      else if (cmdId == "iddefineadmins") {
         msg = CreateAdminsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idroleadd") { // *********************************************************** AddRole *******************************************************************************
+      // *********************************************************** DefAdmins.AddRole *******************************************************************************
+      else if (cmdId == "idroleadd") {
         await ctx.Channel.DeleteMessageAsync(msg);
         DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the roles to add (_type anything else to close_)");
         var answer = await interact.WaitForMessageAsync((dm) => {
@@ -343,34 +345,34 @@ public class Setup : BaseCommandModule {
 
         await ctx.Channel.DeleteMessageAsync(prompt);
         msg = CreateAdminsInteraction(ctx, null);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id.Length > 9 && ir.Id[0..9] == "idrolerem") { // *********************************************************** RemRole *******************************************************************************
+      // *********************************************************** DefAdmins.RemRole *******************************************************************************
+      else if (cmdId.Length > 8 && cmdId[0..9] == "idrolerem") {
         await ctx.Channel.DeleteMessageAsync(msg);
-        if (int.TryParse(ir.Id[9..], out int rpos)) {
+        if (int.TryParse(cmdId[9..], out int rpos)) {
           ulong rid = AdminRoles[ctx.Guild.Id][rpos]; ;
           Database.DeleteByKeys<AdminRole>(gid, rid);
           AdminRoles[ctx.Guild.Id].RemoveAt(rpos);
         }
 
         msg = CreateAdminsInteraction(ctx, null);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "iddefinetracking") { // ************************************************************ DefTracking **************************************************************************
+      // ************************************************************ DefTracking **************************************************************************
+      else if (cmdId == "iddefinetracking") {
         msg = CreateTrackingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idchangetrackch") { // ************************************************************ Change Tracking ************************************************************************
+      // ************************************************************ DefTracking.Change Channel ************************************************************************
+      else if (cmdId == "idchangetrackch") {
         await ctx.Channel.DeleteMessageAsync(msg);
         DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", please mention the channel (_use: **#**_) as tracking channel\nType _remove_ to remove the tracking channel");
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id && (dm.MentionedChannels.Count > 0 || dm.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)));
         }, TimeSpan.FromMinutes(2));
         if (answer.Result == null || (answer.Result.MentionedChannels.Count == 0 && !answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase))) {
-          await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
+          await interRes.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
           return;
         }
 
@@ -392,7 +394,8 @@ public class Setup : BaseCommandModule {
           }
           Database.Add(TrackChannels[gid]);
 
-        } else if (answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)) {
+        }
+        else if (answer.Result.Content.Contains("remove", StringComparison.InvariantCultureIgnoreCase)) {
           if (TrackChannels[gid] != null) {
             Database.Delete(TrackChannels[gid]);
             TrackChannels[gid] = null;
@@ -401,152 +404,149 @@ public class Setup : BaseCommandModule {
 
         await ctx.Channel.DeleteMessageAsync(prompt);
         msg = CreateTrackingInteraction(ctx, null);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idremtrackch") { // ************************************************************ Remove Tracking ************************************************************************
+      // ************************************************************ DefTracking.Remove Tracking ************************************************************************
+      else if (cmdId == "idremtrackch") {
         if (TrackChannels[gid] != null) {
           Database.Delete(TrackChannels[gid]);
           TrackChannels[gid] = null;
         }
 
         msg = CreateTrackingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idaltertrackjoin") { // ************************************************************ Alter Tracking Join ************************************************************************
+      // ************************************************************ Alter Tracking Join ************************************************************************
+      else if (cmdId == "idaltertrackjoin") {
         AlterTracking(gid, true, false, false);
-
         msg = CreateTrackingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idaltertrackleave") { // ************************************************************ Alter Tracking Leave ************************************************************************
+      // ************************************************************ Alter Tracking Leave ************************************************************************
+      else if (cmdId == "idaltertrackleave") {
         AlterTracking(gid, false, true, false);
-
         msg = CreateTrackingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idaltertrackroles") { // ************************************************************ Alter Tracking Roles ************************************************************************
+      // ************************************************************ Alter Tracking Roles ************************************************************************
+      else if (cmdId == "idaltertrackroles") {
         AlterTracking(gid, false, false, true);
-
         msg = CreateTrackingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idconfigfeats") { // *************************************************************** ConfigFeats ***********************************************************************
+      // *************************************************************** ConfigFeats ***********************************************************************
+      else if (cmdId == "idconfigfeats") {
         msg = CreateFeaturesInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
 
-      } else if (ir.Id == "idfeatping" || ir.Id == "idfeatping0" || ir.Id == "idfeatping1" || ir.Id == "idfeatping2") { // *********** Config Ping ***********************************************************************
-        if (ir.Id == "idfeatping0") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatping1") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatping2") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.Everybody);
+      // *********** Config Ping ***********************************************************************
+      else if (cmdId == "idfeatping" || cmdId == "idfeatping0" || cmdId == "idfeatping1" || cmdId == "idfeatping2") {
+        if (cmdId == "idfeatping0") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatping1") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatping2") SetConfigValue(gid, Config.ParamType.Ping, Config.ConfVal.Everybody);
         msg = CreatePingInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatwhois" || ir.Id == "idfeatwhois0" || ir.Id == "idfeatwhois1" || ir.Id == "idfeatwhois2") { // ********* Config WhoIs ***********************************************************************
-        if (ir.Id == "idfeatwhois0") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatwhois1") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatwhois2") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.Everybody);
+      // ********* Config WhoIs ***********************************************************************
+      else if (cmdId == "idfeatwhois" || cmdId == "idfeatwhois0" || cmdId == "idfeatwhois1" || cmdId == "idfeatwhois2") {
+        if (cmdId == "idfeatwhois0") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatwhois1") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatwhois2") SetConfigValue(gid, Config.ParamType.WhoIs, Config.ConfVal.Everybody);
         msg = CreateWhoIsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatmassdel" || ir.Id == "idfeatmassdel0" || ir.Id == "idfeatmassdel1" || ir.Id == "idfeatmassdel2") { // ********* Config MassDel ***********************************************************************
-        if (ir.Id == "idfeatmassdel0") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatmassdel1") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatmassdel2") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.Everybody);
+      // ********* Config MassDel ***********************************************************************
+      else if (cmdId == "idfeatmassdel" || cmdId == "idfeatmassdel0" || cmdId == "idfeatmassdel1" || cmdId == "idfeatmassdel2") {
+        if (cmdId == "idfeatmassdel0") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatmassdel1") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatmassdel2") SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.Everybody);
         msg = CreateMassDelInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatgames" || ir.Id == "idfeatgames0" || ir.Id == "idfeatgames1" || ir.Id == "idfeatgames2") { // ********* Config Games ***********************************************************************
-        if (ir.Id == "idfeatgames0") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatgames1") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatgames2") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.Everybody);
+      // ********* Config Games ***********************************************************************
+      else if (cmdId == "idfeatgames" || cmdId == "idfeatgames0" || cmdId == "idfeatgames1" || cmdId == "idfeatgames2") {
+        if (cmdId == "idfeatgames0") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatgames1") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatgames2") SetConfigValue(gid, Config.ParamType.Games, Config.ConfVal.Everybody);
         msg = CreateGamesInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatrefactor" || ir.Id == "idfeatrefactor0" || ir.Id == "idfeatrefactor1" || ir.Id == "idfeatrefactor2") { // ********* Config Refactor ***********************************************************************
-        if (ir.Id == "idfeatrefactor0") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatrefactor1") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatrefactor2") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.Everybody);
+      // ********* Config Refactor ***********************************************************************
+      else if (cmdId == "idfeatrefactor" || cmdId == "idfeatrefactor0" || cmdId == "idfeatrefactor1" || cmdId == "idfeatrefactor2") {
+        if (cmdId == "idfeatrefactor0") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatrefactor1") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatrefactor2") SetConfigValue(gid, Config.ParamType.Refactor, Config.ConfVal.Everybody);
         msg = CreateRefactorInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatreunitydocs" || ir.Id == "idfeatreunitydocs0" || ir.Id == "idfeatreunitydocs1" || ir.Id == "idfeatreunitydocs2") { // ********* Config Unity Docs ***********************************************************************
-        if (ir.Id == "idfeatreunitydocs0") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatreunitydocs1") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatreunitydocs2") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.Everybody);
+
+      // ********* Config Unity Docs ***********************************************************************
+      else if (cmdId == "idfeatreunitydocs" || cmdId == "idfeatreunitydocs0" || cmdId == "idfeatreunitydocs1" || cmdId == "idfeatreunitydocs2") {
+        if (cmdId == "idfeatreunitydocs0") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatreunitydocs1") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatreunitydocs2") SetConfigValue(gid, Config.ParamType.UnityDocs, Config.ConfVal.Everybody);
         msg = CreateUnityDocsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatrespamprotect" || // ********* Config Spam Protection ***********************************************************************
-        ir.Id == "idfeatrespamprotect0" || ir.Id == "idfeatrespamprotect1" || ir.Id == "idfeatrespamprotect2") {
+      // ********* Config Spam Protection ***********************************************************************
+      else if (cmdId == "idfeatrespamprotect" || cmdId == "idfeatrespamprotect0" || cmdId == "idfeatrespamprotect1" || cmdId == "idfeatrespamprotect2") {
         Config c = GetConfig(gid, Config.ParamType.SpamProtection);
         ulong val = 0;
         if (c != null) val = c.IdVal;
         ulong old = val;
-        if (ir.Id == "idfeatrespamprotect0") val ^= 1ul;
-        if (ir.Id == "idfeatrespamprotect1") val ^= 2ul;
-        if (ir.Id == "idfeatrespamprotect2") val ^= 4ul;
+        if (cmdId == "idfeatrespamprotect0") val ^= 1ul;
+        if (cmdId == "idfeatrespamprotect1") val ^= 2ul;
+        if (cmdId == "idfeatrespamprotect2") val ^= 4ul;
         if (val != old) {
           if (c == null) {
             c = new Config(gid, Config.ParamType.SpamProtection, val);
             Configs[gid].Add(c);
-          } else c.IdVal = val;
+          }
+          else c.IdVal = val;
           Database.Add(c);
           SpamProtection[gid] = val;
         }
         msg = CreateSpamProtectInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeattz" || ir.Id == "idfeattzs0" || ir.Id == "idfeattzs1" || ir.Id == "idfeattzs2" || ir.Id == "idfeattzg0" || ir.Id == "idfeattzg1" || ir.Id == "idfeattzg2") { 
-        // ********* Config Timezones ***********************************************************************
-        if (ir.Id == "idfeattzs0") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeattzs1") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattzs2") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
-        if (ir.Id == "idfeattzg0") { SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed); }
-        if (ir.Id == "idfeattzg1") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattzg2") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
+      // ********* Config Timezones ***********************************************************************
+      else if (cmdId == "idfeattz" || cmdId == "idfeattzs0" || cmdId == "idfeattzs1" || cmdId == "idfeattzs2" || cmdId == "idfeattzg0" || cmdId == "idfeattzg1" || cmdId == "idfeattzg2") {
+        if (cmdId == "idfeattzs0") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeattzs1") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeattzs2") SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.Everybody);
+        if (cmdId == "idfeattzg0") { SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TimezoneS, Config.ConfVal.NotAllowed); }
+        if (cmdId == "idfeattzg1") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeattzg2") SetConfigValue(gid, Config.ParamType.TimezoneG, Config.ConfVal.Everybody);
         msg = CreateTimezoneInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeattags" || ir.Id == "idfeattagss0" || ir.Id == "idfeattagss1" || ir.Id == "idfeattagss2" || ir.Id == "idfeattagsg0" || ir.Id == "idfeattagsg1" || ir.Id == "idfeattagsg2") {
-        // ********* Config Tags ***********************************************************************
-        if (ir.Id == "idfeattagss0") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeattagss1") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattagss2") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.Everybody);
-        if (ir.Id == "idfeattagsg0") { SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed); }
-        if (ir.Id == "idfeattagsg1") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeattagsg2") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.Everybody);
+      // ********* Config Tags ***********************************************************************
+      else if (cmdId == "idfeattags" || cmdId == "idfeattagss0" || cmdId == "idfeattagss1" || cmdId == "idfeattagss2" || cmdId == "idfeattagsg0" || cmdId == "idfeattagsg1" || cmdId == "idfeattagsg2") {
+        if (cmdId == "idfeattagss0") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeattagss1") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeattagss2") SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.Everybody);
+        if (cmdId == "idfeattagsg0") { SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.NotAllowed); SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed); }
+        if (cmdId == "idfeattagsg1") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeattagsg2") SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.Everybody);
         msg = CreateTagsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatstats" || ir.Id == "idfeatstats0" || ir.Id == "idfeatstats1" || ir.Id == "idfeatstats2") { // ********* Config Stats ***********************************************************************
-        if (ir.Id == "idfeatstats0") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
-        if (ir.Id == "idfeatstats1") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.OnlyAdmins);
-        if (ir.Id == "idfeatstats2") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
+      // ********* Config Stats ***********************************************************************
+      else if (cmdId == "idfeatstats" || cmdId == "idfeatstats0" || cmdId == "idfeatstats1" || cmdId == "idfeatstats2") {
+        if (cmdId == "idfeatstats0") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.NotAllowed);
+        if (cmdId == "idfeatstats1") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.OnlyAdmins);
+        if (cmdId == "idfeatstats2") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
         msg = CreateStatsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id.Length > 12 && ir.Id[0..13] == "idfeatbannedw") { // ********* Config Banned Words ***********************************************************************
-        if (ir.Id == "idfeatbannedwed") {
+      // ********* Config Banned Words ***********************************************************************
+      else if (cmdId.Length > 12 && cmdId[0..13] == "idfeatbannedw") {
+        if (cmdId == "idfeatbannedwed") {
           if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
           else SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
-        } else if (ir.Id == "idfeatbannedwadd") {
+        }
+        else if (cmdId == "idfeatbannedwadd") {
           await ctx.Channel.DeleteMessageAsync(msg);
           msg = null;
           DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the word to be banned (at least 4 letters), you have 1 minute before timeout");
@@ -568,23 +568,23 @@ public class Setup : BaseCommandModule {
           }
           await ctx.Channel.DeleteMessageAsync(prompt);
 
-        } else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatbannedwr") {
+        }
+        else if (cmdId.Length > 13 && cmdId[0..14] == "idfeatbannedwr") {
           // Get the word by number, remove it. In case there are no more disable the feature
-          int.TryParse(ir.Id[13..], out int num);
+          int.TryParse(cmdId[13..], out int num);
           Database.DeleteByKeys<BannedWord>(gid, BannedWords[gid][num]);
           BannedWords[gid].RemoveAt(num);
         }
         msg = CreateBannedWordsInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id == "idfeatscoresere" || ir.Id == "idfeatscoresefe") { // ********* Config Scoring emojis ***********************************************************************
-
+      // ********* Config Scoring emojis ***********************************************************************
+      else if (cmdId == "idfeatscoresere" || cmdId == "idfeatscoresefe") {
         if (msg != null) await ctx.Channel.DeleteMessageAsync(msg);
         msg = null;
         string emjs = "";
         bool missing = true;
-        WhatToTrack wtt = ir.Id == "idfeatscoresere" ? WhatToTrack.Reputation : WhatToTrack.Fun;
+        WhatToTrack wtt = cmdId == "idfeatscoresere" ? WhatToTrack.Reputation : WhatToTrack.Fun;
         foreach (var e in RepEmojis[gid].Values)
           if (e.HasFlag(wtt)) {
             emjs += e.GetEmoji(ctx.Guild) + " ";
@@ -592,24 +592,24 @@ public class Setup : BaseCommandModule {
           }
         if (missing) emjs += " (_No emojis defined!_)";
 
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + (ir.Id == "idfeatscoresere" ? "Reputation" : "Fun") + "_, you have 5 minutes before timeout\nCurrent emojis are: " + emjs);
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type all the emojis to be used for _" + (cmdId == "idfeatscoresere" ? "Reputation" : "Fun") + "_, you have 5 minutes before timeout\nCurrent emojis are: " + emjs);
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(5));
         if (answer.Result == null || answer.Result.Content.Length < 4) {
           _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
-
-        } else {
+        }
+        else {
           Dictionary<ulong, ReputationEmoji> eset = new Dictionary<ulong, ReputationEmoji>();
 
           // Start by grabbing all values that are snowflakes
           string resp = answer.Result.Content.Trim();
-          resp = emjSnowflakeER.Replace(resp, (m) => {
+          resp = emjSnowflakeRE.Replace(resp, (m) => {
             if (ulong.TryParse(m.Groups[1].Value, out ulong id)) {
               var rem = new ReputationEmoji(gid, id, null, wtt);
               eset.Add(rem.GetKeyValue(), rem);
             }
-              
+
             return "";
           });
           // And then the values of the unicode emojis regex
@@ -645,134 +645,300 @@ public class Setup : BaseCommandModule {
           }
 
           await ctx.Channel.DeleteMessageAsync(prompt);
-          msg = CreateScoresInteraction(ctx, msg);
-          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-          ir = result.Result;
         }
+        msg = CreateScoresInteraction(ctx, msg);
+      }
 
-
-      } else if (ir.Id.Length > 10 && ir.Id[0..11] == "idfeatscore") { // ********* Config Scoring ***********************************************************************
+      // ********* Config Scoring ***********************************************************************
+      else if (cmdId.Length > 10 && cmdId[0..11] == "idfeatscore") {
         Config c = GetConfig(gid, Config.ParamType.Scores);
         ulong val = 0;
         if (c != null) val = c.IdVal;
         ulong old = val;
-        if (ir.Id == "idfeatscorese0") val ^= (ulong)WhatToTrack.Reputation;
-        if (ir.Id == "idfeatscorese1") val ^= (ulong)WhatToTrack.Fun;
-        if (ir.Id == "idfeatscorese2") val ^= (ulong)WhatToTrack.Thanks;
-        if (ir.Id == "idfeatscorese3") val ^= (ulong)WhatToTrack.Rank;
-        if (ir.Id == "idfeatscorese4") val ^= (ulong)WhatToTrack.Mention;
+        if (cmdId == "idfeatscorese0") val ^= (ulong)WhatToTrack.Reputation;
+        if (cmdId == "idfeatscorese1") val ^= (ulong)WhatToTrack.Fun;
+        if (cmdId == "idfeatscorese2") val ^= (ulong)WhatToTrack.Thanks;
+        if (cmdId == "idfeatscorese3") val ^= (ulong)WhatToTrack.Rank;
+        if (cmdId == "idfeatscorese4") val ^= (ulong)WhatToTrack.Mention;
         if (val != old) {
           if (c == null) {
             c = new Config(gid, Config.ParamType.Scores, val);
             Configs[gid].Add(c);
-          } else c.IdVal = val;
+          }
+          else c.IdVal = val;
           Database.Add(c);
           WhatToTracks[gid] = (WhatToTrack)val;
         }
         msg = CreateScoresInteraction(ctx, msg);
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
+      }
 
-      } else if (ir.Id.Length > 9 && ir.Id[0..10] == "idfeatem4r") { // ********* Emoji for roles ***********************************************************************
-        if (ir.Id == "idfeatem4red") {
-          if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.Everybody);
-          else SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.NotAllowed);
-        }
-        else if (ir.Id == "idfeatem4radd") {
-          // Select the role you want to add
-          msg = CreateEmoji4RoleInteractionRoleSelect(ctx, msg);
-          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-          ir = result.Result;
+      // ********* Emoji for roles ***********************************************************************
+      else if (cmdId == "idfeatem4r") {
+        msg = CreateEmoji4RoleInteraction(ctx, msg);
+      }
 
-          // Add a reaction to the message that should give the role, with the emoji you want to use. You have 5 minutes to complete.
-          // After this come back here and select the role you want to add
-        }
-        else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatem4raddr") { // Role selected, do the message to add the emoji to the post
-          TempRoleSelected[gid] = null;
-          int.TryParse(ir.Id[14..], out int rnum);
-          var roles = ctx.Guild.Roles.Values;
-          int num = 0;
-          foreach (var r in roles) {
-            if (r.IsManaged || r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == 0) continue;
-            if (num == rnum) {
-              TempRoleSelected[gid] = new TempSetRole(ctx.User.Id, r);
-              break;
-            }
-            num++;
+      // ********* Emoji for roles.EanbleDisable ***********************************************************************
+      else if (cmdId == "idfeatem4rendis") {
+        if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.Everybody);
+        else SetConfigValue(gid, Config.ParamType.Emoji4Role, Config.ConfVal.NotAllowed);
+        msg = CreateEmoji4RoleInteraction(ctx, msg);
+      }
+
+      // ********* Emoji for roles.Add (select role) ***********************************************************************
+      else if (cmdId == "idfeatem4radd") { // Just show the interaction with the list of roles
+        msg = CreateEmoji4RoleInteractionRoleSelect(ctx, msg);
+      }
+
+      // ********* Emoji for roles.Add (role selected) ***********************************************************************
+      else if (cmdId.Length > 13 && cmdId[0..14] == "idfeatem4raddr") { // Role selected, do the message to add the emoji to the post
+        TempRoleSelected[gid] = null;
+        int.TryParse(cmdId[14..], out int rnum);
+        var roles = ctx.Guild.Roles.Values;
+        int num = 0;
+        foreach (var r in roles) {
+          if (r.IsManaged || r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == 0) continue;
+          if (num == rnum) {
+            TempRoleSelected[gid] = new TempSetRole(ctx.User.Id, r);
+            break;
           }
-
-          // FIXME handle if the TempRoleSelected[gid] is not defined
-
+          num++;
+        }
+        if (TempRoleSelected[gid] == null) { // Something wrong, show just the default interaction
+          TempRoleSelected[gid] = null;
+          msg = CreateEmoji4RoleInteraction(ctx, msg);
+        }
+        else {
           msg = CreateEmoji4RoleInteractionEmojiSelect(ctx, msg);
           var waitem = await interact.WaitForButtonAsync(msg, TempRoleSelected[gid].cancel.Token);
 
           if (TempRoleSelected[gid].cancel.IsCancellationRequested) { // We should have what we need here
-            int maybegood = 1;
-            EmojiForRoleValue em = new EmojiForRoleValue {
-              Guild = gid,
-              Role = TempRoleSelected[gid].role.Id,
-              Channel = 0,
-              Message = 0,
-              EmojiId = 0,
-              EmojiName = null
-            };
-            Em4Roles[gid].Add(em);
-            //Database.Add(em);
-            TempRoleSelected[gid] = null;
+            if (TempRoleSelected[gid].message != 0) { // We have a result
+              EmojiForRoleValue em = new EmojiForRoleValue {
+                Guild = gid,
+                Role = TempRoleSelected[gid].role.Id,
+                Channel = TempRoleSelected[gid].channel,
+                Message = TempRoleSelected[gid].message,
+                EmojiId = TempRoleSelected[gid].emojiid,
+                EmojiName = TempRoleSelected[gid].emojiname
+              };
+              Em4Roles[gid].Add(em);
+              Database.Add(em);
+              TempRoleSelected[gid] = null;
+              msg = CreateEmoji4RoleInteraction(ctx, msg);
+            }
+            else { // Probably a timeout or clicked on cancel button
+              if (waitem.Result != null && waitem.Result.Id == "idfeatem4rback")
+                msg = CreateEmoji4RoleInteraction(ctx, msg);
+            }
           }
-
-          if (waitem.Result == null) {
-            int failer = 1; // Timed out just close
+          else { // Probably a timeout or clicked on cancel button
+            if (waitem.Result != null && waitem.Result.Id == "idfeatem4rback")
+              msg = CreateEmoji4RoleInteraction(ctx, msg);
           }
-          else {
-            // Button pressed, handle
-            int buttonpressed = 1;
-          }
-
-          msg = CreateEmoji4RoleInteraction(ctx, msg);
-          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-          ir = result.Result;
+          TempRoleSelected[gid] = null;
         }
-        else if (ir.Id.Length > 13 && ir.Id[0..14] == "idfeatem4rlist") {
-          int.TryParse(ir.Id[14..], out int num);
-          EmojiForRoleValue em = Em4Roles[gid][num];
-          // Details
-          // Do you want to delete it? Yes/No
+      }
 
-          msg = CreateEmoji4RoleRemoveInteraction(ctx, msg, em);
-          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-          ir = result.Result;
+      // ********* Emoji for roles.remove ***********************************************************************
+      else if (cmdId.Length > 13 && cmdId[0..14] == "idfeatem4rlist") {
+        int.TryParse(cmdId[14..], out int num);
+        EmojiForRoleValue em = Em4Roles[gid][num];
+        // Details
+        // Do you want to delete it? Yes/No
 
-          if (ir.Id == "idfeatem4rdel") {
-            Em4Roles[gid].Remove(em);
-            Database.Delete(em);
-            msg = CreateEmoji4RoleInteraction(ctx, msg);
-            result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-            ir = result.Result;
+        msg = CreateEmoji4RoleRemoveInteraction(ctx, msg, em);
+        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
 
-          }
-          else if (ir.Id == "idfeatem4rback") {
-            msg = CreateEmoji4RoleInteraction(ctx, msg);
-            result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-            ir = result.Result;
-
-          }
+        if (result.Result != null && result.Result.Id == "idfeatem4rdel") {
+          Em4Roles[gid].Remove(em);
+          Database.Delete(em);
+          msg = CreateEmoji4RoleInteraction(ctx, msg);
         }
         else {
           msg = CreateEmoji4RoleInteraction(ctx, msg);
-          result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-          ir = result.Result;
         }
-
-      } else {
-        result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
-        ir = result.Result;
       }
+
+
+
+
+      // ***************************************************** UNKNOWN ***********************************************************************************
+      else {
+        Utils.Log("Unknown interaction result: " + cmdId, ctx.Guild.Name);
+      }
+      result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+      interRes = result.Result;
     }
-    if (ir == null) await ctx.Channel.DeleteMessageAsync(msg); // Expired
-    else await ir.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config completed"));
+    if (interRes == null) await ctx.Channel.DeleteMessageAsync(msg); // Expired
+    else await interRes.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config completed"));
+
   }
 
+  string GenerateSetupList(DiscordGuild g, ulong gid) {
+    // list
+    Config cfg, cfg2;
+
+    string msg = "Setup list for Discord Server " + g.Name + "\n";
+    string part = "";
+    // Admins ******************************************************
+    if (AdminRoles[gid].Count == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+    else {
+      foreach (var rid in AdminRoles[gid]) {
+        DiscordRole r = g.GetRole(rid);
+        if (r != null) part += r.Name + ", ";
+      }
+      if (part.Length == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
+      else msg += "**AdminRoles**: " + part[0..^2] + "\n";
+    }
+
+    // TrackingChannel ******************************************************
+    if (TrackChannels[gid] == null) msg += "**TrackingChannel**: _no tracking channel defined_\n";
+    else {
+      msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
+      if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
+        if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
+        if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
+        if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
+      }
+      else msg += "nothing";
+      msg += "\n";
+    }
+
+    // Ping ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Ping);
+    if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
+    else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // WhoIs ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.WhoIs);
+    if (cfg == null) msg += "**WhoIs**: _not defined (disabled by default)_\n";
+    else msg += "**WhoIs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // MassDel ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.MassDel);
+    if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
+    else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // Games ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Games);
+    if (cfg == null) msg += "**Games**: _not defined (disabled by default)_\n";
+    else msg += "**Games**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // Refactor ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Refactor);
+    if (cfg == null) msg += "**Code Refactor**: _not defined (disabled by default)_\n";
+    else msg += "**Code Refactor**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // Timezones ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.TimezoneS);
+    cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
+    if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
+    else {
+      msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + "; Read = " + (Config.ConfVal)cfg2.IdVal;
+      if ((Config.ConfVal)cfg.IdVal != Config.ConfVal.Everybody && (Config.ConfVal)cfg2.IdVal == Config.ConfVal.Everybody) msg += " (_everybody can set its own timezone_)";
+      msg += "\n";
+    }
+
+    // UnityDocs ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.UnityDocs);
+    if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
+    else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // SpamProtection ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.SpamProtection);
+    if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
+    else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
+    else msg += "**Spam Protection**: enabled for" +
+        ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
+        ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
+        ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
+        "\n";
+
+    // Stats ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Stats);
+    if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
+    else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
+
+    // Banned Words ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.BannedWords);
+    if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
+    else {
+      if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
+      else {
+        string bws = "";
+        foreach (var w in BannedWords[gid]) bws += w + ", ";
+        msg += "**BannedWords**: " + bws[0..^2] + ".\n";
+      }
+    }
+
+    // Scores ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Scores);
+    if (cfg == null) msg += "**Scores**: _not defined (disabled by default)_\n";
+    else {
+      WhatToTrack wtt = (WhatToTrack)cfg.IdVal;
+      if (wtt == WhatToTrack.None) msg += "**Scores** is _Disabled_\n"; else msg += "**Scores** _Enabled_ are";
+      if (wtt.HasFlag(WhatToTrack.Reputation)) {
+        msg += " **Reputation**";
+        bool missing = true;
+        foreach (var e in RepEmojis[gid].Values)
+          if (e.HasFlag(WhatToTrack.Reputation)) {
+            missing = false;
+            break;
+          }
+        if (missing) msg += " (_No emojis defined!_)  ";
+      }
+      if (wtt.HasFlag(WhatToTrack.Fun)) {
+        msg += " **Fun**";
+        bool missing = true;
+        foreach (var e in RepEmojis[gid].Values)
+          if (e.HasFlag(WhatToTrack.Fun)) {
+            missing = false;
+            break;
+          }
+        if (missing) msg += " (_No emojis defined!_)  ";
+      }
+      if (wtt.HasFlag(WhatToTrack.Thanks)) msg += " **Thanks**";
+      if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
+      if (wtt.HasFlag(WhatToTrack.Mention)) msg += " **Mentions**";
+      msg += "\n";
+    }
+
+    // Tags ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.TagsDefine);
+    cfg2 = GetConfig(gid, Config.ParamType.TagsUse);
+    if (cfg == null || cfg2 == null) msg += "**Tags**: _not defined (disabled by default)_\n";
+    else {
+      msg += "**Tags**: Set = " + (Config.ConfVal)cfg.IdVal + "; Use = " + (Config.ConfVal)cfg2.IdVal + "\n";
+    }
+
+    // Emoji for Role ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Emoji4Role);
+    if (cfg == null) msg += "**Emoji for role**: _not defined (disabled by default)_\n";
+    else {
+      if ((Config.ConfVal)cfg.IdVal == Config.ConfVal.NotAllowed) {
+        msg += "**Emoji for role**: _disabled_ ";
+      }
+      else {
+        msg += "**Emoji for role**: _enabled_ ";
+      }
+      var ems4role = Em4Roles[gid];
+      if (ems4role.Count == 0) {
+        msg += "_no emojis and no roles defined_\n";
+      }
+      else {
+        string rs = "";
+        foreach (var em in ems4role) {
+          DiscordRole r = g.GetRole(em.Role);
+          if (r != null) {
+            rs += Utils.GetEmojiSnowflakeID(em.EmojiId, em.EmojiName, g) + " " + r.Name + ", ";
+          }
+        }
+        msg += rs[..^2] + "\n";
+      }
+    }
+
+    return msg;
+  }
 
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
@@ -795,146 +961,7 @@ public class Setup : BaseCommandModule {
 
       // ****************** LIST *********************************************************************************************************************************************
       if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
-        // list
-        Config cfg, cfg2;
-
-        string msg = "Setup list for Discord Server " + ctx.Guild.Name + "\n";
-        string part = "";
-        // Admins ******************************************************
-        if (AdminRoles[gid].Count == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
-        else {
-          foreach (var rid in AdminRoles[gid]) {
-            DiscordRole r = g.GetRole(rid);
-            if (r != null) part += r.Name + ", ";
-          }
-          if (part.Length == 0) msg += "**AdminRoles**: _no roles defined. Owner and roles with Admin flag will be considered bot Admins_\n";
-          else msg += "**AdminRoles**: " + part[0..^2] + "\n";
-        }
-
-        // TrackingChannel ******************************************************
-        if (TrackChannels[gid] == null) msg += "**TrackingChannel**: _no tracking channel defined_\n";
-        else {
-          msg += "**TrackingChannel**: " + TrackChannels[gid].channel.Mention + " for ";
-          if (TrackChannels[gid].trackJoin || TrackChannels[gid].trackLeave || TrackChannels[gid].trackRoles) {
-            if (TrackChannels[gid].trackJoin) msg += "_Join_ ";
-            if (TrackChannels[gid].trackLeave) msg += "_Leave_ ";
-            if (TrackChannels[gid].trackRoles) msg += "_Roles_ ";
-          } else msg += "nothing";
-          msg += "\n";
-        }
-
-        // Ping ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.Ping);
-        if (cfg == null) msg += "**Ping**: _not defined (allowed to all by default)_\n";
-        else msg += "**Ping**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // WhoIs ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.WhoIs);
-        if (cfg == null) msg += "**WhoIs**: _not defined (disabled by default)_\n";
-        else msg += "**WhoIs**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // MassDel ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.MassDel);
-        if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
-        else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // Games ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.Games);
-        if (cfg == null) msg += "**Games**: _not defined (disabled by default)_\n";
-        else msg += "**Games**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // Refactor ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.Refactor);
-        if (cfg == null) msg += "**Code Refactor**: _not defined (disabled by default)_\n";
-        else msg += "**Code Refactor**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // Timezones ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.TimezoneS);
-        cfg2 = GetConfig(gid, Config.ParamType.TimezoneG);
-        if (cfg == null || cfg2 == null) msg += "**Timezones**: _not defined (disabled by default)_\n";
-        else {
-          msg += "**Timezones**: Set = " + (Config.ConfVal)cfg.IdVal + "; Read = " + (Config.ConfVal)cfg2.IdVal;
-          if ((Config.ConfVal)cfg.IdVal != Config.ConfVal.Everybody && (Config.ConfVal)cfg2.IdVal == Config.ConfVal.Everybody) msg += " (_everybody can set its own timezone_)";
-          msg += "\n";
-        }
-
-        // UnityDocs ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.UnityDocs);
-        if (cfg == null) msg += "**Unity Docs**: _not defined (disabled by default)_\n";
-        else msg += "**Unity Docs**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // SpamProtection ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.SpamProtection);
-        if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
-        else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
-        else msg += "**Spam Protection**: enabled for" +
-            ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
-            ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-            ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
-            "\n";
-
-        // Stats ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.Stats);
-        if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
-        else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-        // Banned Words ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.BannedWords);
-        if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
-        else {
-          if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
-          else {
-            string bws = "";
-            foreach (var w in BannedWords[gid]) bws += w + ", ";
-            msg += "**BannedWords**: " + bws[0..^2] + ".\n";
-          }
-        }
-
-        // Scores ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.Scores);
-        if (cfg == null) msg += "**Scores**: _not defined (disabled by default)_\n";
-        else {
-          WhatToTrack wtt = (WhatToTrack)cfg.IdVal;
-          if (wtt == WhatToTrack.None) msg += "**Scores** is _Disabled_\n"; else msg += "**Scores** _Enabled_ are";
-          if (wtt.HasFlag(WhatToTrack.Reputation)) {
-            msg += " **Reputation**";
-            bool missing = true;
-            foreach (var e in RepEmojis[gid].Values)
-              if (e.HasFlag(WhatToTrack.Reputation)) {
-                missing = false;
-                break;
-              }
-            if (missing) msg += " (_No emojis defined!_)  ";
-          }
-          if (wtt.HasFlag(WhatToTrack.Fun)) {
-            msg += " **Fun**";
-            bool missing = true;
-            foreach (var e in RepEmojis[gid].Values)
-              if (e.HasFlag(WhatToTrack.Fun)) {
-                missing = false;
-                break;
-              }
-            if (missing) msg += " (_No emojis defined!_)  ";
-          }
-          if (wtt.HasFlag(WhatToTrack.Thanks)) msg += " **Thanks**";
-          if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
-          if (wtt.HasFlag(WhatToTrack.Mention)) msg += " **Mentions**";
-          msg += "\n";
-        }
-
-        // Tags ******************************************************
-        cfg = GetConfig(gid, Config.ParamType.TagsDefine);
-        cfg2 = GetConfig(gid, Config.ParamType.TagsUse);
-        if (cfg == null || cfg2 == null) msg += "**Tags**: _not defined (disabled by default)_\n";
-        else {
-          msg += "**Tags**: Set = " + (Config.ConfVal)cfg.IdVal + "; Use = " + (Config.ConfVal)cfg2.IdVal + "\n";
-        }
-
-
-
-
-
-        await Utils.DeleteDelayed(60, ctx.RespondAsync(msg));
+        await Utils.DeleteDelayed(60, ctx.RespondAsync(GenerateSetupList(g, gid)));
         return;
       }
 
@@ -1262,7 +1289,7 @@ public class Setup : BaseCommandModule {
             for (int i = 1; i < cmds.Length; i++) {
               // Find if we have it (and the id)
               ulong id = 0;
-              Match rm = roleParser.Match(cmds[i]);
+              Match rm = roleSnowflakeER.Match(cmds[i]);
               if (rm.Success)
                 ulong.TryParse(rm.Groups[1].Value, out id);
               else {
@@ -1375,13 +1402,13 @@ public class Setup : BaseCommandModule {
           } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
             SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
             if (BannedWords[gid].Count == 0)
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_ (but no banned words are deifned)"));
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _enabled_ (but no banned words are deifned)"));
             else
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _enabled_"));
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _enabled_"));
 
           } else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
             SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("Stats command changed to _disabled_"));
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _disabled_"));
 
           } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
             string bw = cmds[2].ToLowerInvariant().Trim();
@@ -1412,7 +1439,6 @@ public class Setup : BaseCommandModule {
         }
         return;
       }
-
 
       // ****************** SCORES *********************************************************************************************************************************************
       if (cmds[0].Equals("scores")) {
@@ -1487,7 +1513,7 @@ public class Setup : BaseCommandModule {
 
                 // Start by grabbing all values that are snowflakes
                 string resp = answer.Result.Content.Trim();
-                resp = emjSnowflakeER.Replace(resp, (m) => {
+                resp = emjSnowflakeRE.Replace(resp, (m) => {
                   if (ulong.TryParse(m.Groups[1].Value, out ulong id)) {
                     var rem = new ReputationEmoji(gid, id, null, wtt);
                     eset.Add(rem.GetKeyValue(), rem);
@@ -1573,6 +1599,162 @@ public class Setup : BaseCommandModule {
           return;
         }
       }
+
+      // ****************** EMOJI4ROLE *********************************************************************************************************************************************
+      if (cmds[0].Equals("emojiforrole") || cmds[0].Equals("emoji4role")) {
+        if (cmds.Length > 1) {
+          // +|- -> enable/disable
+          // list -> list emojis
+          // add <role> -> wait for emoji and completes
+          // remove <emoji>|<num> -> removes
+
+          if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
+            if (Em4Roles[gid].Count == 0) {
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("No emoji for roles are defined"));
+              return;
+            }
+            string ems = "Emojis for role: ";
+            if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) ems += " (_disabled_)";
+            else ems += " (_enabled_)";
+            int pos = 1;
+            foreach (var em4r in Em4Roles[gid]) {
+              DiscordRole r = g.GetRole(em4r.Role);
+              DiscordChannel ch = g.GetChannel(em4r.Channel);
+              DiscordMessage m = null;
+              try {
+                m = ch?.GetMessageAsync(em4r.Message).Result; // This may fail
+              } catch (Exception) { }
+              string name = "\n(" + pos + ")  " + Utils.GetEmojiSnowflakeID(em4r.EmojiId, em4r.EmojiName, g) + " ";
+              if (r == null || ch == null || m == null) name += "..._invalid_...";
+              else name += (m.Content.Length > 12 ? m.Content[0..12] + "..." : m.Content) + " (" + ch.Name + ") -> " + r.Name;
+              pos++;
+              ems += name;
+            }
+            await Utils.DeleteDelayed(60, ctx.RespondAsync(ems));
+          }
+
+          else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
+            SetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role, Config.ConfVal.Everybody);
+            if (BannedWords[gid].Count == 0)
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for Role command changed to _enabled_ (but no roles are deifned)"));
+            else
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for Role command changed to _enabled_"));
+          }
+
+          else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
+            SetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role, Config.ConfVal.NotAllowed);
+            await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for Role command changed to _disabled_"));
+          }
+
+          else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
+            string rolename = cmds[2].ToLowerInvariant().Trim();
+
+            // Get the role from the guild, as id or name
+            DiscordRole role = null;
+            Match rm = roleSnowflakeER.Match(rolename);
+            if (rm.Success && ulong.TryParse(rm.Groups[1].Value, out ulong rid)) {
+              role = g.GetRole(rid);
+            }
+            else {
+              foreach (var r in g.Roles.Values)
+                if (r.Name.Equals(rolename, StringComparison.InvariantCultureIgnoreCase)) {
+                  role = r;
+                  break;
+                }
+            }
+            if (role == null) { // If missing show error
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("The role specified is invalid"));
+            }
+            else { // If good show the message and wait for a while
+              TempRoleSelected[gid] = new TempSetRole(ctx.User.Id, role);
+
+              string msg = "Role is selected to **" + TempRoleSelected[gid].role.Name + "**\nAdd the emoji you want for this role to the message you want to monitor.";
+              DiscordMessage toDelete = await ctx.RespondAsync(msg);
+              _ = TempRoleSelected[gid].cancel.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(120));
+
+              await toDelete.DeleteAsync();
+              if (TempRoleSelected[gid].cancel.IsCancellationRequested) { // We should have what we need here
+                if (TempRoleSelected[gid].message != 0) { // We have a result
+                  EmojiForRoleValue em = new EmojiForRoleValue {
+                    Guild = gid,
+                    Role = TempRoleSelected[gid].role.Id,
+                    Channel = TempRoleSelected[gid].channel,
+                    Message = TempRoleSelected[gid].message,
+                    EmojiId = TempRoleSelected[gid].emojiid,
+                    EmojiName = TempRoleSelected[gid].emojiname
+                  };
+                  Em4Roles[gid].Add(em);
+                  Database.Add(em);
+                  TempRoleSelected[gid] = null;
+                  await Utils.DeleteDelayed(15, ctx.RespondAsync("The emoji for role (" + Utils.GetEmojiSnowflakeID(em.EmojiId, em.EmojiName, g) + ") has been added"));
+                }
+              }
+            }
+          }
+
+          else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
+            // We can have either a number or an emoji
+            string identifier = cmds[2].Trim();
+
+            if (int.TryParse(identifier, out int id)) { // Is an index
+              if (Em4Roles[gid].Count >= id && id > 0) {
+                Em4Roles[gid].RemoveAt(id - 1);
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for role has been removed"));
+              }
+              else {
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("Cannot find the Emoji for role to remove"));
+              }
+            }
+            else { // Check by emoji
+              Match m = emjSnowflakeRE.Match(identifier);
+              if (m.Success && ulong.TryParse(m.Groups[1].Value, out ulong eid)) { // Get the id
+                EmojiForRoleValue e = null;
+                foreach (var em4r in Em4Roles[gid]) {
+                  if (em4r.EmojiId == eid) {
+                    e = em4r;
+                    break;
+                  }
+                }
+                if (e != null) {
+                  Em4Roles[gid].Remove(e);
+                  await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for role has been removed"));
+                }
+                else {
+                  await Utils.DeleteDelayed(15, ctx.RespondAsync("Cannot find the Emoji for role to remove"));
+                }
+              }
+              else {
+                EmojiForRoleValue e = null;
+                foreach (var em4r in Em4Roles[gid]) {
+                  if (em4r.EmojiName.Equals(identifier, StringComparison.InvariantCultureIgnoreCase)) {
+                    e = em4r;
+                    break;
+                  }
+                }
+                if (e != null) {
+                  Em4Roles[gid].Remove(e);
+                  await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for role has been removed"));
+                }
+                else {
+                  await Utils.DeleteDelayed(15, ctx.RespondAsync("Cannot find the Emoji for role to remove"));
+                }
+              }
+            }
+          }
+
+          _ = Utils.DeleteDelayed(15, ctx.Message);
+          return;
+        }
+
+        if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
+          await Utils.DeleteDelayed(15, ctx.RespondAsync(
+            "Use: `enable` or `disable` to activate and deactivate the feature\n`add` _role_ will let you to add then an emoji to the message you want to grant the role specified\n" +
+            "`list` will show the emojis for role that are defined\n`remove` will remove the emoji (you can also specify the index of the one to remove)"));
+          return;
+        }
+      }
+
+
 
       await Utils.DeleteDelayed(15, ctx.RespondAsync("I do not understand the command: " + ctx.Message.Content));
 
@@ -2438,8 +2620,8 @@ public class Setup : BaseCommandModule {
 
     actions = new List<DiscordButtonComponent> {
       cv == Config.ConfVal.NotAllowed ?
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4red", "Enable", false, ey) :
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4red", "Disable", false, en),
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rendis", "Enable", false, ey) :
+        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4rendis", "Disable", false, en),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4radd", "Add new", false, ey)
     };
     builder.AddComponents(actions);
@@ -2544,13 +2726,9 @@ public class Setup : BaseCommandModule {
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-    // - Exit
-    // - Back
-    // - Back to features
+    // - Cancel
     actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rback", "Cancel", false, el)
     };
     builder.AddComponents(actions);
 
@@ -2590,17 +2768,7 @@ public class Setup : BaseCommandModule {
     builder.AddEmbed(eb.Build());
     List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatem4rdel", "Delete", false, en),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rback", "Back", false, el)
-    };
-    builder.AddComponents(actions);
-
-    // - Exit
-    // - Back
-    // - Back to features
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rback", "Cancel", false, el)
     };
     builder.AddComponents(actions);
 

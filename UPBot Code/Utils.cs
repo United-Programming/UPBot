@@ -28,43 +28,14 @@ public static class Utils
   private static DiscordClient client;
   private static DateTimeFormatInfo sortableDateTimeFormat;
   readonly private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
-  private static DiscordMember mySelf;
-  readonly private static Dictionary<ulong, DiscordGuild> guilds = new Dictionary<ulong, DiscordGuild>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/06";
-  }
-
-  /// <summary>
-  /// Returns the Bot user as Member of the United Programming Guild
-  /// </summary>
-  /// <returns></returns>
-  public static DiscordMember GetMyself() {
-    if (mySelf==null) mySelf = client.Guilds[830900174553481236ul].CurrentMember;
-    return mySelf;
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/13";
   }
 
   public static DiscordClient GetClient() {
     return client;
   }
-
-  public static Dictionary<ulong, Dictionary<ulong, DiscordChannel>> GetAllChannelsFromGuilds() {
-    Dictionary<ulong, Dictionary<ulong, DiscordChannel>> res = new Dictionary<ulong, Dictionary<ulong, DiscordChannel>>();
-
-    while (client == null) Task.Delay(1000);
-    while (client.Guilds == null) Task.Delay(1000);
-    while (client.Guilds.Count == 0) Task.Delay(1000);
-    Task.Delay(1000);
-
-    foreach (var guild in client.Guilds.Values) {
-      Dictionary<ulong, DiscordChannel> gc = new Dictionary<ulong, DiscordChannel>();
-      res[guild.Id] = gc;
-      foreach (var channel in guild.Channels.Values) gc[channel.Id] = channel;
-    }
-
-    return res;
-  }
-
 
   public static void InitClient(DiscordClient c) {
     client = c;
@@ -108,11 +79,9 @@ public static class Utils
   /// <param name="count">The count, the string is referring to</param>
   /// <param name="singular">The singular version (referring to only one)</param>
   /// <param name="plural">The singular version (referring to more than one)</param>
-  public static string PluralFormatter(int count, string singular, string plural)
-  {
+  public static string PluralFormatter(int count, string singular, string plural) {
     return count > 1 ? plural : singular;
   }
-
 
   /// <summary>
   /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
@@ -120,14 +89,12 @@ public static class Utils
   /// <param name="title">Embed title</param>
   /// <param name="description">Embed description</param>
   /// <param name="color">Embed color</param>
-  public static DiscordEmbedBuilder BuildEmbed(string title, string description, DiscordColor color)
-  {
-    DiscordEmbedBuilder b = new DiscordEmbedBuilder();
-    b.Title = title;
-    b.Color = color;
-    b.Description = description;
-    
-    return b;
+  public static DiscordEmbedBuilder BuildEmbed(string title, string description, DiscordColor color) {
+    return new DiscordEmbedBuilder {
+      Title = title,
+      Color = color,
+      Description = description
+    };
   }
 
   /// <summary>
@@ -180,19 +147,6 @@ public static class Utils
   private static DiscordEmoji thinkingAsError;
 
   /// <summary>
-  /// This function gets the Emoji object corresponding to the id fromthe server.
-  /// </summary>
-  /// <param name="id">The id of the emoji to get</param>
-  /// <returns>The requested emoji or the Thinking emoji in case something went wrong</returns>
-  public static DiscordEmoji GetEmoji(ulong id) {
-    try {
-      DiscordEmoji emoji = guilds[830900174553481236ul].GetEmojiAsync(id).Result;
-      return emoji;
-    } catch (Exception) { }
-    return thinkingAsError;
-  }
-
-  /// <summary>
   /// This function gets the Emoji object corresponding to the emojis of the server.
   /// They are cached to improve performance (this command will not work on other servers.)
   /// </summary>
@@ -226,13 +180,17 @@ public static class Utils
     return "<" + emoji.GetDiscordName() + emoji.Id.ToString() + ">";
   }
 
+
   /// <summary>
-  /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji object
+  /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji identified by id or name
   /// </summary>
-  /// <param name="emoji">The emoji enum for the emoji to convert</param>
+  /// <param name="id">The emoji id, if zero then the name is used</param>
+  /// <param name="name">The emoji in Unicode format</param>
   /// <returns>A string representation of the emoji that can be used in a message</returns>
-  public static string GetEmojiSnowflakeID(EmojiEnum emoji) {
-    DiscordEmoji em = GetEmoji(emoji);
+  public static string GetEmojiSnowflakeID(ulong id, string name, DiscordGuild g) {
+    if (id == 0) return name;
+    var em = g.GetEmojiAsync(id).Result;
+    if (em == null) return "?";
     return "<" + em.GetDiscordName() + em.Id.ToString() + ">";
   }
 
@@ -265,18 +223,16 @@ public static class Utils
       _ = e.Message;
     }
   }
-  
-  internal static async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams)
-  {
+
+  internal static async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams) {
     DiscordColor red = Red;
     string message = string.Empty;
     bool respond = false;
-    switch (error)
-    {
+    switch (error) {
       case CommandErrors.CommandExists:
         respond = true;
         if (additionalParams[0] is string name)
-          message = $"There is already a command containing the alias {additionalParams[0]}";
+          message = $"There is already a command containing the alias {name}";
         else
           throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
         break;
@@ -307,7 +263,7 @@ public static class Utils
         respond = true;
         break;
     }
-        
+
     await Utils.BuildEmbedAndExecute("Error", message, red, ctx, respond);
   }
 
@@ -396,11 +352,11 @@ public enum EmojiEnum {
 }
 
 public enum CommandErrors {
-    InvalidParams,
-    InvalidParamsDelete,
-    CommandExists,
-    UnknownError,
-    MissingCommand,
-    NoCustomCommands,
-    CommandNotSpecified
+  InvalidParams,
+  InvalidParamsDelete,
+  CommandExists,
+  UnknownError,
+  MissingCommand,
+  NoCustomCommands,
+  CommandNotSpecified
 }

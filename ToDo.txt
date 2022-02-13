@@ -2,10 +2,8 @@
 [future] Add cppref
 [future] add a shortcut to set all on
 [future] add something to save/load a config
-[todo] Remove old static functions from the Utils for the emojis and roles. They should not be used anymore
 [fix] If we are added to a new server we need to fill all values of setup or we will miserably fail
 [todo] Command to download the logs
-[todo] emoji for roles
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -29,10 +27,6 @@ unitydocs       |    X    |         |           |    X      |          |        
 
 
 
+To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=1541290192083&scope=bot
 
-To authorize UPBotDev on a server: https://discord.com/oauth2/authorize?client_id=929729299525795951&permissions=1238025235520&scope=bot
 
-emj4role
---- list definitions (link to post + show emojis + show role)
---- add definition (post link, post emoji, mention role)
---- delete definition

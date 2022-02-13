@@ -7,16 +7,17 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class EmojisForRole : BaseCommandModule {
-  internal static Task ReacionAdded(DiscordClient sender, MessageReactionAddEventArgs a) {
+  internal static Task ReacionAdded(DiscordClient _, MessageReactionAddEventArgs a) {
     if (a.Guild == null) Task.FromResult(0); // No direct messages
     try {
-      if (Setup.TempRoleSelected[a.Guild.Id] != null && Setup.TempRoleSelected[a.Guild.Id].user == a.User.Id) {
+      if (Setup.TempRoleSelected.ContainsKey(a.Guild.Id) && Setup.TempRoleSelected[a.Guild.Id] != null && Setup.TempRoleSelected[a.Guild.Id].user == a.User.Id) {
         TempSetRole tsr = Setup.TempRoleSelected[a.Guild.Id];
         tsr.channel = a.Channel.Id;
         tsr.message = a.Message.Id;
         tsr.emojiid = a.Emoji.Id;
         tsr.emojiname = a.Emoji.Name;
         tsr.cancel.Cancel();
+        return Task.FromResult(0);
       }
 
       // Find if we have guild/channel/message/emoji, in case add the role to the user
@@ -31,7 +32,7 @@ public class EmojisForRole : BaseCommandModule {
     return Task.FromResult(0);
   }
 
-  internal static Task ReactionRemoved(DiscordClient sender, MessageReactionRemoveEventArgs a) {
+  internal static Task ReactionRemoved(DiscordClient _, MessageReactionRemoveEventArgs a) {
     if (a.Guild == null) Task.FromResult(0); // No direct messages
     try {
       // Find if we have guild/channel/message/emoji, in case add the role to the user
@@ -65,10 +66,10 @@ public class EmojisForRole : BaseCommandModule {
           Utils.Log("The role with ID " + em.Role + " does not exist anymore!", guild.Name);
           return;
         }
-        dm.GrantRoleAsync(r);
+        dm.GrantRoleAsync(r).Wait();
       }
       else if (here && !add) {
-        dm.RevokeRoleAsync(r);
+        dm.RevokeRoleAsync(r).Wait();
       }
     } catch (Exception ex) {
       Utils.Log("Error in EmojisForRole.HandleRoleForEmoji: " + ex.Message, guild.Name);

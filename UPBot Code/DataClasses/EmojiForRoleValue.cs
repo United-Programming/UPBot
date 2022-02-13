@@ -7,8 +7,4 @@ public class EmojiForRoleValue : Entity {
   [Key] public ulong Role;
   public ulong EmojiId;
   public string EmojiName;
-
-  [NotPersistent]
-  public DiscordRole dRole; // Not in DB
-
 }

@@ -20,94 +20,92 @@ public class TestB : BaseCommandModule {
   [Description("Test command to produce buttons")]
   public async Task TestBCommand(CommandContext ctx) {
     try {
-      using (Bitmap b = new Bitmap(400, 150)) {
-        using (Graphics g = Graphics.FromImage(b)) {
-          Font f = new Font("Times New Roman", 20, FontStyle.Bold, GraphicsUnit.Pixel);
-          Font f2 = new Font("Times New Roman", 16, FontStyle.Bold, GraphicsUnit.Pixel);
+      using Bitmap b = new Bitmap(400, 150);
+      using (Graphics g = Graphics.FromImage(b)) {
+        Font f = new Font("Times New Roman", 20, FontStyle.Bold, GraphicsUnit.Pixel);
+        Font f2 = new Font("Times New Roman", 16, FontStyle.Bold, GraphicsUnit.Pixel);
 
-          g.Clear(Color.Transparent);
-          Pen back = new Pen(Color.FromArgb(30, 30, 28));
-          Pen lines = new Pen(Color.FromArgb(70, 70, 72));
-          Brush fill = new SolidBrush(back.Color);
-          Brush txtl = new SolidBrush(Color.FromArgb(150, 150, 102));
-          Brush txte = new SolidBrush(Color.FromArgb(170, 182, 150));
-          Brush txty = new SolidBrush(Color.FromArgb(204, 212, 170));
-          Brush txtb = new SolidBrush(Color.FromArgb(50, 50, 107));
+        g.Clear(Color.Transparent);
+        Pen back = new Pen(Color.FromArgb(30, 30, 28));
+        Pen lines = new Pen(Color.FromArgb(70, 70, 72));
+        Brush fill = new SolidBrush(back.Color);
+        Brush txtl = new SolidBrush(Color.FromArgb(150, 150, 102));
+        Brush txte = new SolidBrush(Color.FromArgb(170, 182, 150));
+        Brush txty = new SolidBrush(Color.FromArgb(204, 212, 170));
+        Brush txtb = new SolidBrush(Color.FromArgb(50, 50, 107));
 
-          Brush expfillg = new SolidBrush(Color.FromArgb(106, 188, 96));
-          Pen explineg = new Pen(Color.FromArgb(106, 248, 169));
-          Brush expfillb = new SolidBrush(Color.FromArgb(100, 96, 180));
-          Pen explineb = new Pen(Color.FromArgb(106, 169, 248));
+        Brush expfillg = new SolidBrush(Color.FromArgb(106, 188, 96));
+        Pen explineg = new Pen(Color.FromArgb(106, 248, 169));
+        Brush expfillb = new SolidBrush(Color.FromArgb(100, 96, 180));
+        Pen explineb = new Pen(Color.FromArgb(106, 169, 248));
 
-          /*
-               ----------------------------------------
-              | Rank for <NAME>                        |
-              |   Level: <rank>                        |
-              |   Experience <abcd>/<defg>             |
-              |   #<position>/<total counted>          |
-               ----------------------------------------
+        /*
+             ----------------------------------------
+            | Rank for <NAME>                        |
+            |   Level: <rank>                        |
+            |   Experience <abcd>/<defg>             |
+            |   #<position>/<total counted>          |
+             ----------------------------------------
 
-          <rank> is the calculated level
-          <abcd> is the number we calculate
-          <defg> is the number for the next level
-
-
-
-          exp = ran * 1.25 + rep * 2.5 + fun * 2.5 + tnk * 3.5
-
-          2^4 = 16
-          3^4 = 81
-          4^4
+        <rank> is the calculated level
+        <abcd> is the number we calculate
+        <defg> is the number for the next level
 
 
-          lev = (exp-9)^(1/4)
-          exp = lev^4+9
+
+        exp = ran * 1.25 + rep * 2.5 + fun * 2.5 + tnk * 3.5
+
+        2^4 = 16
+        3^4 = 81
+        4^4
 
 
-      double lev = Math.Floor(
-                      1.25 * Math.Pow(r.Ran, 0.25) +
-                      2.5 * Math.Pow(r.Rep, 0.27) +
-                      2.5 * Math.Pow(r.Fun, 0.27) +
-                      3.5 * Math.Pow(r.Tnk, 0.27)) - 20;
+        lev = (exp-9)^(1/4)
+        exp = lev^4+9
 
 
+    double lev = Math.Floor(
+                    1.25 * Math.Pow(r.Ran, 0.25) +
+                    2.5 * Math.Pow(r.Rep, 0.27) +
+                    2.5 * Math.Pow(r.Fun, 0.27) +
+                    3.5 * Math.Pow(r.Tnk, 0.27)) - 20;
 
 
 
 
 
 
-          */
 
 
-          DrawBox(g, fill, lines, 0, 0, 400, 150);
+        */
 
-          g.DrawString("Rank for", f, txtl, 16, 16);
-          g.DrawString(ctx.User.Username, f, txty, 105, 16);
 
-          g.DrawString("Level:", f, txtl, 32, 48);
-          g.DrawString("1", f, txte, 160, 48);
+        DrawBox(g, fill, lines, 0, 0, 400, 150);
 
-          g.FillRectangle(expfillg, new Rectangle(160, 80, 400 - 16 - 160, 24));
-          g.DrawRectangle(explineg, new Rectangle(160, 80, 400 - 16 - 160, 24));
-          g.FillRectangle(expfillb, new Rectangle(161, 81, 400 - 16 - 160 - 90, 22));
-          g.DrawRectangle(explineb, new Rectangle(161, 81, 400 - 16 - 160 - 90, 22));
+        g.DrawString("Rank for", f, txtl, 16, 16);
+        g.DrawString(ctx.User.Username, f, txty, 105, 16);
 
-          g.DrawString("Experience:", f, txtl, 32, 80);
-          g.DrawString("12345 / 56789", f2, txtb, 192, 84);
+        g.DrawString("Level:", f, txtl, 32, 48);
+        g.DrawString("1", f, txte, 160, 48);
 
-          g.DrawString("Position:", f, txtl, 32, 112);
-          g.DrawString("#1", f, txte, 160, 112);
-        }
-        b.Save(@"green.png", ImageFormat.Png);
+        g.FillRectangle(expfillg, new Rectangle(160, 80, 400 - 16 - 160, 24));
+        g.DrawRectangle(explineg, new Rectangle(160, 80, 400 - 16 - 160, 24));
+        g.FillRectangle(expfillb, new Rectangle(161, 81, 400 - 16 - 160 - 90, 22));
+        g.DrawRectangle(explineb, new Rectangle(161, 81, 400 - 16 - 160 - 90, 22));
 
-        using (var fs = new FileStream("green.png", FileMode.Open, FileAccess.Read)) {
-          var msg = new DiscordMessageBuilder().WithFiles(new Dictionary<string, Stream>() { { "green.png", fs } });
-          await ctx.RespondAsync(msg);
-        }
+        g.DrawString("Experience:", f, txtl, 32, 80);
+        g.DrawString("12345 / 56789", f2, txtb, 192, 84);
 
-        return;
+        g.DrawString("Position:", f, txtl, 32, 112);
+        g.DrawString("#1", f, txte, 160, 112);
       }
+      b.Save(@"green.png", ImageFormat.Png);
+
+      using var fs = new FileStream("green.png", FileMode.Open, FileAccess.Read);
+      var msg = new DiscordMessageBuilder().WithFiles(new Dictionary<string, Stream>() { { "green.png", fs } });
+      await ctx.RespondAsync(msg);
+
+      return;
     } catch (Exception ex) {
       Console.WriteLine(ex.Message);
     }

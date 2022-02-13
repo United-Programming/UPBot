@@ -19,11 +19,12 @@ public class Tag : BaseCommandModule {
   public async Task TagMainCommand(CommandContext ctx) {
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx) && !Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-      embed.Title = "Error in usage!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.";
-      embed.Timestamp = DateTime.Now;
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
+        Title = "Error in usage!",
+        Color = DiscordColor.Red,
+        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.",
+        Timestamp = DateTime.Now
+      };
       var builder = new DiscordMessageBuilder();
       await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
     } catch (Exception ex) {
@@ -355,8 +356,9 @@ public class Tag : BaseCommandModule {
   }
 
   public async Task ShowTopic(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-    embed.Title = $"{topic}";
+    DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
+      Title = $"{topic}"
+    };
     int randomnumber = rand.Next(0, randColor.Length);
     embed.Color = randColor[randomnumber];
     embed.Timestamp = DateTime.Now;

@@ -190,9 +190,9 @@ public class AppreciationTracking : BaseCommandModule {
     }
   }
 
-  private static Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
+  private static readonly Dictionary<ulong, Dictionary<ulong, LastPosters>> LastMemberPerGuildPerChannels = new Dictionary<ulong, Dictionary<ulong, LastPosters>>();
 
-  internal static Task ThanksAdded(DiscordClient sender, MessageCreateEventArgs args) {
+  internal static Task ThanksAdded(DiscordClient _, MessageCreateEventArgs args) {
     if (args.Guild == null) return Task.FromResult(0);
     try {
       if (args.Author.IsBot) Task.FromResult(0);
@@ -229,7 +229,6 @@ public class AppreciationTracking : BaseCommandModule {
 
       if (msg.Reference == null && (msg.MentionedUsers == null || msg.MentionedUsers.Count == 0)) { // Get the previous poster
         IReadOnlyList<DiscordMessage> msgs = msg.Channel.GetMessagesBeforeAsync(msg.Id, 3).Result;
-        msg = null;
         foreach (DiscordMessage m in msgs) {
           if (m.Author.IsBot) continue;
           ulong oid = m.Author.Id;
@@ -304,7 +303,7 @@ public class AppreciationTracking : BaseCommandModule {
 
 
 
-  internal static Task ReactionAdded(DiscordClient sender, MessageReactionAddEventArgs mr) {
+  internal static Task ReactionAdded(DiscordClient _, MessageReactionAddEventArgs mr) {
     try {
       if (mr.User.IsBot) return Task.FromResult(0);
       ulong gid = mr.Guild.Id;

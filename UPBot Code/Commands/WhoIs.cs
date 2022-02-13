@@ -100,7 +100,7 @@ public class WhoIs : BaseCommandModule {
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageEmojis)) perms += ", Manage Emojis";
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseSlashCommands)) perms += ", Use Bot";
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.UsePublicThreads)) perms += ", Use Threads";
-      if (perms.Length > 0) embed.AddField("Permissions", perms.Substring(2), false);
+      if (perms.Length > 0) embed.AddField("Permissions", perms[2..], false);
 
       return ctx.RespondAsync(embed.Build());
     } catch (Exception ex) {
