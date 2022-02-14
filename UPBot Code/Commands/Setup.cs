@@ -252,8 +252,6 @@ public class Setup : BaseCommandModule {
   }
 
   internal static Task NewGuildAdded(DSharpPlus.DiscordClient _, GuildCreateEventArgs e) {
-    // FIXME handle this to fill all values for a new guild added
-
     DiscordGuild g = e.Guild;
     ulong gid = g.Id;
     // Do we have the guild?
