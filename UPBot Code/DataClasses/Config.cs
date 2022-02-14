@@ -32,6 +32,7 @@ public class Config : Entity {
     TagsUse = 13,
     TagsDefine = 14,
     Emoji4Role = 15,
+    Emoji4RoleList = 16,
     //VideosAbout
   }
 

@@ -39,7 +39,8 @@ public class MembersTracking {
     await Task.Delay(50);
   }
 
-  public static async Task DiscordMemberAdded(DiscordClient client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Double _ for double ignored parameter")]
+  public static async Task DiscordMemberAdded(DiscordClient _client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try {
       if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];

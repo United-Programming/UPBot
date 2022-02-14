@@ -1,4 +1,4 @@
-﻿[todo] Add wikis for each command on GitHub
+﻿[in progress] Add wikis for each command on GitHub
 [future] Add cppref
 [future] add a shortcut to set all on
 [future] add something to save/load a config

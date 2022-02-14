@@ -706,6 +706,24 @@ public class Setup : BaseCommandModule {
         msg = CreateEmoji4RoleInteraction(ctx, msg);
       }
 
+      // ********* Emoji for roles.List No ***********************************************************************
+      else if (cmdId == "idfeatem4rshow0") {
+        SetConfigValue(gid, Config.ParamType.Emoji4RoleList, Config.ConfVal.NotAllowed);
+        msg = CreateEmoji4RoleInteraction(ctx, msg);
+      }
+
+      // ********* Emoji for roles.List Admins ***********************************************************************
+      else if (cmdId == "idfeatem4rshow1") {
+        SetConfigValue(gid, Config.ParamType.Emoji4RoleList, Config.ConfVal.OnlyAdmins);
+        msg = CreateEmoji4RoleInteraction(ctx, msg);
+      }
+
+      // ********* Emoji for roles.List All ***********************************************************************
+      else if (cmdId == "idfeatem4rshow2") {
+        SetConfigValue(gid, Config.ParamType.Emoji4RoleList, Config.ConfVal.Everybody);
+        msg = CreateEmoji4RoleInteraction(ctx, msg);
+      }
+
       // ********* Emoji for roles.Add (select role) ***********************************************************************
       else if (cmdId == "idfeatem4radd") { // Just show the interaction with the list of roles
         msg = CreateEmoji4RoleInteractionRoleSelect(ctx, msg);
@@ -958,6 +976,11 @@ public class Setup : BaseCommandModule {
         msg += rs[..^2] + "\n";
       }
     }
+
+    // Emoji for Role List ******************************************************
+    cfg = GetConfig(gid, Config.ParamType.Emoji4RoleList);
+    if (cfg == null) msg += "**Emoji for role List**: _not defined (disabled by default)_\n";
+    else msg += "**Emoji for role List**: " + (Config.ConfVal)cfg.IdVal + "\n";
 
     return msg;
   }
@@ -1642,28 +1665,43 @@ public class Setup : BaseCommandModule {
           // remove <emoji>|<num> -> removes
 
           if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
-            if (Em4Roles[gid].Count == 0) {
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("No emoji for roles are defined"));
-              return;
+            if (cmds.Length == 2) { // Actual list
+              if (Em4Roles[gid].Count == 0) {
+                await Utils.DeleteDelayed(15, ctx.RespondAsync("No emoji for roles are defined"));
+                return;
+              }
+              string ems = "Emojis for role: ";
+              if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) ems += " (_disabled_)";
+              else ems += " (_enabled_)";
+              int pos = 1;
+              foreach (var em4r in Em4Roles[gid]) {
+                DiscordRole r = g.GetRole(em4r.Role);
+                DiscordChannel ch = g.GetChannel(em4r.Channel);
+                DiscordMessage m = null;
+                try {
+                  m = ch?.GetMessageAsync(em4r.Message).Result; // This may fail
+                } catch (Exception) { }
+                string name = "\n(" + pos + ")  " + Utils.GetEmojiSnowflakeID(em4r.EmojiId, em4r.EmojiName, g) + " ";
+                if (r == null || ch == null || m == null) name += "..._invalid_...";
+                else name += (m.Content.Length > 12 ? m.Content[0..12] + "..." : m.Content) + " (" + ch.Name + ") -> " + r.Name;
+                pos++;
+                ems += name;
+              }
+              await Utils.DeleteDelayed(60, ctx.RespondAsync(ems));
             }
-            string ems = "Emojis for role: ";
-            if (GetConfigValue(gid, Config.ParamType.Emoji4Role) == Config.ConfVal.NotAllowed) ems += " (_disabled_)";
-            else ems += " (_enabled_)";
-            int pos = 1;
-            foreach (var em4r in Em4Roles[gid]) {
-              DiscordRole r = g.GetRole(em4r.Role);
-              DiscordChannel ch = g.GetChannel(em4r.Channel);
-              DiscordMessage m = null;
-              try {
-                m = ch?.GetMessageAsync(em4r.Message).Result; // This may fail
-              } catch (Exception) { }
-              string name = "\n(" + pos + ")  " + Utils.GetEmojiSnowflakeID(em4r.EmojiId, em4r.EmojiName, g) + " ";
-              if (r == null || ch == null || m == null) name += "..._invalid_...";
-              else name += (m.Content.Length > 12 ? m.Content[0..12] + "..." : m.Content) + " (" + ch.Name + ") -> " + r.Name;
-              pos++;
-              ems += name;
+            else { // Enable/disable listing
+              char mode = cmds[2][0];
+              Config c = GetConfig(gid, Config.ParamType.Emoji4RoleList);
+              if (c == null) {
+                c = new Config(gid, Config.ParamType.Emoji4RoleList, 1);
+                Configs[gid].Add(c);
+              }
+              if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
+              if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
+              if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
+              Database.Add(c);
+              await Utils.DeleteDelayed(15, ctx.RespondAsync("Listing of existing emojis for role command changed to " + (Config.ConfVal)c.IdVal));
             }
-            await Utils.DeleteDelayed(60, ctx.RespondAsync(ems));
           }
 
           else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
@@ -2636,6 +2674,7 @@ public class Setup : BaseCommandModule {
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
     Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
+    Config.ConfVal cv2 = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4RoleList);
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "The bot allows to track emojis on specific messages to grant and remove roles.\n\n";
     if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Emoji for roles** are _Disabled_";
@@ -2649,13 +2688,15 @@ public class Setup : BaseCommandModule {
 
     // List existing (role name, emoji, for channel (part of name))
     // Add one (add emoji to a channel to pick the channel and then type the role)
-
-
     actions = new List<DiscordButtonComponent> {
       cv == Config.ConfVal.NotAllowed ?
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatem4rendis", "Enable", false, ey) :
         new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4rendis", "Disable", false, en),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4radd", "Add new", false, ey)
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatem4radd", "Add new", false, ey),
+
+      new DiscordButtonComponent(GetIsStyle(cv2, Config.ConfVal.NotAllowed), "idfeatem4rshow0", "Nobody can list", false, GetYN(cv2, Config.ConfVal.NotAllowed)),
+      new DiscordButtonComponent(GetIsStyle(cv2, Config.ConfVal.OnlyAdmins), "idfeatem4rshow1", "Only Admins can list", false, GetYN(cv2, Config.ConfVal.OnlyAdmins)),
+      new DiscordButtonComponent(GetIsStyle(cv2, Config.ConfVal.Everybody), "idfeatem4rshow2", "Everybody can list", false, GetYN(cv2, Config.ConfVal.Everybody))
     };
     builder.AddComponents(actions);
 

@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using System;
@@ -76,5 +77,44 @@ public class EmojisForRole : BaseCommandModule {
     }
   }
 
+  [Command("emojiforroles")]
+  [Aliases("emojiforrole", "emojisforroles", "emforrole", "emoji4roles", "emoji4role", "emojis4roles", "em4role")]
+  [Description("List the possible emoji for role and a link to the actual message")]
+  public async Task Em4RoleCommand(CommandContext ctx) {
+    if (ctx.Guild == null) return;
+    try {
+      if (!Setup.Permitted(ctx.Guild, Config.ParamType.Emoji4RoleList, ctx) || !Setup.Permitted(ctx.Guild, Config.ParamType.Emoji4Role, ctx)) return;
+      ulong gid = ctx.Guild.Id;
+      DiscordGuild g = ctx.Guild;
+
+      if (Setup.Em4Roles[gid].Count == 0) {
+        await Utils.DeleteDelayed(15, ctx.RespondAsync("No emoji for roles are defined"));
+        return;
+      }
+      DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+        Title = "Emojis for Roles"
+      };
+
+      string ems = "";
+      foreach (var em4r in Setup.Em4Roles[gid]) {
+        DiscordRole r = g.GetRole(em4r.Role);
+        DiscordChannel ch = g.GetChannel(em4r.Channel);
+        DiscordMessage m = null;
+        try {
+          m = ch?.GetMessageAsync(em4r.Message).Result; // This may fail
+        } catch (Exception) { }
+        if (r == null || ch == null || m == null) continue;
+
+        ems += Utils.GetEmojiSnowflakeID(em4r.EmojiId, em4r.EmojiName, g) + " grants  **_@" + r.Name + "_**  here: [" +
+          (m.Content.Length > 16 ? m.Content[0..16] + "..." : m.Content) + "](https://discord.com/channels/" +
+          gid + "/" + ch.Id + "/" + m.Id + ")\n";
+      }
+      eb.WithDescription(ems);
+      await Utils.DeleteDelayed(15, ctx.RespondAsync(eb.Build()));
+
+    } catch (Exception ex) {
+      Utils.Log("Error in EmojisForRole.Em4RoleCommand: " + ex.Message, ctx.Guild.Name);
+    }
+  }
 
 }
