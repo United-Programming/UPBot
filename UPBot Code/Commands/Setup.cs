@@ -183,6 +183,7 @@ public class Setup : BaseCommandModule {
         if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
         if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
         if (!Em4Roles.ContainsKey(g)) Em4Roles[g] = new List<EmojiForRoleValue>();
+        if (!TempRoleSelected.ContainsKey(g)) TempRoleSelected[g] = null;
       }
 
       Utils.Log("Params fully loaded. " + Configs.Count + " Discord servers found", null);
@@ -252,6 +253,28 @@ public class Setup : BaseCommandModule {
 
   internal static Task NewGuildAdded(DSharpPlus.DiscordClient _, GuildCreateEventArgs e) {
     // FIXME handle this to fill all values for a new guild added
+
+    DiscordGuild g = e.Guild;
+    ulong gid = g.Id;
+    // Do we have the guild?
+    if (TryGetGuild(gid) == null) { // No, that is a problem.
+      Utils.Log("Impossible to connect to a new Guild: " + g.Name, null);
+      return Task.FromResult(0);
+    }
+    // Fill all values
+    Configs[gid] = new List<Config>();
+    TrackChannels[gid] = null;
+    AdminRoles[gid] = new List<ulong>();
+    SpamProtection[gid] = 0;
+    BannedWords[gid] = new List<string>();
+    WhatToTracks[gid] = WhatToTrack.None;
+    RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
+    Tags[gid] = new List<TagBase>();
+    Em4Roles[gid] = new List<EmojiForRoleValue>();
+    TempRoleSelected[gid] = null;
+    Utils.Log("Guild " + g.Name + " joined", g.Name);
+    Utils.Log("Guild " + g.Name + " joined", null);
+
     return Task.FromResult(0);
   }
 

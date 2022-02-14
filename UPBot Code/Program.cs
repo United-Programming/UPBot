@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +44,7 @@ namespace UPBot {
           ButtonBehavior = DSharpPlus.Interactivity.Enums.ButtonPaginationBehavior.DeleteMessage,
           ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
-        Utils.Log("use interactivity", null);
+        Utils.Log("Use interactivity", null);
 
         Utils.InitClient(client);
         Utils.Log("Utils.InitClient", null);
