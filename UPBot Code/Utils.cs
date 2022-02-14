@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -62,6 +63,52 @@ public static class Utils
     string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
     if (File.Exists(logPath)) logs[guild] = new StreamWriter(logPath, append: true);
     else logs[guild] = File.CreateText(logPath);
+  }
+
+  public static string GetLogsPath(string guild) {
+    string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
+    if (!File.Exists(logPath)) return null;
+    else return logPath;
+  }
+
+  public static string GetLastLogsFolder(string guild, string logPath) {
+    string zipFolder = Path.Combine(LogsFolder, guild + " ZippedLog/");
+    if (!Directory.Exists(zipFolder)) Directory.CreateDirectory(zipFolder);
+    FileInfo fi = new FileInfo(logPath);
+    File.Copy(fi.FullName, Path.Combine(zipFolder, fi.Name), true);
+    return zipFolder;
+  }
+
+  public static string GetAllLogsFolder(string guild) {
+    Regex logsRE = new Regex(@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
+    string zipFolder = Path.Combine(LogsFolder, guild + " ZippedLogs/");
+    if (!Directory.Exists(zipFolder)) Directory.CreateDirectory(zipFolder);
+    foreach (var file in Directory.GetFiles(LogsFolder, "*.logs")) {
+      if (logsRE.IsMatch(file)) {
+        FileInfo fi = new FileInfo(file);
+        File.Copy(fi.FullName, Path.Combine(zipFolder, fi.Name), true);
+      }
+    }
+    return zipFolder;
+  }
+
+  public static int DeleteAllLogs(string guild) {
+    Regex logsRE = new Regex(@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
+    List<string> toDelete = new List<string>();
+    foreach (var file in Directory.GetFiles(LogsFolder, "*.logs")) {
+      if (logsRE.IsMatch(file)) {
+        FileInfo fi = new FileInfo(file);
+        toDelete.Add(fi.FullName);
+      }
+    }
+    int num = 0;
+    foreach (var file in toDelete) {
+      try {
+        File.Delete(file);
+        num++;
+      } catch { }
+    }
+    return num;
   }
 
   internal static string GetSafeMemberName(CommandContext ctx, ulong userSnoflake) {
@@ -265,6 +312,22 @@ public static class Utils
     }
 
     await Utils.BuildEmbedAndExecute("Error", message, red, ctx, respond);
+  }
+
+  /// <summary>
+  /// Used to delete a folder after a while
+  /// </summary>
+  /// <param name="msg1"></param>
+  public static Task DeleteFolderDelayed(int seconds, string path) {
+    Task.Run(() => {
+      try {
+        Task.Delay(seconds * 1000).Wait();
+        Directory.Delete(path, true);
+      } catch (Exception ex) {
+        Console.WriteLine("Cannot delete folder: " + path + ": " + ex.Message);
+      }
+    });
+    return Task.FromResult(0);
   }
 
   /// <summary>

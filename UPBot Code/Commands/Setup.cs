@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -962,6 +963,17 @@ public class Setup : BaseCommandModule {
       // ****************** LIST *********************************************************************************************************************************************
       if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
         await Utils.DeleteDelayed(60, ctx.RespondAsync(GenerateSetupList(g, gid)));
+        return;
+      }
+
+      if (cmds[0].Equals("save")) {
+        string theList = GenerateSetupList(g, gid);
+        string rndName = "SetupList" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".txt";
+        File.WriteAllText(rndName, theList);
+        using var fs = new FileStream(rndName, FileMode.Open, FileAccess.Read);
+        await Utils.DeleteFileDelayed(30, rndName);
+        DiscordMessage msg = await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithContent("Setup List in attachment").WithFiles(new Dictionary<string, Stream>() { { rndName, fs } }));
+        await Utils.DeleteDelayed(60, msg);
         return;
       }
 

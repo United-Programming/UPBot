@@ -2,8 +2,6 @@
 [future] Add cppref
 [future] add a shortcut to set all on
 [future] add something to save/load a config
-[fix] If we are added to a new server we need to fill all values of setup or we will miserably fail
-[todo] Command to download the logs
 
 
                   Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
@@ -24,9 +22,8 @@ whois           |         |         |     X     |    X      |    X     |        
 timezone        |         |    X    |           |    X      |          |    X     |
 unitydocs       |    X    |         |           |    X      |          |          |
 
-
+[fix] If we are added to a new server we need to fill all values of setup or we will miserably fail
 
 
 To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=1541290192083&scope=bot
-
 
