@@ -31,7 +31,7 @@ public static class Utils
   readonly private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/14";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/24";
   }
 
   public static DiscordClient GetClient() {

@@ -56,7 +56,6 @@ public class GameModule : BaseCommandModule {
     int val = random.Next(0, 3);
 
     while (ir != null) {
-      ir.Handled = true;
       await ctx.Channel.DeleteMessageAsync(msg);
       if (ir.Id == "idrock") {
         if(val == 0) {

@@ -10,6 +10,7 @@ using DSharpPlus.Interactivity.Extensions;
 
 namespace UPBot {
   class Program {
+
     static void Main(string[] args) {
       if (args.Length >= 3) Utils.LogsFolder = args[2];
       Utils.Log("Log Started. Woho.", null);
