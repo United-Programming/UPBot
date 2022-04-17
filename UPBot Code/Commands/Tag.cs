@@ -22,7 +22,7 @@ public class Tag : BaseCommandModule {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
         Title = "Error in usage!",
         Color = DiscordColor.Red,
-        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.",
+        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.\nUse: `tag edit <topic>` - edit information of topic\nUse:`tag edit-tag <tag>` - to change name of tag`",
         Timestamp = DateTime.Now
       };
       var builder = new DiscordMessageBuilder();
@@ -49,7 +49,7 @@ public class Tag : BaseCommandModule {
   }
 
   [Command("tag")]
-  public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit.)")] string command, [Description("Topic to be shown.")] string topic) {
+  public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit, edit-tag)")] string command, [Description("Topic to be shown.")] string topic) {
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
     try {
       Utils.LogUserCommand(ctx);
@@ -69,6 +69,10 @@ public class Tag : BaseCommandModule {
         await EditCommand(ctx, topic);
         return;
       }
+      else if(command == "edit-tag") {
+        await EditTagCommand(ctx, topic);
+        return;
+      }
       else if (command == "alias") {
         embed.Title = "Error in usage!";
         embed.Color = DiscordColor.Red;
@@ -77,7 +81,6 @@ public class Tag : BaseCommandModule {
         await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
         return;
       }
-
       embed.Title = "Error in usage!";
       embed.Color = DiscordColor.Red;
       embed.Description = ($"Possible commands are: `Add`, `Remove`, and `Edit`");
@@ -254,6 +257,51 @@ public class Tag : BaseCommandModule {
     embed.Description = $"New information for {topic.ToUpperInvariant()}, is:\n\n{answer.Result.Content}\n";
     embed.Timestamp = DateTime.Now;
     await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
+  }
+  public async Task EditTagCommand(CommandContext ctx, string topic)
+  {
+        DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+        TagBase toEdit = FindTag(ctx.Guild.Id, topic, false);
+        if (toEdit == null)
+        {
+            embed.Title = "Tag does not exist!";
+            embed.Color = DiscordColor.Red;
+            embed.Description = $"The tag `{topic}` does not exist!";
+            embed.Timestamp = DateTime.Now;
+            await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
+            return;
+        }
+        embed.Title = $"Editing name of tag: {topic}";
+        embed.Color = DiscordColor.Purple;
+        embed.Description = ($"You are editing the {topic.ToUpperInvariant()}.");
+        embed.Timestamp = DateTime.Now;
+        var builder = new DiscordMessageBuilder();
+        DiscordMessage question = await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
+
+        var interact = ctx.Client.GetInteractivity();
+        var answer = await interact.WaitForMessageAsync((dm) => {
+            return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+        }, TimeSpan.FromMinutes(5));
+        await question.DeleteAsync();
+
+        if (answer.Result == null || string.IsNullOrWhiteSpace(answer.Result.Content))
+        {
+            embed.Title = "Time Passed!";
+            embed.Color = DiscordColor.Red;
+            embed.Description = ($"You have being answering for too long. :KO:");
+            embed.Timestamp = DateTime.Now;
+            await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
+            return;
+        }
+
+        toEdit.Topic = answer.Result.Content;
+        Database.Add(toEdit); // adding information to base
+
+        embed.Title = "Changes accepted";
+        embed.Color = DiscordColor.Green;
+        embed.Description = $"New name for {topic.ToUpperInvariant()}, changed to:\n\n{answer.Result.Content}\n";
+        embed.Timestamp = DateTime.Now;
+        await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
   }
 
   public async Task AliasCommand(CommandContext ctx, string topic, string alias) {
