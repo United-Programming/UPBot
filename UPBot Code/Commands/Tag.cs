@@ -22,7 +22,7 @@ public class Tag : BaseCommandModule {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
         Title = "Error in usage!",
         Color = DiscordColor.Red,
-        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.\nUse: `tag edit <topic>` - edit information of topic\nUse:`tag edit-tag <tag>` - to change name of tag`",
+        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.\nUse: `tag edit <topic>` - edit information of topic\nUse:`tag rename <tag>` - to change name of tag`",
         Timestamp = DateTime.Now
       };
       var builder = new DiscordMessageBuilder();
@@ -69,7 +69,7 @@ public class Tag : BaseCommandModule {
         await EditCommand(ctx, topic);
         return;
       }
-      else if(command == "edit-tag") {
+      else if(command == "rename") {
         await EditTagCommand(ctx, topic);
         return;
       }
@@ -271,9 +271,9 @@ public class Tag : BaseCommandModule {
             await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
             return;
         }
-        embed.Title = $"Editing name of tag: {topic}";
+        embed.Title = $"Renaming tag: {topic}";
         embed.Color = DiscordColor.Purple;
-        embed.Description = ($"You are editing the {topic.ToUpperInvariant()}.");
+        embed.Description = ($"You are renaming the {topic.ToUpperInvariant()}.");
         embed.Timestamp = DateTime.Now;
         var builder = new DiscordMessageBuilder();
         DiscordMessage question = await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
