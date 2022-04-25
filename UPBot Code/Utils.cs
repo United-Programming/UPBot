@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
-  public const int vmajor = 0, vminor = 2, vbuild = 0;
+  public const int vmajor = 0, vminor = 2, vbuild = 1;
   public static string LogsFolder = "./";
 
   /// <summary>
@@ -31,7 +31,7 @@ public static class Utils
   readonly private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/02/24";
+    return vmajor + "." + vminor + "." + vbuild + " - 2022/04/25";
   }
 
   public static DiscordClient GetClient() {

@@ -105,6 +105,7 @@ namespace UPBot {
         guilds[key] = false;
 
       int times = 0;
+      bool cleanOldGuilds = true;
       while (true) {
         times++;
         foreach (var g in client.Guilds.Values) {
@@ -113,16 +114,35 @@ namespace UPBot {
         int num = 0;
         foreach (bool b in guilds.Values) if (b) num++;
 
-        if (num == toGet) break;
+        if (num == toGet) {
+          cleanOldGuilds = false;
+          break;
+        }
         await Task.Delay(500);
         if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
 
-        if (times > 120) {
-          if (num > 0) Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
+        if (times > 10) { // FIXME
+          if (num > 0) {
+            Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
+            break;
+          }
           else {
             Utils.Log("[CRITICAL] Stopping. We cannot find any valid Discord server.", null);
             exitToken.Cancel();
             return;
+          }
+        }
+      }
+      // Remove guild that are no more valid
+      if (cleanOldGuilds) {
+        foreach (var g in client.Guilds.Values) {
+          if (g.IsUnavailable || string.IsNullOrEmpty(g.Name)) {
+            Utils.Log("Leaving guild with id: " + g.Id, null);
+            try {
+              _ = g.LeaveAsync();
+            } catch (Exception e) {
+              Utils.Log("Error in Leaving guild: " + e.Message, null);
+            }
           }
         }
       }

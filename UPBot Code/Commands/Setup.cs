@@ -2682,7 +2682,7 @@ public class Setup : BaseCommandModule {
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions;
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
