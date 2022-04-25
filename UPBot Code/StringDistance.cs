@@ -157,22 +157,40 @@ public static class StringDistance {
     float xtra = (10 + Math.Abs(a.Length - b.Length)) / (float)Math.Sqrt(len);
     float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
 
-    if (a.IndexOf('.') != -1) {
-      string[] parts = a.Split('.');
-      foreach (string p in parts) {
-        if (p.Length < 3) continue;
-        if (b.IndexOf(p.ToLowerInvariant()) != -1) cont *= .9f;
-      }
-    }
-    if (b.IndexOf('.') != -1) {
-      string[] parts = b.Split('.');
-      foreach (string p in parts) {
-        if (p.Length < 3) continue;
-        if (a.IndexOf(p.ToLowerInvariant()) != -1) cont *= .9f;
-      }
-    }
-
     return (int)(1000 * jw * dl * xtra * cont);
   }
 
+  public static int DistancePart(string a, string b) {
+    a = a.ToLowerInvariant();
+    b = b.ToLowerInvariant();
+    if (a == b) return 0;
+
+    float dist = 10000;
+    if (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) dist = 1000;
+
+    string[] pa = a.Replace('-', '.').Split('.');
+    string[] pb = b.Replace('-', '.').Split('.');
+
+    // one part is the same or contained or close enough to another part
+    foreach (string p1 in pa)
+      foreach (string p2 in pb) {
+        if (p1 == p2) dist *= .1f;
+        else if (p2.Length > 2 && p1.Length > p2.Length && p1.IndexOf(p2) != -1) dist *= .5f;
+        else if (p1.Length > 2 && p2.Length > p1.Length && p2.IndexOf(p1) != -1) dist *= .5f;
+        else {
+          float minLen = Math.Min(p1.Length, p2.Length);
+          float dld = DLDistance(p1, p2) / minLen;
+          if (dld < .05f) dld = .05f;
+          if (dld > 2) dld = 2;
+          dist *= dld;
+        }
+      }
+    if (dist < 0) dist = 0;
+    else {
+      float minLen = Math.Min(a.Length, b.Length);
+      dist *= DLDistance(a, b) / minLen;
+    }
+
+    return (int)dist;
+  }
 }

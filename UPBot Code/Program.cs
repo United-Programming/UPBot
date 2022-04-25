@@ -12,6 +12,15 @@ namespace UPBot {
   class Program {
 
     static void Main(string[] args) {
+
+      StringDistance.DistancePart("keycode.left", "KeyCode.LeftArrow");
+      StringDistance.DistancePart("keycode.left", "KeyCode.Clear");
+      StringDistance.DistancePart("keycode.left", "KeyCode.LeftBracket");
+
+
+
+
+
       if (args.Length >= 3) Utils.LogsFolder = args[2];
       Utils.Log("Log Started. Woho.", null);
       if (args.Length < 1) {

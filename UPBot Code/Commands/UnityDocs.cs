@@ -40,8 +40,7 @@ public class UnityDocs : BaseCommandModule {
 
       foreach (string item in UnityDocItems) {
         string key = item.ToLowerInvariant();
-        int dist = StringDistance.Distance(what, key);
-        if (key.IndexOf(what) != -1) dist /= 2;
+        int dist = StringDistance.DistancePart(what, key);
         for (int i = 0; i < numResults; i++) {
           if (dist < mins[i] && !bests.Contains(item)) {
             for (int j = numResults - 1; j > i; j--) {
@@ -53,33 +52,19 @@ public class UnityDocs : BaseCommandModule {
             break;
           }
         }
-        int lastdot = what.LastIndexOf('.');
-        if (lastdot != -1) {
-          string last = what[(lastdot + 1)..];
-          dist = StringDistance.Distance(last, key);
-          if (key.IndexOf(last) != -1) dist /= 4;
-          for (int i = 0; i < numResults; i++) {
-            if (dist < mins[i] && !bests.Contains(item)) {
-              for (int j = numResults - 1; j > i; j--) {
-                mins[j] = mins[j - 1];
-                bests[j] = bests[j - 1];
-              }
-              mins[i] = dist;
-              bests[i] = item;
-              break;
-            }
-          }
-        }
       }
 
       if (mins[0] > 400) return Utils.DeleteDelayed(30, ctx.RespondAsync("I cannot find anything related to `" + what + "` in Unity documentation").Result);
 
-      int numok = 0;
-      float average = 0;
-      for (int i = 0; i < numResults; i++) average += mins[i];
-      average /= numResults;
+      int numok = 1;
+      float diffSum = mins[0];
       for (int i = 1; i < numResults; i++) {
-        if (mins[i] < average) numok++;
+        diffSum += mins[i] - mins[i - 1];
+      }
+      float average = diffSum / numResults;
+      for (int i = 1; i < numResults; i++) {
+        if (mins[i] - mins[i - 1] < average) numok++;
+        else break;
       }
 
       if (numok == 1) {
@@ -11878,9 +11863,25 @@ public class UnityDocs : BaseCommandModule {
 "Quaternion",
 "Quaternion.AngleAxis",
 "Quaternion.Euler",
-"Quaternion.LookRotation",
 "Quaternion.Slerp",
 "Quaternion-identity",
+"Quaternion-eulerAngles",
+"Quaternion-normalized",
+"Quaternion.Set",
+"Quaternion.SetFromToRotation",
+"Quaternion.SetLookRotation",
+"Quaternion.ToAngleAxis",
+"Quaternion.Angle",
+"Quaternion.AngleAxis",
+"Quaternion.Dot",
+"Quaternion.FromToRotation",
+"Quaternion.Inverse",
+"Quaternion.Lerp",
+"Quaternion.LerpUnclamped",
+"Quaternion.LookRotation",
+"Quaternion.Normalize",
+"Quaternion.RotateTowards",
+"Quaternion.Slerp",
 "QueryTriggerInteraction",
 "QueryTriggerInteraction.Collide",
 "QueryTriggerInteraction.Ignore",
@@ -13265,13 +13266,101 @@ public class UnityDocs : BaseCommandModule {
 "ResourcesAPI.UnloadAsset",
 "ResourcesAPI-overrideAPI",
 "Rigidbody",
-"Rigidbody.AddForce",
+"Rigidbody-angularDrag",
+"Rigidbody-angularVelocity",
+"Rigidbody-centerOfMass",
+"Rigidbody-collisionDetectionMode",
+"Rigidbody-constraints",
+"Rigidbody-detectCollisions",
+"Rigidbody-drag",
+"Rigidbody-freezeRotation",
+"Rigidbody-inertiaTensor",
+"Rigidbody-inertiaTensorRotation",
+"Rigidbody-interpolation",
+"Rigidbody-isKinematic",
+"Rigidbody-mass",
+"Rigidbody-maxAngularVelocity",
+"Rigidbody-maxDepenetrationVelocity",
+"Rigidbody-position",
+"Rigidbody-rotation",
+"Rigidbody-sleepThreshold",
+"Rigidbody-solverIterations",
+"Rigidbody-solverVelocityIterations",
+"Rigidbody-useGravity",
+"Rigidbody-velocity",
+"Rigidbody-worldCenterOfMass",
+"Rigidbody-AddExplosionForce",
+"Rigidbody-AddForce",
+"Rigidbody-AddForceAtPosition",
+"Rigidbody-AddRelativeForce",
+"Rigidbody-AddRelativeTorque",
+"Rigidbody-AddTorque",
+"Rigidbody-ClosestPointOnBounds",
+"Rigidbody-GetPointVelocity",
+"Rigidbody-GetRelativePointVelocity",
+"Rigidbody-IsSleeping",
+"Rigidbody-MovePosition",
+"Rigidbody-MoveRotation",
+"Rigidbody-ResetCenterOfMass",
+"Rigidbody-ResetInertiaTensor",
+"Rigidbody-SetDensity",
+"Rigidbody-Sleep",
+"Rigidbody-SweepTest",
+"Rigidbody-SweepTestAll",
+"Rigidbody-WakeUp",
 "Rigidbody2D",
-"Rigidbody2D.AddForce",
+"Rigidbody2D-angularDrag",
+"Rigidbody2D-angularVelocity",
+"Rigidbody2D-attachedColliderCount",
+"Rigidbody2D-bodyType",
+"Rigidbody2D-centerOfMass",
+"Rigidbody2D-collisionDetectionMode",
 "Rigidbody2D-constraints",
+"Rigidbody2D-drag",
+"Rigidbody2D-freezeRotation",
+"Rigidbody2D-gravityScale",
+"Rigidbody2D-inertia",
+"Rigidbody2D-interpolation",
+"Rigidbody2D-isKinematic",
+"Rigidbody2D-mass",
+"Rigidbody2D-position",
+"Rigidbody2D-rotation",
+"Rigidbody2D-sharedMaterial",
+"Rigidbody2D-simulated",
+"Rigidbody2D-sleepMode",
+"Rigidbody2D-useAutoMass",
+"Rigidbody2D-useFullKinematicContacts",
+"Rigidbody2D-velocity",
+"Rigidbody2D-worldCenterOfMass",
+"Rigidbody2D-AddForce",
+"Rigidbody2D-AddForceAtPosition",
+"Rigidbody2D-AddRelativeForce",
+"Rigidbody2D-AddTorque",
+"Rigidbody2D-Cast",
+"Rigidbody2D-ClosestPoint",
+"Rigidbody2D-Distance",
+"Rigidbody2D-GetAttachedColliders",
+"Rigidbody2D-GetContacts",
+"Rigidbody2D-GetPoint",
+"Rigidbody2D-GetPointVelocity",
+"Rigidbody2D-GetRelativePoint",
+"Rigidbody2D-GetRelativePointVelocity",
+"Rigidbody2D-GetRelativeVector",
+"Rigidbody2D-GetShapes",
+"Rigidbody2D-GetVector",
+"Rigidbody2D-IsAwake",
+"Rigidbody2D-IsSleeping",
+"Rigidbody2D-IsTouching",
+"Rigidbody2D-IsTouchingLayers",
+"Rigidbody2D-MovePosition",
+"Rigidbody2D-MoveRotation",
+"Rigidbody2D-OverlapCollider",
+"Rigidbody2D-OverlapPoint",
+"Rigidbody2D-SetRotation",
+"Rigidbody2D-Sleep",
+"Rigidbody2D-WakeUp",
 "Rigidbody-collisionDetectionMode",
 "RigidbodyConstraints",
-"Rigidbody-constraints",
 "RigidbodyConstraints.FreezeAll",
 "RigidbodyConstraints.FreezePosition",
 "RigidbodyConstraints.FreezePositionX",
