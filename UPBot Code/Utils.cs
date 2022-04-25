@@ -40,21 +40,26 @@ public static class Utils
 
   public static void InitClient(DiscordClient c) {
     client = c;
-    thinkingAsError = DiscordEmoji.FromUnicode("🤔");
-    emojiIDs = new[] {
-      830907665869570088ul, // OK = 0,
-      830907684085039124ul, // KO = 1,
-      840702597216337990ul, // whatthisguysaid = 2,
-      830907626928996454ul, // StrongSmile = 3,
-      831465408874676273ul, // Cpp = 4,
-      831465428214743060ul, // CSharp = 5,
-      875852276017815634ul, // Java = 6,
-      876103767068647435ul, // Javascript = 7,
-      831465381016895500ul, // Python = 8,
-      831407996453126236ul, // UnitedProgramming = 9,
-      830908553908060200ul, // Unity = 10,
-      830908576951304212ul, // Godot = 11,
-      876180793213464606ul  // AutoRefactored = 12,
+    if (!DiscordEmoji.TryFromName(client, ":thinking:", out thinkingAsError)) {
+      thinkingAsError = DiscordEmoji.FromUnicode("🤔");
+    }
+    emojiNames = new[] {
+      ":thinking:", // Thinking = 0,
+      ":OK:", // OK = 1,
+      ":KO:", // KO = 2,
+      ":whatthisguysaid:", // whatthisguysaid = 3,
+      ":StrongSmile:", // StrongSmile = 4,
+      ":CPP:", // Cpp = 5,
+      ":CSharp:", // CSharp = 6,
+      ":Java:", // Java = 7,
+      ":Javascript:", // Javascript = 8,
+      ":Python:", // Python = 9,
+      ":UnitedProgramming:", // UnitedProgramming = 10,
+      ":Unity:", // Unity = 11,
+      ":Godot:", // Godot = 12,
+      ":AutoRefactored:",  // AutoRefactored = 13,
+      ":CodeMonkey:", // CodeMonkey = 14,
+      ":TaroDev:", // TaroDev = 15,
     };
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
   }
@@ -189,8 +194,7 @@ public static class Utils
     return await ctx.Channel.SendMessageAsync(builder.Build());
   } 
 
-  private static DiscordEmoji[] emojis;
-  private static ulong[] emojiIDs;
+  private static string[] emojiNames;
   private static DiscordEmoji thinkingAsError;
 
   /// <summary>
@@ -200,22 +204,38 @@ public static class Utils
   /// <param name="emoji">The emoji to get, specified from the enum</param>
   /// <returns>The requested emoji or the Thinking emoji in case something went wrong</returns>
   public static DiscordEmoji GetEmoji(EmojiEnum emoji) {
-    if (emojis == null) emojis = new DiscordEmoji[13];
-
     int index = (int)emoji;
-    if (index < 0 || index >= emojis.Length) {
+    if (index < 0 || index >= emojiNames.Length) {
       Console.WriteLine("WARNING: Requested wrong emoji");
       return thinkingAsError;
     }
-    if (emojis[index] == null) {
-      if (!DiscordEmoji.TryFromGuildEmote(client, emojiIDs[index], out DiscordEmoji res)) {
-        Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
-        return thinkingAsError;
-      }
-      emojis[index] = res;
+    if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
+      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
+      return thinkingAsError;
     }
-    return emojis[index];
+    return res;
   }
+
+
+  /// <summary>
+  /// This function gets the url of the Emoji based on its name.
+  /// No access to discord (so if the URL is no more valid it will fail (invalid image))
+  /// </summary>
+  /// <param name="emoji">The emoji to get, specified from the enum</param>
+  /// <returns>The requested url for the emoji</returns>
+  public static string GetEmojiURL(EmojiEnum emoji) {
+    int index = (int)emoji;
+    if (index < 0 || index >= emojiNames.Length) {
+      Console.WriteLine("WARNING: Requested wrong emoji");
+      return thinkingAsError.Url;
+    }
+    if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
+      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
+      return thinkingAsError;
+    }
+    return res.Url;
+  }
+
 
   /// <summary>
   /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji object
@@ -399,19 +419,22 @@ public static class Utils
 
 public enum EmojiEnum {
   None = -1,
-  OK = 0,
-  KO = 1,
-  WhatThisGuySaid = 2,
-  StrongSmile = 3,
-  Cpp = 4,
-  CSharp = 5,
-  Java = 6,
-  Javascript = 7,
-  Python = 8,
-  UnitedProgramming = 9,
-  Unity = 10,
-  Godot = 11,
-  AutoRefactored = 12,
+  Thinking = 0,
+  OK = 1,
+  KO = 2,
+  WhatThisGuySaid = 3,
+  StrongSmile = 4,
+  Cpp = 5,
+  CSharp = 6,
+  Java = 7,
+  Javascript = 8,
+  Python = 9,
+  UnitedProgramming = 10,
+  Unity = 11,
+  Godot = 12,
+  AutoRefactored = 13,
+  CodeMonkey = 14,
+  TaroDev = 15,
 }
 
 public enum CommandErrors {

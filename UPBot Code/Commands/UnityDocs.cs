@@ -98,7 +98,7 @@ public class UnityDocs : BaseCommandModule {
         DiscordEmbedBuilder e = new DiscordEmbedBuilder()
         .WithTitle("Possible documents for " + what)
         .WithDescription(msg)
-        .WithThumbnail(Utils.GetEmoji(EmojiEnum.Unity).Url, 32, 32);
+        .WithThumbnail(Utils.GetEmojiURL(EmojiEnum.Unity), 32, 32);
         return ctx.RespondAsync(e.Build());
       }
     } catch (Exception ex) {

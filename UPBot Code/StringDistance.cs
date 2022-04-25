@@ -156,6 +156,20 @@ public static class StringDistance {
     float dl = DLDistance(a, b) / len;
     float xtra = (10 + Math.Abs(a.Length - b.Length)) / len;
     float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
+
+    if (a.IndexOf('.') != -1) {
+      string[] parts = a.Split('.');
+      foreach (string p in parts) {
+        if (b.IndexOf(p.ToLowerInvariant()) != -1) cont *= .1f;
+      }
+    }
+    if (b.IndexOf('.') != -1) {
+      string[] parts = b.Split('.');
+      foreach (string p in parts) {
+        if (a.IndexOf(p.ToLowerInvariant()) != -1) cont *= .1f;
+      }
+    }
+
     return (int)(1000 * jw * dl * xtra * cont);
   }
 

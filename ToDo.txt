@@ -24,3 +24,4 @@ unitydocs       |    X    |         |           |    X      |          |        
 
 To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=1541290192083&scope=bot
 
+Add affiliate links promotion.
