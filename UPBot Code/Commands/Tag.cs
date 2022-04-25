@@ -37,8 +37,7 @@ public class Tag : BaseCommandModule {
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) return;
     try {
       Utils.LogUserCommand(ctx);
-      topic = topic.Trim().ToLowerInvariant();
-      if (topic == "list") {
+      if (topic.Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
         if (Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) await ShowAllInformation(ctx);
         return;
       }
@@ -54,7 +53,7 @@ public class Tag : BaseCommandModule {
     try {
       Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-      topic = topic.Trim().ToLowerInvariant();
+      topic = topic.Trim();
       command = command.Trim().ToLowerInvariant();
 
       if (command == "add") {
@@ -98,8 +97,8 @@ public class Tag : BaseCommandModule {
     try {
       Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-      topic = topic.Trim().ToLowerInvariant();
-      alias = alias.Trim().ToLowerInvariant();
+      topic = topic.Trim();
+      alias = alias.Trim();
       command = command.Trim().ToLowerInvariant();
 
       if (command == "alias") {
@@ -120,7 +119,10 @@ public class Tag : BaseCommandModule {
 
   TagBase FindTag(ulong gid, string name, bool getClosest) {
     foreach (TagBase tag in Setup.Tags[gid]) {
-      if (tag.Topic == name || tag.Alias1 == name || tag.Alias2 == name || tag.Alias3 == name) {
+      if (name.Equals(tag.Topic, StringComparison.InvariantCultureIgnoreCase) ||
+        name.Equals(tag.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+        name.Equals(tag.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
+        name.Equals(tag.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
         return tag;
       }
     }
@@ -171,7 +173,10 @@ public class Tag : BaseCommandModule {
     var builder = new DiscordMessageBuilder();
 
     foreach (var topics in Setup.Tags[ctx.Guild.Id]) {
-      if (topic == topics.Topic) {
+      if (topic.Equals(topics.Topic, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(topics.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(topics.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(topics.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
         embed.Title = "The Topic exists already!";
         embed.Color = DiscordColor.Red;
         embed.Description = ($"You are trying to add topic that already exists!\nIf you want to edit the topic use: `tag edit <topic>` - to edit");
@@ -317,8 +322,11 @@ public class Tag : BaseCommandModule {
       await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
       return;
     }
-    // Check if we do nto have the alias already
-    if (toAlias.Topic == alias || toAlias.Alias1 == alias || toAlias.Alias2 == alias || toAlias.Alias3 == alias) {
+    // Check if we do not have the alias already
+    if (alias.Equals(toAlias.Topic, StringComparison.InvariantCultureIgnoreCase) ||
+        alias.Equals(toAlias.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+        alias.Equals(toAlias.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
+        alias.Equals(toAlias.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
       embed.Title = "Alias already existing";
       embed.Color = DiscordColor.Yellow;
       embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
@@ -356,7 +364,10 @@ public class Tag : BaseCommandModule {
 
     TagBase toRemove = FindTag(ctx.Guild.Id, topic, false);
     foreach (TagBase tag in Setup.Tags[ctx.Guild.Id]) {
-      if (tag.Topic == topic || tag.Alias1 == topic || tag.Alias2 == topic || tag.Alias3 == topic) {
+      if (topic.Equals(tag.Topic, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(tag.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(tag.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
+          topic.Equals(tag.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
         toRemove = tag;
         break;
       }
@@ -404,16 +415,20 @@ public class Tag : BaseCommandModule {
   }
 
   public async Task ShowTopic(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
-      Title = $"{topic}"
-    };
+    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
     int randomnumber = rand.Next(0, randColor.Length);
     embed.Color = randColor[randomnumber];
     embed.Timestamp = DateTime.Now;
 
     TagBase tag = FindTag(ctx.Guild.Id, topic, true);
     if (tag != null) {
-      await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.WithDescription(tag.Information).Build()));
+      embed.Title = tag.Topic;
+      string descr = "";
+      if (tag.Alias3 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_\n";
+      else if (tag.Alias2 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_\n";
+      else if (tag.Alias1 != null) descr += $"Alias: _**{tag.Alias1}**_\n";
+      descr += tag.Information;
+      await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.WithDescription(descr).Build()));
     }
     else {
       await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.WithDescription($"{topic} tag does not exist.").Build())));
