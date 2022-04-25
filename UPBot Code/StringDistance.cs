@@ -154,19 +154,21 @@ public static class StringDistance {
     float len = Math.Min(a.Length, b.Length);
     double jw = JWDistance(a, b);
     float dl = DLDistance(a, b) / len;
-    float xtra = (10 + Math.Abs(a.Length - b.Length)) / len;
+    float xtra = (10 + Math.Abs(a.Length - b.Length)) / (float)Math.Sqrt(len);
     float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
 
     if (a.IndexOf('.') != -1) {
       string[] parts = a.Split('.');
       foreach (string p in parts) {
-        if (b.IndexOf(p.ToLowerInvariant()) != -1) cont *= .1f;
+        if (p.Length < 3) continue;
+        if (b.IndexOf(p.ToLowerInvariant()) != -1) cont *= .9f;
       }
     }
     if (b.IndexOf('.') != -1) {
       string[] parts = b.Split('.');
       foreach (string p in parts) {
-        if (a.IndexOf(p.ToLowerInvariant()) != -1) cont *= .1f;
+        if (p.Length < 3) continue;
+        if (a.IndexOf(p.ToLowerInvariant()) != -1) cont *= .9f;
       }
     }
 

@@ -147,6 +147,7 @@ namespace UPBot {
         }
       }
 
+
       Utils.Log("Got all guilds after " + times, null);
       foreach (var g in client.Guilds.Values)
         Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""), null);

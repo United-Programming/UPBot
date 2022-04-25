@@ -74,18 +74,12 @@ public class UnityDocs : BaseCommandModule {
 
       if (mins[0] > 400) return Utils.DeleteDelayed(30, ctx.RespondAsync("I cannot find anything related to `" + what + "` in Unity documentation").Result);
 
-      int numok = numResults;
+      int numok = 0;
       float average = 0;
       for (int i = 0; i < numResults; i++) average += mins[i];
       average /= numResults;
-      double standardDeviation = 0;
-      for (int i = 0; i< numResults; i++) standardDeviation += (mins[i] - average) * (mins[i] - average);
-      standardDeviation = Math.Sqrt(standardDeviation) / numResults;
       for (int i = 1; i < numResults; i++) {
-        if (Math.Abs(mins[i] - average) > 10 && mins[i] > average + standardDeviation) {
-          numok = i;
-          break;
-        }
+        if (mins[i] < average) numok++;
       }
 
       if (numok == 1) {
@@ -93,7 +87,7 @@ public class UnityDocs : BaseCommandModule {
           " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
       } else {
         string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
-        for (int i = 0; i < numok - 1; i++) msg += "[" + bests[i] + "](https://docs.unity3d.com/ScriptReference/" + bests[i] + ".html), ";
+        for (int i = 0; i < numok - 1; i++) msg += "[" + bests[i] + "(" + mins[i] +  ")](https://docs.unity3d.com/ScriptReference/" + bests[i] + ".html), ";
         msg += "and [" + bests[numok - 1] + "](https://docs.unity3d.com/ScriptReference/" + bests[numok - 1] + ".html).\nTry one of them.";
         DiscordEmbedBuilder e = new DiscordEmbedBuilder()
         .WithTitle("Possible documents for " + what)
