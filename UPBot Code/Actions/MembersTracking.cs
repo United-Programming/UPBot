@@ -16,7 +16,7 @@ public class MembersTracking {
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
       if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
 
-      if (tracking.ContainsKey(args.Member.Id) || daysJ < 2) {
+      if (tracking.ContainsKey(args.Member.Id) || (daysJ >= 0 && daysJ < 2)) {
         tracking.Remove(args.Member.Id);
         string msg = "User " + args.Member.DisplayName + " did a kiss and go. (" + args.Guild.MemberCount + " members total)";
         await trackChannel.channel.SendMessageAsync(msg);
@@ -25,9 +25,9 @@ public class MembersTracking {
       else {
         string msgC;
         if (daysJ >= 0)
-          msgC = "<:KO:942449235050266667> User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
+          msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
         else
-          msgC = "<:KO:942449235050266667>  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
+          msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
         await trackChannel.channel.SendMessageAsync(msgC);
         Utils.Log(msgL, args.Guild.Name);
@@ -98,9 +98,13 @@ public class MembersTracking {
   static async Task SomethingAsync(DiscordChannel trackChannel, ulong id, string name, string mention, int numMembers) {
     await Task.Delay(25000);
     if (tracking.ContainsKey(id)) {
-      string msgC = "<:OK:942449235050266667>  User " + mention + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
+      string msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.OK) + "  User " + mention + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
       string msgL = "+ User " + name + " joined on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + numMembers + " members total)";
-      await trackChannel.SendMessageAsync(msgC);
+      try {
+        await trackChannel.SendMessageAsync(msgC);
+      } catch (Exception e) {
+        Utils.Log("Cannot post in tracking channel: " + e.Message, trackChannel.Guild.Name);
+      }
       Utils.Log(msgL, trackChannel.Guild.Name);
       tracking.Remove(id);
     }

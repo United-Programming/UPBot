@@ -61,6 +61,8 @@ public static class Utils
       ":CodeMonkey:", // CodeMonkey = 14,
       ":TaroDev:", // TaroDev = 15,
     };
+    emojiUrls = new string[emojiNames.Length];
+    emojiSnowflakes = new string[emojiNames.Length];
     sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
   }
 
@@ -195,6 +197,8 @@ public static class Utils
   } 
 
   private static string[] emojiNames;
+  private static string[] emojiUrls;
+  private static string[] emojiSnowflakes;
   private static DiscordEmoji thinkingAsError;
 
   /// <summary>
@@ -229,13 +233,35 @@ public static class Utils
       Console.WriteLine("WARNING: Requested wrong emoji");
       return thinkingAsError.Url;
     }
+
+    if (!string.IsNullOrEmpty(emojiUrls[index])) return emojiUrls[index];
     if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
       Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
       return thinkingAsError;
     }
+    emojiUrls[index] = res.Url;
     return res.Url;
   }
 
+  /// <summary>
+  /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji object
+  /// </summary>
+  /// <param name="emoji">The emoji to convert</param>
+  /// <returns>A string representation of the emoji that can be used in a message</returns>
+  public static string GetEmojiSnowflakeID(EmojiEnum emoji) {
+    int index = (int)emoji;
+    if (index < 0 || index >= emojiNames.Length) {
+      return "<" + thinkingAsError.GetDiscordName() + thinkingAsError.Id.ToString() + ">";
+    }
+
+    if (!string.IsNullOrEmpty(emojiSnowflakes[index])) return emojiSnowflakes[index];
+    if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
+      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
+      return thinkingAsError;
+    }
+    emojiSnowflakes[index] = "<" + res.GetDiscordName() + res.Id.ToString() + ">";
+    return emojiSnowflakes[index];
+  }
 
   /// <summary>
   /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji object

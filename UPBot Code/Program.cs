@@ -60,6 +60,7 @@ namespace UPBot {
         Database.AddTable<AdminRole>();
         Database.AddTable<TrackChannel>();
         Database.AddTable<TagBase>();
+        Database.AddTable<AffiliationLink>();
         Utils.Log("Added Tables", null);
 
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
@@ -165,6 +166,7 @@ namespace UPBot {
 
       client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
+      client.MessageCreated += async (s, e) => { await Affiliation.CheckMessage(s, e); };
       client.MessageCreated += AppreciationTracking.ThanksAdded;
       Utils.Log("Tracking", null);
 
