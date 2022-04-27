@@ -20,7 +20,33 @@ public class Logs : BaseCommandModule {
     if (ctx.Guild == null) return;
     Utils.LogUserCommand(ctx);
     try {
+
+      Utils.Log("Checking admin", null);
+
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
+
+
+      Utils.Log("Checking if we post in GLOBAL", null);
+      Utils.Log("Checking if we post local", ctx.Guild.Name);
+
+      string logs = Utils.GetLogsPath(ctx.Guild.Name);
+
+      Utils.Log("Log path = " + logs, null);
+
+      using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+        Utils.Log("filestream reader open", null);
+        using (var sr = new StreamReader(fs)) {
+          int num = 0;
+          Utils.Log("stream reader open", null);
+          while (!sr.EndOfStream) {
+            sr.ReadLine();
+            num++;
+          }
+          Utils.Log("read lines " + num, null);
+        }
+      }
+
+      Utils.Log("Quitting", null);
 
       await Utils.DeleteDelayed(60, ctx.Message.RespondAsync(helpMsg));
 
