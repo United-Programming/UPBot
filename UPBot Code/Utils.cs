@@ -311,9 +311,9 @@ public static class Utils
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
       logs[guild].WriteLine(msg);
-      logs[guild].FlushAsync();
+      logs[guild].FlushAsync().Wait();
     } catch (Exception e) {
-      _ = e.Message;
+      Console.WriteLine("Log error: " + e.Message);
     }
   }
 
