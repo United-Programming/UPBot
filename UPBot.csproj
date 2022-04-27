@@ -6,11 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01072" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0-nightly-01072" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0-nightly-01072" />
+    <PackageReference Include="DSharpPlus" Version="4.2.0" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0" />
     <PackageReference Include="SQLite" Version="3.13.0" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.114.4" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.3" />
   </ItemGroup>

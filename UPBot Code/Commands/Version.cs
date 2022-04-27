@@ -11,7 +11,7 @@ public class Version : BaseCommandModule {
   [Command("Version")]
   [Description("Get version information about the bot.")]
   public async Task VersionCommand(CommandContext ctx) {
-    string authors = "**CPU**, **Duck**, **Eremiell**, **SlicEnDicE**, **J0nathan**";
+    string authors = "**CPU**, **Duck**, **Eremiell**, **SlicEnDicE**, **J0nathan**, **Revolution**";
 
     await ctx.Message.RespondAsync(Utils.BuildEmbed("United Programming Bot",
       "**Version**: " + Utils.GetVersion() + "\n\nContributors: " +
