@@ -38,31 +38,46 @@ public class Logs : BaseCommandModule {
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
 
       string logs = Utils.GetLogsPath(ctx.Guild.Name);
+
+      Utils.Log("Checking if we get a numebr", null);
       if (int.TryParse(what, out int num)) {
+        Utils.Log("Got number " + num, null);
         if (num < 1) num = 1;
         if (num > 25) num = 25;
+        Utils.Log("Checking logs", null);
         if (logs == null) {
           await Utils.DeleteDelayed(60, ctx.Message.RespondAsync($"There are no logs today for the guild **{ctx.Guild.Name}**"));
           return;
         }
+        Utils.Log("Checking done", null);
 
         List<string> lines = new List<string>();
-        
-        using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-        using (var sr = new StreamReader(fs)) {
-          while (!sr.EndOfStream) {
-            lines.Add(sr.ReadLine());
+
+        using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+          Utils.Log("filestream reader open", null);
+          using (var sr = new StreamReader(fs)) {
+            Utils.Log("stream reader open", null);
+            while (!sr.EndOfStream) {
+              lines.Add(sr.ReadLine());
+              Utils.Log("adding a line", null);
+            }
           }
         }
 
+        Utils.Log("lines found " + lines.Count, null);
         int start = lines.Count - num;
         if (start < 0) start = 0;
         string res = $"Last {num} lines of logs:\n```";
+        Utils.Log("preparing res start="+start, null);
         while (start < lines.Count) {
           res += lines[start] + "\n";
           start++;
         }
+        Utils.Log("trimming", null);
+        if (res.Length > 1990) res = res[0..1990] + "...\n";
+
         res += "```";
+        Utils.Log("posting result", null);
         await Utils.DeleteDelayed(60, ctx.Message.RespondAsync(res));
         return;
       }
