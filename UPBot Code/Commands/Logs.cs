@@ -54,6 +54,7 @@ public class Logs : BaseCommandModule {
         }
 
         int start = lines.Count - num;
+        if (start < 0) start = 0;
         string res = $"Last {num} lines of logs:\n```";
         while (start < lines.Count) {
           res += lines[start] + "\n";
