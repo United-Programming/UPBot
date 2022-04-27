@@ -18,6 +18,7 @@ public class Logs : BaseCommandModule {
   [Description("Allows to see and download guild logs (only admins)")]
   public async Task LogsCommand(CommandContext ctx) {
     if (ctx.Guild == null) return;
+    Utils.LogUserCommand(ctx);
     try {
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
 
@@ -32,6 +33,7 @@ public class Logs : BaseCommandModule {
   [Description("Allows to see and download guild logs (only admins)")]
   public async Task LogsCommand(CommandContext ctx, [Description("How many lines to show or 'save' to save the logs")]string what) {
     if (ctx.Guild == null) return;
+    Utils.LogUserCommand(ctx);
     try {
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
 
