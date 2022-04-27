@@ -59,10 +59,13 @@ public class Logs : BaseCommandModule {
   [Description("Allows to see and download guild logs (only admins)")]
   public async Task LogsCommand(CommandContext ctx, [Description("How many lines to show or 'save' to save the logs")]string what) {
     if (ctx.Guild == null) return;
+      Utils.Log("Checking if we post in GLOBAL", null);
     Utils.LogUserCommand(ctx);
     try {
+      Utils.Log("Checking admin", null);
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
 
+      Utils.Log("Getting path", null);
       string logs = Utils.GetLogsPath(ctx.Guild.Name);
 
       Utils.Log("Checking if we get a numebr", null);
@@ -154,9 +157,11 @@ public class Logs : BaseCommandModule {
       Utils.Log("Error in LogsCommand: " + ex.Message, ctx.Guild.Name);
     }
   }
-    [Command("Logs")]
+
+/*  
+  [Command("LogsDelete")]
   [Description("Allows to see and download guild logs (only admins)")]
-  public async Task LogsCommand(CommandContext ctx, [Description("How many lines to show or 'save' to save the logs")]string what, [Description("The name of the guild, case sensitive, to confirm the delete")][RemainingText]string guildname) {
+  public async Task LogsCommand(CommandContext ctx, [Description("How many lines to show or 'save' to save the logs")]string what, [Description("The name of the guild, case sensitive, to confirm the delete")]string guildname) {
     if (ctx.Guild == null) return;
     try {
       if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) return;
@@ -181,6 +186,6 @@ public class Logs : BaseCommandModule {
       Utils.Log("Error in LogsCommand: " + ex.Message, ctx.Guild.Name);
     }
   }
-
+*/
   const string helpMsg = "Specify how many lines (up to 25) or `save` to download the zipped logs of today, or `saveall` for a zip of all logs of the guild.\nUse `delete` _name of guild_ to delete all logs for the guild.";
 }
