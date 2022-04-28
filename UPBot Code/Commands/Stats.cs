@@ -231,7 +231,7 @@ stats all #channel
 
     string res = "**Stats** (last 1000 messages)" + (c==ctx.Channel ? "" : " for channel " + c.Mention) + "\n_Used emojis_: used " + list.Count + " different emojis(as reactions):\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + "(" + list[i].Value + ") ";
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
     if (list.Count >= 25) res += " _showing only the first, most used, 25._";
     return res;
@@ -269,13 +269,13 @@ stats all #channel
 
     string res = "**Stats** (last 1000 messages)" + (c==ctx.Channel ? "" : " for channel " + c.Mention) + "\n_Mentioned users_: " + list.Count + " users have been mentioned:\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + "(" + list[i].Value + ") ";
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
     if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
 
     res += "\n_Users mentioning_: " + listask.Count + " users have mentioned other users:\n  ";
     for (int i = 0; i < 25 && i < listask.Count; i++) {
-      res += listask[i].Key + "(" + listask[i].Value + ") ";
+      res += $"**{listask[i].Key}**({listask[i].Value}) ";
     }
     if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
 
@@ -314,13 +314,13 @@ stats all #channel
 
     string res = "**Stats** (last 1000 messages)" + (c==ctx.Channel ? "" : " for channel " + c.Mention) + "\n_Mentioned roles_: " + list.Count + " roles have been mentioned:\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + "(" + list[i].Value + ") ";
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
     if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
 
     res += "\n_Users mentioning_: " + listask.Count + " users have mentioned the roles:\n  ";
     for (int i = 0; i < 25 && i < listask.Count; i++) {
-      res += listask[i].Key + "(" + listask[i].Value + ") ";
+      res += $"**{listask[i].Key}**({listask[i].Value}) ";
     }
     if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
 
@@ -371,10 +371,10 @@ stats all #channel
     list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
     string res = "**Stats** (last 1000 messages)" + (c==ctx.Channel ? "" : " for channel " + c.Mention) + "\n_Used emojis_: used " + list.Count + " different emojis (as reactions):\n  ";
-    for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + " (" + list[i].Value + ")  ";
+    for (int i = 0; i < 10 && i < list.Count; i++) {
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
-    if (list.Count >= 25) res += " _showing only the first, most used, 25._";
+    if (list.Count >= 10) res += " _showing only most used 10._";
 
     list.Clear();
     foreach (var k in countU.Keys) list.Add(new KeyValuePair<string, int>(k, countU[k]));
@@ -387,17 +387,17 @@ stats all #channel
     }
     listask.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
-    res += "\n_Mentioned users_: " + list.Count + " users have been mentioned:\n  ";
-    for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + " (" + list[i].Value + ")  ";
+    res += "\n\n_Mentioned users_: " + list.Count + " users have been mentioned:\n  ";
+    for (int i = 0; i < 10 && i < list.Count; i++) {
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
-    if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
+    if (list.Count >= 10) res += " _showing only most mentioned 10._";
 
-    res += "\n_Users mentioning_: " + listask.Count + " users have mentioned other users:\n  ";
-    for (int i = 0; i < 25 && i < listask.Count; i++) {
-      res += listask[i].Key + "(" + listask[i].Value + ") ";
+    res += "\n\n_Users mentioning_: " + listask.Count + " users have mentioned other users:\n  ";
+    for (int i = 0; i < 10 && i < listask.Count; i++) {
+      res += $"**{listask[i].Key}**({listask[i].Value}) ";
     }
-    if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
+    if (list.Count >= 10) res += " _showing most mentioned 10._";
 
     list.Clear();
     foreach (var k in countR.Keys) list.Add(new KeyValuePair<string, int>(k, countR[k]));
@@ -411,17 +411,17 @@ stats all #channel
     }
     listask.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
-    res += "\n_Mentioned roles_: " + list.Count + " roles have been mentioned:\n  ";
-    for (int i = 0; i < 25 && i < list.Count; i++) {
-      res += list[i].Key + " (" + list[i].Value + ")  ";
+    res += "\n\n_Mentioned roles_: " + list.Count + " roles have been mentioned:\n  ";
+    for (int i = 0; i < 10 && i < list.Count; i++) {
+      res += $"**{list[i].Key}**({list[i].Value}) ";
     }
-    if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
+    if (list.Count >= 10) res += " _showing only most mentioned 10._";
 
     res += "\n_Users mentioning_: " + listask.Count + " users have mentioned the roles:\n  ";
-    for (int i = 0; i < 25 && i < listask.Count; i++) {
-      res += listask[i].Key + "(" + listask[i].Value + ") ";
+    for (int i = 0; i < 10 && i < listask.Count; i++) {
+      res += $"**{listask[i].Key}**({listask[i].Value}) ";
     }
-    if (list.Count >= 25) res += " _showing only the first, most mentioned, 25._";
+    if (list.Count >= 10) res += " _showing only most mentioned 10._";
 
     return res;
   }
