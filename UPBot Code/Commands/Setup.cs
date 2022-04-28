@@ -2949,7 +2949,6 @@ public class Setup : BaseCommandModule {
       Title = "UPBot Configuration - Emoji for Role"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
-    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
     eb.Description = "\n\n**For the message**:\n" + msgcontent + "\n" +
       "**in the channel**:\n" + c?.Name + "\n" +
       "**The emoji**: " + emj + "\n**Will grant the role**: " + r?.Name + "\n\n\n";
@@ -3003,11 +3002,6 @@ public class Setup : BaseCommandModule {
       tc.SetVal(v); 
     }
     Database.Add(tc);
-  }
-
-  private DiscordComponentEmoji GetYN(Config.ConfVal cv) {
-    if (cv == Config.ConfVal.NotAllowed) return en;
-    return ey;
   }
 
   private DiscordComponentEmoji GetYN(Config.ConfVal cv, Config.ConfVal what) {

@@ -49,10 +49,9 @@ public class Logs : BaseCommandModule {
 
         List<string> lines = new List<string>();
         using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-          using (var sr = new StreamReader(fs)) {
-            while (!sr.EndOfStream) {
-              lines.Add(sr.ReadLine());
-            }
+          using var sr = new StreamReader(fs);
+          while (!sr.EndOfStream) {
+            lines.Add(sr.ReadLine());
           }
         }
 

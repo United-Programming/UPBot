@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 public static class Utils
 {
   public const int vmajor = 0, vminor = 2, vbuild = 1;
+  public const char vrev = 'c';
   public static string LogsFolder = "./";
 
   /// <summary>
@@ -28,10 +29,16 @@ public static class Utils
   // Fields relevant for InitClient()
   private static DiscordClient client;
   private static DateTimeFormatInfo sortableDateTimeFormat;
-  readonly private static Dictionary<string, StreamWriter> logs = new Dictionary<string, StreamWriter>();
+
+  private class LogInfo {
+    public StreamWriter sw;
+    public string path;
+  }
+
+  readonly private static Dictionary<string, LogInfo> logs = new Dictionary<string, LogInfo>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + " - 2022/04/27";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/04/28";
   }
 
   public static DiscordClient GetClient() {
@@ -68,14 +75,20 @@ public static class Utils
 
   public static void InitLogs(string guild) {
     string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
-    if (File.Exists(logPath)) logs[guild] = new StreamWriter(logPath, append: true);
-    else logs[guild] = File.CreateText(logPath);
+    LogInfo l;
+    if (logs.ContainsKey(guild)) l = logs[guild];
+    else {
+      l = new LogInfo();
+      logs[guild] = l;
+    }
+    l.path = logPath;
+    if (File.Exists(logPath)) logs[guild].sw = new StreamWriter(logPath, append: true);
+    else logs[guild].sw = File.CreateText(logPath);
   }
 
   public static string GetLogsPath(string guild) {
-    string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
-    if (!File.Exists(logPath)) return null;
-    else return logPath;
+    if (!logs.ContainsKey(guild)) return null;
+    return logs[guild].path;
   }
 
   public static string GetLastLogsFolder(string guild, string logPath) {
@@ -310,8 +323,8 @@ public static class Utils
     Console.WriteLine(guild + ": " + msg);
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
-      logs[guild].WriteLine(msg);
-      logs[guild].FlushAsync().Wait();
+      logs[guild].sw.WriteLine(msg);
+      logs[guild].sw.FlushAsync();
     } catch (Exception e) {
       Console.WriteLine("Log error: " + e.Message);
     }
