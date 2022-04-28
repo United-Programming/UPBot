@@ -59,35 +59,35 @@ public class GameModule : BaseCommandModule {
       await ctx.Channel.DeleteMessageAsync(msg);
       if (ir.Id == "idrock") {
         if(val == 0) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**");
         }
         else if(val == 1) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**");
         }
         else if(val == 2) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**");
         }
       }
       else if (ir.Id == "idpaper") {
         if(val == 0) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**");
         }
         else if(val == 1) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**");
         }
         else if(val == 2) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**");
         }
       }
       else if (ir.Id == "idscissors") {
         if(val == 0) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**");
         }
         else if(val == 1) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**");
         }
         else if(val == 2) {
-          await Utils.DeleteDelayed(15, await ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**"));
+          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**");
         }
       }
     }
@@ -136,27 +136,27 @@ public class GameModule : BaseCommandModule {
 
     if (playerChoice == RPSTypes.Rock) {
       if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**");
       } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**");
       } else {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**");
       }
     } else if (playerChoice == RPSTypes.Paper) {
       if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**");
       } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**");
       } else {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**");
       }
     } else {
       if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**");
       } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**");
       } else {
-        return Utils.DeleteDelayed(15, ctx.Channel.SendMessageAsync("You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**"));
+        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**");
       }
     }
   }

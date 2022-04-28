@@ -69,28 +69,28 @@ stats all #channel
         var msg = await ctx.Channel.SendMessageAsync("Counting emojis usage, mentioned users and roles for the channel...");
         string res = await CalculateAll(ctx, ch);
         await Utils.DeleteDelayed(60, ctx.Message);
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (cmd == "emojis") {
         var msg = await ctx.Channel.SendMessageAsync("Counting emojis usage, mentioned users and roles for the channel...");
         string res = await CalculateEmojis(ctx, ch);
         _ = msg.DeleteAsync();
         await Utils.DeleteDelayed(60, ctx.Message);
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (cmd == "users") {
         var msg = await ctx.Channel.SendMessageAsync("Counting mentioned people...");
         string res = await CalculateUserMentions(ctx, ch);
         _ = msg.DeleteAsync();
         await Utils.DeleteDelayed(60, ctx.Message);
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (cmd == "roles") {
         var msg = await ctx.Channel.SendMessageAsync("Counting mentioned roles...");
         string res = await CalculateRoleMentions(ctx, ch);
         _ = msg.DeleteAsync();
         await Utils.DeleteDelayed(60, ctx.Message);
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
       }
     } catch (Exception ex) {
       await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Stats", ex));
@@ -179,28 +179,28 @@ stats all #channel
         msg = await ctx.Channel.SendMessageAsync("Counting emojis usage, mentioned users and roles for the channel...");
         string res = await CalculateAll(ctx, ctx.Channel);
         msg.DeleteAsync().Wait();
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (ir.Id == "idusedemojis") {
         msg.DeleteAsync().Wait();
         msg = await ctx.Channel.SendMessageAsync("Counting emojis usage for the channel...");
         string res = await CalculateEmojis(ctx, ctx.Channel);
         msg.DeleteAsync().Wait();
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (ir.Id == "idmentionedusers") {
         msg.DeleteAsync().Wait();
         msg = await ctx.Channel.SendMessageAsync("Counting mentioned people...");
         string res = await CalculateUserMentions(ctx, ctx.Channel);
         msg.DeleteAsync().Wait();
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else if (ir.Id == "idmentionedroles") {
         msg.DeleteAsync().Wait();
         msg = await ctx.Channel.SendMessageAsync("Counting mentioned roles...");
         string res = await CalculateRoleMentions(ctx, ctx.Channel);
         msg.DeleteAsync().Wait();
-        await Utils.DeleteDelayed(120, ctx.Channel.SendMessageAsync(res));
+        await Utils.DeleteDelayedSend(120, ctx.Channel, res);
 
       } else {
         await Utils.DeleteDelayed(120, ctx.Message);

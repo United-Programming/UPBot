@@ -413,6 +413,27 @@ public static class Utils
     Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
     return Task.FromResult(0);
   }
+  public static Task DeleteDelayedSend(int seconds, DiscordChannel ch, string msg) {
+    if (msg.Length > 1999) { // Split
+      List<DiscordMessage> msgs = new List<DiscordMessage>();
+      while (msg.Length > 1999) {
+        int pos = msg.LastIndexOf(' ', 2000);
+        if (pos == -1) pos = 1990;
+        string msg1 = msg[0..pos].Trim();
+        msg = msg[pos..].Trim();
+        msgs.Add(ch.SendMessageAsync(msg1).Result);
+      }
+      if (msg.Length > 0) msgs.Add(ch.SendMessageAsync(msg).Result);
+      foreach (var dm in msgs) {
+        Task.Run(() => DelayAfterAWhile(dm, seconds * 1000));
+      }
+    }
+    else {
+      DiscordMessage dmsg = ch.SendMessageAsync(msg).Result;
+      Task.Run(() => DelayAfterAWhile(dmsg, seconds * 1000));
+    }
+    return Task.FromResult(0);
+  }
 
   /// <summary>
   /// Used to delete some messages after a while
