@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils
 {
-  public const int vmajor = 0, vminor = 2, vbuild = 1;
-  public const char vrev = 'c';
+  public const int vmajor = 0, vminor = 3, vbuild = 0;
+  public const char vrev = ' ';
   public static string LogsFolder = "./";
 
   /// <summary>
