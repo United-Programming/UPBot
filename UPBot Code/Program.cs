@@ -7,6 +7,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
 
 namespace UPBot {
   class Program {
@@ -63,9 +64,13 @@ namespace UPBot {
         Database.AddTable<AffiliationLink>();
         Utils.Log("Added Tables", null);
 
+
+
+        var slash = client.UseSlashCommands();
+        slash.RegisterCommands<SlashPing>(830900174553481236ul);
+
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
           StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters
-
           CaseSensitive = false,
           EnableDms = true,
           EnableMentionPrefix = true
