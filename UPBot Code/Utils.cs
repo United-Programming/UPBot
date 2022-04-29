@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -315,10 +316,9 @@ public static class Utils
   }
 
   internal static void LogUserCommand(InteractionContext ctx) {
-    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + 
-      "=> " + ctx.CommandName  + 
-      " FROM " + ctx.Member.DisplayName,
-      ctx.Guild.Name);
+    string log = $"{DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern)} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
+    foreach (var p in ctx.Interaction.Data.Options) log += $" [{p.Name}]{p.Value}";
+    Log(log, ctx.Guild.Name);
   }
 
   /// <summary>
@@ -326,7 +326,7 @@ public static class Utils
   /// </summary>
   /// <param name="msg"></param>
   /// <returns></returns>
-  internal static void Log(string msg, string guild) {
+    internal static void Log(string msg, string guild) {
     if (guild == null) guild = "GLOBAL";
     Console.WriteLine(guild + ": " + msg);
     try {

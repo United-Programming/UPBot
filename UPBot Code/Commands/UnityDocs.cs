@@ -1,33 +1,31 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 /// <summary>
 /// This command tried to find a link to Unity script documentation from a pre-defined list of terms
 /// author: CPU
 /// </summary>
-public class UnityDocs : BaseCommandModule {
+public class SlashUnityDocs : ApplicationCommandModule {
 
-  [Command("unitydocs")]
-  [Description("Get links to official Unity scripts documentation.")]
-  public async Task UnityDocsCommand(CommandContext ctx, [RemainingText] string what) {
+  [SlashCommand("unitydocs", "Get links to official Unity scripts documentation")]
+  public async Task UnityDocsCommand(InteractionContext ctx, [Option("What", "A part of the name of the script to search")] string what) {
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.UnityDocs, ctx)) return;
     await GenerateDocLink(ctx, what);
   }
 
   const int numResults = 20;
 
-  private Task GenerateDocLink(CommandContext ctx, string what) {
+  private Task GenerateDocLink(InteractionContext ctx, string what) {
     if (string.IsNullOrWhiteSpace(what)) return Task.FromResult(0);
     Utils.LogUserCommand(ctx);
     try {
       what = what.Trim().ToLowerInvariant();
       foreach (string item in UnityDocItems) {
         if (item.Equals(what, StringComparison.InvariantCultureIgnoreCase)) {
-          return ctx.RespondAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
+          return ctx.CreateResponseAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
         }
       }
       // Try to find something similar
@@ -54,7 +52,7 @@ public class UnityDocs : BaseCommandModule {
         }
       }
 
-      if (mins[0] > 400) return Utils.DeleteDelayed(30, ctx.RespondAsync("I cannot find anything related to `" + what + "` in Unity documentation").Result);
+      if (mins[0] > 400) return ctx.CreateResponseAsync("I cannot find anything related to `" + what + "` in Unity documentation");
 
       int numok = 1;
       float diffSum = mins[0];
@@ -68,7 +66,7 @@ public class UnityDocs : BaseCommandModule {
       }
 
       if (numok == 1) {
-        return ctx.RespondAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
+        return ctx.CreateResponseAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
           " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
       } else {
         string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
@@ -78,10 +76,10 @@ public class UnityDocs : BaseCommandModule {
         .WithTitle("Possible documents for " + what)
         .WithDescription(msg)
         .WithThumbnail(Utils.GetEmojiURL(EmojiEnum.Unity), 32, 32);
-        return ctx.RespondAsync(e.Build());
+        return ctx.CreateResponseAsync(e);
       }
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
+      return ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
     }
   }
 
