@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -310,6 +311,13 @@ public static class Utils
       "=> " + ctx.Command.Name + 
       " FROM " + ctx.Member.DisplayName + 
       ": " + ctx.Message.Content,
+      ctx.Guild.Name);
+  }
+
+  internal static void LogUserCommand(InteractionContext ctx) {
+    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + 
+      "=> " + ctx.CommandName  + 
+      " FROM " + ctx.Member.DisplayName,
       ctx.Guild.Name);
   }
 

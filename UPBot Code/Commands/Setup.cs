@@ -247,6 +247,24 @@ public class Setup : BaseCommandModule {
     return t == Config.ParamType.Ping; // Only ping is available by default
   }
 
+  internal static bool Permitted(DiscordGuild guild, Config.ParamType t, DSharpPlus.SlashCommands.InteractionContext ctx) {
+    if (guild == null) return false;
+    if (Configs[guild.Id].Count == 0) return t == Config.ParamType.Ping; // Only ping is available by default
+    Config.ConfVal cv = GetConfigValue(guild.Id, t);
+    switch (cv) {
+      case Config.ConfVal.NotAllowed: return false;
+      case Config.ConfVal.Everybody: return true;
+      case Config.ConfVal.OnlyAdmins:
+        if (ctx.Member.IsOwner) return true;
+        IEnumerable<DiscordRole> roles = ctx.Member.Roles;
+        foreach (var role in roles) {
+          if (IsAdminRole(guild.Id, role)) return true;
+        }
+        break;
+    }
+    return t == Config.ParamType.Ping; // Only ping is available by default
+  }
+
 
   internal static Reputation GetReputation(ulong gid, ulong uid) {
     if (!Reputations.ContainsKey(gid)) Reputations[gid] = new Dictionary<ulong, Reputation>();

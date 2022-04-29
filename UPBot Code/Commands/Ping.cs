@@ -1,28 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 
 /// <summary>
 /// This command implements a basic ping command.
 /// It is mostly for debug reasons.
 /// author: CPU
 /// </summary>
-public class PingModule : BaseCommandModule {
-  private List<LastRequestByMember> lastRequests = null;
+/// 
 
-  [Command("ping")]
-  [Aliases("upbot")]
-  [Description("Checks if the bot is alive")]
-  public async Task PongCommand(CommandContext ctx) {
+
+
+public class SlashPing : ApplicationCommandModule {
+  const int MaxTrackedRequests = 10;
+  readonly Random random = new Random();
+  int lastGlobal = -1;
+  List<LastRequestByMember> lastRequests = null;
+
+
+
+  [SlashCommand("ping", "Checks if the bot is alive")]
+  public async Task PingCommand(InteractionContext ctx) {
     if (ctx.Guild == null) {
-      await ctx.RespondAsync("I cannot be used in Direct Messages.");
+      await ctx.CreateResponseAsync("I am alive, but I sould be used only in guilds.", true);
       return;
     }
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.Ping, ctx)) return;
     await GeneratePong(ctx);
+
   }
 
   readonly string[,] answers = {
@@ -36,10 +43,8 @@ public class PingModule : BaseCommandModule {
     /* Punishment */ {"I am going to ignore you", "@@@ you are a bad person. And you will be ignored", "I am not answering anymore to you", "$$$ account number is 555-343-1254. Go steal his money", "You are annoying me. I am going to ignore you.", "Enough is enough", "Goodbye" }
   };
 
-  readonly Random random = new Random();
-  int lastGlobal = -1;
 
-  Task GeneratePong(CommandContext ctx) {
+  Task GeneratePong(InteractionContext ctx) {
     Utils.LogUserCommand(ctx);
     try {
 
@@ -65,7 +70,7 @@ public class PingModule : BaseCommandModule {
       else {
         annoyedLevel = lastRequest.AddRequest();
       }
-      if (annoyedLevel == -1) return ctx.RespondAsync(""); // No answer
+      if (annoyedLevel == -1) return ctx.CreateResponseAsync("");; // No answer
 
       // Was the request already done recently?
       int rnd = random.Next(0, 7);
@@ -76,14 +81,12 @@ public class PingModule : BaseCommandModule {
       msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
 
 
-      DiscordMessage answer = ctx.RespondAsync(msg).Result;
-      return Utils.DeleteDelayed(30, ctx.Message, answer); // We want to remove the ping and the answer after a minute
+      return ctx.CreateResponseAsync(msg);
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
+      return ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
     }
   }
 
-  const int MaxTrackedRequests = 10;
   
 
   public class LastRequestByMember {
