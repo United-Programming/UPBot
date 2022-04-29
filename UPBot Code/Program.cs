@@ -66,11 +66,14 @@ namespace UPBot {
 
 
         // SlashCommands
+        Utils.Log("SlashCommands", null);
         var slash = client.UseSlashCommands();
         slash.RegisterCommands<SlashPing>(830900174553481236ul); // FIXME this is just for United programming
         slash.RegisterCommands<SlashUnityDocs>(830900174553481236ul);
         slash.RegisterCommands<SlashRefactor>(830900174553481236ul);
         slash.RegisterCommands<SlashDelete>(830900174553481236ul);
+        slash.RegisterCommands<SlashWhoIs>(830900174553481236ul);
+
 
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
           StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters

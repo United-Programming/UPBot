@@ -1,41 +1,30 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+
 /// <summary>
 /// This command implements a WhoIs command.
 /// It gives info about a Discord User or yourself
 /// author: CPU
 /// </summary>
-public class WhoIs : BaseCommandModule {
+/// 
 
-  [Command("whois")]
-  [Aliases("userinfo")]
-  [Description("Get information about a specific user.")]
-  public async Task WhoIsCommand(CommandContext ctx) { // Basic version without parameters
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.WhoIs, ctx)) return;
-    await GenerateWhoIs(ctx, null);
-  }
+public class SlashWhoIs : ApplicationCommandModule {
 
-  [Command("whois")]
-  public async Task WhoIsCommand(CommandContext ctx, [Description("The user to get info from.")] DiscordMember member) { // Standard version with a user
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.WhoIs, ctx)) return;
-    await GenerateWhoIs(ctx, member);
-  }
-
-  [Command("whoami")]
-  [Description("Get information about your own Discord account.")]
-  public async Task WhoAmICommand(CommandContext ctx) { // Alternate version without parameters
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.WhoIs, ctx)) return;
-    await GenerateWhoIs(ctx, null);
-  }
-
-  private Task GenerateWhoIs(CommandContext ctx, DiscordMember m) {
+  [SlashCommand("whois", "Get information about a specific user (or yourself)")]
+  public async Task WhoIsCommand(InteractionContext ctx, [Option("user", "The user to get info from")] DiscordUser user = null) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.WhoIs, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
+
     try {
-      if (m == null) { // If we do not have a user we use the member that invoked the command
+      DiscordMember m = null;
+
+      if (user == null) { // If we do not have a user we use the member that invoked the command
         m = ctx.Member;
+      }
+      else {
+        m = ctx.Guild.GetMemberAsync(user.Id).Result;
       }
       bool you = m == ctx.Member;
 
@@ -102,9 +91,9 @@ public class WhoIs : BaseCommandModule {
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreatePublicThreads)) perms += ", Use Threads";
       if (perms.Length > 0) embed.AddField("Permissions", perms[2..], false);
 
-      return ctx.RespondAsync(embed.Build());
+      await ctx.CreateResponseAsync(embed.Build());
     } catch (Exception ex) {
-      return ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhoIs", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhoIs", ex));
     }
   }
 }
