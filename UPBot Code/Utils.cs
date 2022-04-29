@@ -317,7 +317,8 @@ public static class Utils
 
   internal static void LogUserCommand(InteractionContext ctx) {
     string log = $"{DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern)} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
-    foreach (var p in ctx.Interaction.Data.Options) log += $" [{p.Name}]{p.Value}";
+    if (ctx.Interaction.Data.Options != null)
+      foreach (var p in ctx.Interaction.Data.Options) log += $" [{p.Name}]{p.Value}";
     Log(log, ctx.Guild.Name);
   }
 

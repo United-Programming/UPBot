@@ -7,6 +7,7 @@
                 
 ping            | *
 unitydocs       | *
+reformat        | 
 MemberTracking  | 
 Appreciation    | 
 EmojiForRole    | 
@@ -17,11 +18,9 @@ game            |
 bool            | 
 rps             | 
 checklanguage   | 
-reformat        | 
 stats           | 
 whois           | 
 timezone        | 
 
-To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=1541290192083&scope=bot
-https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
+To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
 

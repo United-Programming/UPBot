@@ -11,8 +11,6 @@ using DSharpPlus.SlashCommands;
 /// </summary>
 /// 
 
-
-
 public class SlashPing : ApplicationCommandModule {
   const int MaxTrackedRequests = 10;
   readonly Random random = new Random();
