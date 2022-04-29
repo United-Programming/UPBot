@@ -1,105 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 
 /// <summary>
 /// This command will delete the last x messages
 /// or the last x messages of a specific user
 /// author: Duck
 /// </summary>
-public class Delete : BaseCommandModule {
-  private const int MessageLimit = 50;
-  private const string CallbackLimitExceeded = ", since you can't delete more than 50 messages at a time.";
+/// 
+
+public class SlashDelete : ApplicationCommandModule {
+
 
   /// <summary>
   /// Delete the last x messages of any user
   /// </summary>
-  [Command("massdel")]
-  [Aliases("clear", "purge")]
-  [Description("Deletes the last x messages in the channel, the command was invoked in (e.g. `massdel 10`)." +
-               "\nIt contains an overload to delete the last x messages of a specified user (e.g. `massdel @User 10`).")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  public async Task DeleteCommand(CommandContext ctx, [Description("How many messages should be deleted?")] int count) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx)) return;
+  [SlashCommand("massdel", "Deletes all the last messages (massdel 10) or from a user (massdel @User 10) in the channel")]
+  public async Task DeleteCommand(InteractionContext ctx, [Option("count", "How many messages to delete")][Minimum(1)][Maximum(50)]long count, [Option("user", "What user' messages to delete")]DiscordUser user=null) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
-      await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatLanguage", $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?"));
+      return;
+    }
+    else if (count > 50) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatLanguage", $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?"));
       return;
     }
 
-    bool limitExceeded = CheckLimit(count);
+    await ctx.CreateResponseAsync("Deleting...");
 
-    var messages = ctx.Channel.GetMessagesAsync(count + 1).Result;
-    await DeleteMessages(ctx.Message, messages);
-
-    await Success(ctx, limitExceeded, count);
-  }
-
-  /// <summary>
-  /// Delete the last x messages of the specified user
-  /// </summary>
-  [Command("massdel")]
-  [RequirePermissions(Permissions.ManageMessages)] // Restrict this command to users/roles who have the "Manage Messages" permission
-  public async Task DeleteCommand(CommandContext ctx, [Description("Whose last x messages should get deleted?")] DiscordMember targetUser, [Description("How many messages should get deleted?")] int count) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx)) return;
-    Utils.LogUserCommand(ctx);
-    if (count <= 0) {
-      await Utils.ErrorCallback(CommandErrors.InvalidParamsDelete, ctx, count);
-      return;
-    }
-
-    bool limitExceeded = CheckLimit(count);
-
-    var allMessages = ctx.Channel.GetMessagesAsync().Result; // Get last 100 messages
-    var userMessages = allMessages.Where(x => x.Author == targetUser).Take(count + 1);
-    await DeleteMessages(ctx.Message, userMessages);
-
-    await Success(ctx, limitExceeded, count, targetUser);
-  }
-
-  /// <summary>
-  /// The core-process of deleting the messages
-  /// </summary>
-  public async Task DeleteMessages(DiscordMessage request, IEnumerable<DiscordMessage> messages) {
     try {
+      int numMsgs = 1;
+      int numDeleted = 0;
       List<DiscordMessage> toDelete = new List<DiscordMessage>();
-      foreach (DiscordMessage m in messages) {
-        if (m != request) toDelete.Add(m);
+      while (numMsgs < 5 && numDeleted < count) {
+        int num = (user == null ? (int)count + 2 : 50) * numMsgs;
+        var messages = await ctx.Channel.GetMessagesAsync(num);
+        foreach (DiscordMessage m in messages) {
+          if ((user == null || m.Author.Id == user.Id) && !m.Author.IsCurrent) {
+            toDelete.Add(m);
+            numDeleted++;
+            if (numDeleted >= count) break;
+          }
+        }
+        numMsgs++;
       }
-      await request.Channel.DeleteMessagesAsync(toDelete);
+      await ctx.Channel.DeleteMessagesAsync(toDelete);
+
+      await ctx.GetOriginalResponseAsync().Result.DeleteAsync();
+      if (user != null)
+        await ctx.Channel.SendMessageAsync($"{numDeleted} messages from {user.Username} deleted");
+      else
+        await ctx.Channel.SendMessageAsync($"{numDeleted} messages deleted");
     } catch (Exception ex) {
-      await request.RespondAsync(Utils.GenerateErrorAnswer(request.Channel.Guild.Name, "DeleteMessages", ex));
-    }
-
-  }
-
-  /// <summary>
-  /// Will be called at the end of every execution of this command and tells the user that the execution succeeded
-  /// including a short summary of the command (how many messages, by which user etc.)
-  /// </summary>
-  private async Task Success(CommandContext ctx, bool limitExceeded, int count, DiscordMember targetUser = null) {
-    try{
-    string mentionUserStr = targetUser == null ? string.Empty : $"by '{targetUser.DisplayName}'";
-    string overLimitStr = limitExceeded ? CallbackLimitExceeded : string.Empty;
-    string messagesLiteral = Utils.PluralFormatter(count, "message", "messages");
-    string hasLiteral = Utils.PluralFormatter(count, "has", "have");
-
-    await ctx.Message.DeleteAsync();
-    string embedMessage = $"The last {count} {messagesLiteral} {mentionUserStr} {hasLiteral} been successfully deleted{overLimitStr}.";
-
-    var message = await Utils.BuildEmbedAndExecute("Success", embedMessage, Utils.Green, ctx, true);
-    await Utils.DeleteDelayed(10, message);
-    } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Delete", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "DeleteMessages", ex));
     }
   }
 
-  private bool CheckLimit(int count) {
-    return count > MessageLimit;
-  }
 }

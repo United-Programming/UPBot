@@ -31,7 +31,7 @@ public class SlashRefactor : ApplicationCommandModule {
   [SlashCommand("whatlanguage", "Checks the programming language of a post")]
   public async Task CheckLanguage(InteractionContext ctx, [Option("Member", "The user that posted the message to check")] DiscordUser user = null) {
     // Refactors the previous post from specified user, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -65,7 +65,7 @@ public class SlashRefactor : ApplicationCommandModule {
   [SlashCommand("format", "Format a specified post (from a user, if specified) as code block")]
   public async Task FactorCommand(InteractionContext ctx, [Option("Member", "The user that posted the message to format")] DiscordUser user = null) {
     // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -158,7 +158,7 @@ public class SlashRefactor : ApplicationCommandModule {
   [SlashCommand("reformat", "Reformat a specified post as code block, the original message will be deleted")]
   public async Task RefactorCommand(InteractionContext ctx, [Option("Member", "The user that posted the message to format")] DiscordUser user = null) {
     // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
 

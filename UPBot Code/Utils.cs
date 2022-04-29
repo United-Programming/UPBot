@@ -25,6 +25,7 @@ public static class Utils
   /// </summary>
   public static readonly DiscordColor Red = new DiscordColor("#f50f48");
   public static readonly DiscordColor Green = new DiscordColor("#32a852");
+
   public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
   public static readonly DiscordColor Yellow = new DiscordColor("#f5bc42");
   
@@ -198,6 +199,21 @@ public static class Utils
   }
 
   /// <summary>
+  /// Quick shortcut to generate an error message
+  /// </summary>
+  /// <param name="error">The error to display</param>
+  /// <returns></returns>
+  internal static DiscordEmbed GenerateErrorAnswer(string guild, string cmd, string message) {
+    DiscordEmbedBuilder e = new DiscordEmbedBuilder {
+      Color = Red,
+      Title = "Error in " + cmd,
+      Description = message
+    };
+    Log("Error in " + cmd + ": " + message, guild);
+    return e.Build();
+  }
+
+  /// <summary>
   /// Logs an embed as a message in the relevant channel
   /// </summary>
   /// <param name="builder">Embed builder with the embed template</param>
@@ -327,7 +343,7 @@ public static class Utils
   /// </summary>
   /// <param name="msg"></param>
   /// <returns></returns>
-    internal static void Log(string msg, string guild) {
+  internal static void Log(string msg, string guild) {
     if (guild == null) guild = "GLOBAL";
     Console.WriteLine(guild + ": " + msg);
     try {
@@ -358,12 +374,6 @@ public static class Utils
       case CommandErrors.InvalidParams:
         message = "The given parameters are invalid. Enter `\\help [commandName]` to get help with the usage of the command.";
         respond = true;
-        break;
-      case CommandErrors.InvalidParamsDelete:
-        if (additionalParams[0] is int count)
-          message = $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?";
-        else
-          goto case CommandErrors.InvalidParams;
         break;
       case CommandErrors.MissingCommand:
         message = "There is no command with this name! If it's a CC, please don't use an alias, use the original name!";
@@ -484,6 +494,12 @@ public static class Utils
     } catch (Exception) { }
   }
 
+  internal async static void DefaultNotAllowed(InteractionContext ctx) {
+    await ctx.CreateResponseAsync($"The command {ctx.CommandName} is not allowed.");
+    await DeleteDelayed(15, ctx.GetOriginalResponseAsync().Result);
+  }
+
+
 }
 
 public enum EmojiEnum {
@@ -508,7 +524,6 @@ public enum EmojiEnum {
 
 public enum CommandErrors {
   InvalidParams,
-  InvalidParamsDelete,
   CommandExists,
   UnknownError,
   MissingCommand,

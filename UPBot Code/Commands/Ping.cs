@@ -25,7 +25,7 @@ public class SlashPing : ApplicationCommandModule {
       await ctx.CreateResponseAsync("I am alive, but I sould be used only in guilds.", true);
       return;
     }
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Ping, ctx)) return;
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Ping, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     await GeneratePong(ctx);
 
   }
