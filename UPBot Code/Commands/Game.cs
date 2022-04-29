@@ -1,190 +1,218 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+
 
 /// <summary>
 /// This command implements simple games like:
 /// Rock-Paper-Scissors
 /// author: SlicEnDicE
 /// </summary>
-public class GameModule : BaseCommandModule {
-  [Command("game")]
-  public async Task GameCommand(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) return;
-    Utils.LogUserCommand(ctx);
-    StringBuilder sb = new StringBuilder("Available game commmands\n");
-    sb.AppendLine("========================");
-    sb.AppendLine(String.Format("{0, -10}: {1}", "bool", "True or False"));
-    sb.AppendLine(String.Format("{0, -10}: {1}", "rps", "Rock, Paper, Scissors"));
 
-    await ctx.RespondAsync(String.Format("```{0}```", sb.ToString()));
-  }
-
-  [Command("bool")]
-  [Description("Returns True or False")]
-  public async Task BoolCommand(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) return;
-    Utils.LogUserCommand(ctx);
-    await PlayBool(ctx);
-  }
-
-  [Command("rps")]
-  [Description("Play Rock, Paper, Scissors")]
-  public async Task RPSCommand(CommandContext ctx, [Description("rock | paper | scissors")] string kind) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) return;
-    Utils.LogUserCommand(ctx);
-    await PlayRockPaperScissors(ctx, kind);
-  }
-
-  [Command("rps")]
-  public async Task RPSCommand(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) return;
-    Utils.LogUserCommand(ctx);
-
-    ctx.Channel.DeleteMessageAsync(ctx.Message).Wait();
-    var interact = ctx.Client.GetInteractivity();
-
-    // Basic intro message
-    var msg = CreateRPS(ctx);
-    var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(1));
-    var ir = result.Result;
-    int val = random.Next(0, 3);
-
-    while (ir != null) {
-      await ctx.Channel.DeleteMessageAsync(msg);
-      if (ir.Id == "idrock") {
-        if(val == 0) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**");
-        }
-        else if(val == 1) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**");
-        }
-        else if(val == 2) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**");
-        }
-      }
-      else if (ir.Id == "idpaper") {
-        if(val == 0) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**");
-        }
-        else if(val == 1) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**");
-        }
-        else if(val == 2) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**");
-        }
-      }
-      else if (ir.Id == "idscissors") {
-        if(val == 0) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**");
-        }
-        else if(val == 1) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**");
-        }
-        else if(val == 2) {
-          await Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**");
-        }
-      }
-    }
-    if (ir == null) await ctx.Channel.DeleteMessageAsync(msg); // Expired
-  }
-
-
+[SlashCommandGroup("game", "Commands to play games with the bot")]
+public class SlashGame : ApplicationCommandModule {
   readonly Random random = new Random();
 
-  Task PlayBool(CommandContext ctx) {
-    int value = random.Next(0, 2);
+  [SlashCommand("rockpaperscissors", "Play Rock, Paper, Scissors")]
+  public async Task RPSCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSTypes? yourmove = null) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
 
-    switch (value) {
-      case 1:
-        return ctx.RespondAsync("true");
-      default:
-        return ctx.RespondAsync("false");
-    }
-  }
-
-  enum RPSTypes : ushort {
-    Rock = 0,
-    Paper = 1,
-    Scissors = 2
-  }
-
-  Task PlayRockPaperScissors(CommandContext ctx, string kind) {
-    RPSTypes playerChoice;
-
-    _ = Utils.DeleteDelayed(15, ctx.Message);
-    switch (kind) {
-      case "rock":
-        playerChoice = RPSTypes.Rock;
-        break;
-      case "paper":
-        playerChoice = RPSTypes.Paper;
-        break;
-      case "scissors":
-        playerChoice = RPSTypes.Scissors;
-        break;
-      default:
-        return ctx.RespondAsync($"I don't know what {kind} is, please try again...");
-    }
 
     RPSTypes botChoice = (RPSTypes)random.Next(0, 3);
-
-    if (playerChoice == RPSTypes.Rock) {
-      if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 🪨 Rock! **DRAW!**");
-      } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played 📄 Paper! **I win!**");
-      } else {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 🪨 Rock " + ctx.Member.Mention + ", I played ✂️ Scissor! **You win!**");
+    if (yourmove != null) {
+      if (yourmove == RPSTypes.Rock) {
+        if (botChoice == RPSTypes.Rock) {
+          await ctx.CreateResponseAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played 🪨 Rock! **DRAW!**");
+        }
+        else if (botChoice == RPSTypes.Paper) {
+          await ctx.CreateResponseAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played 📄 Paper! **I win!**");
+        }
+        else {
+          await ctx.CreateResponseAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played ✂️ Scissor! **You win!**");
+        }
       }
-    } else if (playerChoice == RPSTypes.Paper) {
-      if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 🪨 Rock! **You win!**");
-      } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played 📄 Paper! **DRAW!**");
-      } else {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said 📄 Paper " + ctx.Member.Mention + ", I played ✂️ Scissor! **I win!**");
+      else if (yourmove == RPSTypes.Paper) {
+        if (botChoice == RPSTypes.Rock) {
+          await ctx.CreateResponseAsync($"You said 📄 Paper {ctx.Member.Mention}, I played 🪨 Rock! **You win!**");
+        }
+        else if (botChoice == RPSTypes.Paper) {
+          await ctx.CreateResponseAsync($"You said 📄 Paper {ctx.Member.Mention}, I played 📄 Paper! **DRAW!**");
+        }
+        else {
+          await ctx.CreateResponseAsync($"You said 📄 Paper {ctx.Member.Mention}, I played ✂️ Scissor! **I win!**");
+        }
       }
-    } else {
-      if (botChoice == RPSTypes.Rock) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 🪨 Rock! **I win!**");
-      } else if (botChoice == RPSTypes.Paper) {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played 📄 Paper! **You win!**");
-      } else {
-        return Utils.DeleteDelayedSend(15, ctx.Channel, "You said ✂️ Scissor " + ctx.Member.Mention + ", I played ✂️ Scissor! **DRAW!**");
+      else {
+        if (botChoice == RPSTypes.Rock) {
+          await ctx.CreateResponseAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played 🪨 Rock! **I win!**");
+        }
+        else if (botChoice == RPSTypes.Paper) {
+          await ctx.CreateResponseAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played 📄 Paper! **You win!**");
+        }
+        else {
+          await ctx.CreateResponseAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played ✂️ Scissor! **DRAW!**");
+        }
       }
+      return;
     }
-  }
 
-  readonly DiscordComponentEmoji er = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("🪨"));
-  readonly DiscordComponentEmoji ep = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("📄"));
-  readonly DiscordComponentEmoji es = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✂️"));
+    await ctx.CreateResponseAsync("Pick your move");
 
-  private DiscordMessage CreateRPS(CommandContext ctx) {
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
-      Title = "Rock Paper Scissor"
-    };
-    eb.Description = "Pick your move, " + ctx.Member.Mention + "!";
-    eb.WithThumbnail(ctx.Member.AvatarUrl);
-
-    var builder = new DiscordMessageBuilder();
-    builder.AddEmbed(eb.Build());
+    var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, or ✂️");
     List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idrock", "Rock!", false, er),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idpaper", "Paper!", false, ep),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idscissors", "Scissors!", false, es)
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors")
     };
     builder.AddComponents(actions);
 
-    return builder.SendAsync(ctx.Channel).Result;
+    DiscordMessage msg = builder.SendAsync(ctx.Channel).Result;
+    var interact = ctx.Client.GetInteractivity();
+    var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+    var interRes = result.Result;
+    if (interRes != null) {
+      if (result.Result.Id == "bRock") {
+        if (botChoice == RPSTypes.Rock) {
+          await ctx.Channel.SendMessageAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played 🪨 Rock! **DRAW!**");
+        }
+        else if (botChoice == RPSTypes.Paper) {
+          await ctx.Channel.SendMessageAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played 📄 Paper! **I win!**");
+        }
+        else {
+          await ctx.Channel.SendMessageAsync($"You said 🪨 Rock {ctx.Member.Mention}, I played ✂️ Scissor! **You win!**");
+        }
+      }
+      else if (result.Result.Id == "bPaper") {
+        if (botChoice == RPSTypes.Rock) {
+          await ctx.Channel.SendMessageAsync($"You said 📄 Paper {ctx.Member.Mention}, I played 🪨 Rock! **You win!**");
+        }
+        else if (botChoice == RPSTypes.Paper) {
+          await ctx.Channel.SendMessageAsync($"You said 📄 Paper {ctx.Member.Mention}, I played 📄 Paper! **DRAW!**");
+        }
+        else {
+          await ctx.Channel.SendMessageAsync($"You said 📄 Paper {ctx.Member.Mention}, I played ✂️ Scissor! **I win!**");
+        }
+      }
+      else if (result.Result.Id == "bScissors") {
+        await ctx.Channel.SendMessageAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played 🪨 Rock! **I win!**");
+      }
+      else if (botChoice == RPSTypes.Paper) {
+        await ctx.Channel.SendMessageAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played 📄 Paper! **You win!**");
+      }
+      else {
+        await ctx.Channel.SendMessageAsync($"You said ✂️ Scissor {ctx.Member.Mention}, I played ✂️ Scissor! **DRAW!**");
+      }
+    }
+    await ctx.Channel.DeleteMessageAsync(msg);
+  }
+
+  public enum RPSTypes { // 🪨📄
+    [ChoiceName("Rock")] Rock = 0,
+    [ChoiceName("Paper")] Paper = 1,
+    [ChoiceName("Scissors")] Scissors = 2
+  }
+  public enum RPSLSTypes { // 🪨📄✂️🦎🖖
+    [ChoiceName("🪨 Rock")] Rock = 0,
+    [ChoiceName("📄 Paper")] Paper = 1,
+    [ChoiceName("✂️ Scissors")] Scissors = 2,
+    [ChoiceName("🦎 Lizard")] Lizard = 3,
+    [ChoiceName("🖖 Spock")] Spock = 4
+  }
+  enum RPSRes { First, Second, Draw }
+  RPSRes[][] rpslsRes = {
+    //                                  Rock          Paper         Scissors         Lizard         Spock 
+    /* Rock     */ new RPSRes[] {RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second },
+    /* Paper    */ new RPSRes[] {RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First  },
+    /* Scissors */ new RPSRes[] {RPSRes.Second, RPSRes.First,   RPSRes.Draw,   RPSRes.First,  RPSRes.Second },
+    /* Lizard   */ new RPSRes[] {RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First  },
+    /* Spock    */ new RPSRes[] {RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw   }
+  };
+  string[][] rpslsMsgs = {
+    //                            Rock                    Paper                     Scissors                        Lizard                          Spock 
+    /* Rock     */ new string[] {"Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"},
+    /* Paper    */ new string[] {"Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock" },
+    /* Scissors */ new string[] {"Rock crushes scissors", "Scissors cuts Paper",    "Draw",                         "Scissors decapitates Lizard",  "Spock smashes Scissors" },
+    /* Lizard   */ new string[] {"Rock crushes Lizard",   "Lizard eats Paper",      "Scissors decapitates Lizard",  "Draw",                         "Lizard poisons Spock"  },
+    /* Spock    */ new string[] {"Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw" }
+  };
+
+  private string GetChoice(RPSLSTypes? move) {
+    switch (move) {
+      case RPSLSTypes.Rock: return "🪨 Rock";
+      case RPSLSTypes.Paper: return "📄 Paper";
+      case RPSLSTypes.Scissors: return "✂️ Scissors";
+      case RPSLSTypes.Lizard: return "🦎 Lizard";
+      case RPSLSTypes.Spock: return "🖖 Spock";
+    }
+    return "?";
   }
 
 
-  // 🪨📄✂️
+  [SlashCommand("rockpaperscissorslizardspock", "Play Rock, Paper, Scissors, Lizard, Spock")]
+  public async Task RPSLKCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSLSTypes? yourmove = null) {
+    //[Option("yourmove", "Rock, Paper, or Scissors")] string yourmove = null) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    RPSLSTypes botChoice = (RPSLSTypes)random.Next(0, 5);
+    if (yourmove != null) {
+      string resmsg = rpslsMsgs[(int)yourmove][(int)botChoice];
+      switch (rpslsRes[(int)yourmove][(int)botChoice]) {
+        case RPSRes.First:
+          await ctx.CreateResponseAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! {resmsg} **You win!**");
+          break;
+        case RPSRes.Second:
+          await ctx.CreateResponseAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! {resmsg} **I win!**");
+          break;
+        case RPSRes.Draw:
+          await ctx.CreateResponseAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! **DRAW!**");
+          break;
+      }
+      return;
+    }
+
+    await ctx.CreateResponseAsync("Pick your move");
+
+
+    var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, ✂️, 🦎, or 🖖");
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bLizard", "🦎 Lizard"),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bSpock", "🖖 Spock")
+    };
+    builder.AddComponents(actions);
+
+    DiscordMessage msg = builder.SendAsync(ctx.Channel).Result;
+    var interact = ctx.Client.GetInteractivity();
+    var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
+    var interRes = result.Result;
+    if (interRes != null) {
+      if (result.Result.Id == "bRock") yourmove = RPSLSTypes.Rock;
+      else if (result.Result.Id == "bPaper") yourmove = RPSLSTypes.Paper;
+      else if (result.Result.Id == "bScissors") yourmove = RPSLSTypes.Scissors;
+      else if (result.Result.Id == "bLizard") yourmove = RPSLSTypes.Lizard;
+      else if (result.Result.Id == "bSpock") yourmove = RPSLSTypes.Spock;
+      string resmsg = rpslsMsgs[(int)yourmove][(int)botChoice];
+      switch (rpslsRes[(int)yourmove][(int)botChoice]) {
+        case RPSRes.First:
+          await ctx.Channel.SendMessageAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! {resmsg}: **You win!**");
+          break;
+        case RPSRes.Second:
+          await ctx.Channel.SendMessageAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! {resmsg}: **I win!**");
+          break;
+        case RPSRes.Draw:
+          await ctx.Channel.SendMessageAsync($"You said {GetChoice(yourmove)} {ctx.Member.Mention}, I played {GetChoice(botChoice)}! **DRAW!**");
+          break;
+      }
+    }
+    await ctx.Channel.DeleteMessageAsync(msg); // Expired
+  }
+
 }
 

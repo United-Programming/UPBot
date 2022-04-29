@@ -9,14 +9,14 @@ ping            | *
 unitydocs       | *
 reformat        | *
 delete          | *
-whois           | 
+whois           | *
+game            | 
 
 MemberTracking  | 
 Appreciation    | 
 EmojiForRole    | 
 BannedWords     | 
 tag             | 
-game            | 
 bool            | 
 rps             | 
 checklanguage   | 
