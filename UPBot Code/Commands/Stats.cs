@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity.Extensions;
 using System.Collections.Generic;
 
 /// <summary>
