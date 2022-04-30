@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.SlashCommands;
+using System.Text.RegularExpressions;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 
@@ -11,111 +11,295 @@ using DSharpPlus.Interactivity.Extensions;
 /// Author: J0nathan550
 /// </summary>
 
-public class Tag : BaseCommandModule {
-  public DiscordInteraction interaction; // for waiting user
+[SlashCommandGroup("tags", "Define and use tags on the server")]
+public class SlashTags : ApplicationCommandModule {
 
 
-  [Command("tag")]
-  public async Task TagMainCommand(CommandContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx) && !Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
+  [SlashCommand("tag", "Show the contents of a specific tag")]
+  public async Task TagCommand(InteractionContext ctx, [Option("tagname", "Tag to be shown")] string tagname) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder {
-        Title = "Error in usage!",
-        Color = DiscordColor.Red,
-        Description = $"Use: `tag add <topic>` - to start registration of topic\nUse: `tag remove <topic>` - to remove topic and included information\nUse: `tag list` - to see all list of topics\nUse: `tag alias <tag> <alias>` - to add an alias for an exisitng topic\nUse: `tag <topic>` - to show a topic.\nUse: `tag edit <topic>` - edit information of topic\nUse:`tag rename <tag>` - to change name of tag`",
-        Timestamp = DateTime.Now
-      };
-      var builder = new DiscordMessageBuilder();
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-    } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "tag", ex));
-    }
-  }
-
-  [Command("tag")]
-  public async Task TagMainCommand(CommandContext ctx, [Description("Topic to be shown.")] string topic) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) return;
-    try {
-      Utils.LogUserCommand(ctx);
-      if (topic.Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
-        if (Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) await ShowAllInformation(ctx);
-        return;
-      }
-      await ShowTopic(ctx, topic);
-    } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "tag", ex));
-    }
-  }
-
-  [Command("tag")]
-  public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit, edit-tag)")] string command, [Description("Topic to be shown.")] string topic) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
-    try {
-      Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-      topic = topic.Trim();
-      command = command.Trim().ToLowerInvariant();
+      int randomnumber = rand.Next(0, randColor.Length);
+      embed.Color = randColor[randomnumber];
+      embed.Timestamp = DateTime.Now;
 
-      if (command == "add") {
-        await AddCommand(ctx, topic);
-        return;
+      TagBase tag = FindTag(ctx.Guild.Id, tagname.Trim(), true);
+      if (tag != null) {
+        embed.Title = tag.Topic;
+        string descr = "";
+        if (tag.Alias3 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_\n";
+        else if (tag.Alias2 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_\n";
+        else if (tag.Alias1 != null) descr += $"Alias: _**{tag.Alias1}**_\n";
+        descr += tag.Information;
+        await ctx.CreateResponseAsync(embed.WithDescription(descr));
       }
-      else if (command == "remove") {
-        await RemoveCommand(ctx, topic);
-        return;
+      else {
+        await ctx.CreateResponseAsync(embed.WithDescription($"{tagname} tag does not exist."), true);
       }
-      else if (command == "edit") {
-        await EditCommand(ctx, topic);
-        return;
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Tag", ex));
+    }
+  }
+
+  [SlashCommand("tagadd", "Adds a new tag")]
+  public async Task TagAddCommand(InteractionContext ctx, [Option("tagname", "Tag to be added")] string tagname) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    try {
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      tagname = tagname.Trim();
+
+      foreach (var topics in Setup.Tags[ctx.Guild.Id]) {
+        if (tagname.Equals(topics.Topic, StringComparison.InvariantCultureIgnoreCase) ||
+            tagname.Equals(topics.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+            tagname.Equals(topics.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
+            tagname.Equals(topics.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
+          embed.Title = "The Tag exists already!";
+          embed.Color = DiscordColor.Red;
+          embed.Description = ($"You are trying to add Tag {tagname} that already exists!\nIf you want to edit the Tag use: `tagedit <topic>` - to edit");
+          embed.Timestamp = DateTime.Now;
+          await ctx.CreateResponseAsync(embed, true);
+          return;
+        }
       }
-      else if(command == "rename") {
-        await EditTagCommand(ctx, topic);
-        return;
-      }
-      else if (command == "alias") {
-        embed.Title = "Error in usage!";
+
+      embed.Title = "Adding a Tag";
+      embed.Color = DiscordColor.Green;
+      embed.Description = $"Type the content of the Tag {tagname}.";
+      embed.Timestamp = DateTime.Now;
+      await ctx.CreateResponseAsync(embed);
+
+      var interact = ctx.Client.GetInteractivity();
+      var answer = await interact.WaitForMessageAsync((dm) => {
+        return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+      }, TimeSpan.FromMinutes(5));
+
+      if (answer.Result == null) {
+        embed.Title = "Time expired!";
         embed.Color = DiscordColor.Red;
-        embed.Description = ($"Alias requires the topic to be aliased and the name of the alias");
+        embed.Description = $"You took too much time to type the tag. :KO:";
         embed.Timestamp = DateTime.Now;
-        await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
+        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
         return;
       }
-      embed.Title = "Error in usage!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = ($"Possible commands are: `Add`, `Remove`, and `Edit`");
+
+      TagBase tagBase = new TagBase(ctx.Guild.Id, tagname, answer.Result.Content); // creating line inside of database
+      Database.Add(tagBase); // adding information to base
+      Setup.Tags[ctx.Guild.Id].Add(tagBase);
+
+      embed.Title = "Tag added";
+      embed.Color = DiscordColor.Green;
+      embed.Description = ($"The topic: {tagname}, has been created");
       embed.Timestamp = DateTime.Now;
-      var builder = new DiscordMessageBuilder();
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
+      await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "tag", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagAdd", ex));
     }
   }
 
-  [Command("tag")]
-  public async Task TagMainCommand(CommandContext ctx, [Description("Command to execute (add, remove, list, alias, edit.)")] string command, [Description("Topic to be shown.")] string topic, [Description("Alias for the topic")] string alias) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) return;
+
+  [SlashCommand("tagremove", "Removes an existing tag")]
+  public async Task TagRemoveCommand(InteractionContext ctx, [Option("tagname", "Tag to be removed")] string tagname) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
     try {
-      Utils.LogUserCommand(ctx);
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-      topic = topic.Trim();
-      alias = alias.Trim();
-      command = command.Trim().ToLowerInvariant();
 
-      if (command == "alias") {
-        await AliasCommand(ctx, topic, alias);
+      TagBase toRemove = FindTag(ctx.Guild.Id, tagname, false);
+      if (toRemove == null) {
+        embed.Title = "The Tag does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{tagname}` does not exist";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+      Setup.Tags[ctx.Guild.Id].Remove(toRemove);
+      Database.DeleteByKeys<TagBase>(ctx.Guild.Id, toRemove);
+
+      embed.Title = "Topic deleted";
+      embed.Color = DiscordColor.DarkRed;
+      embed.Description = ($"Tag `{tagname}` has been deleted by {ctx.Member.DisplayName}");
+      embed.Timestamp = DateTime.Now;
+      await ctx.CreateResponseAsync(embed, true);
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagRemove", ex));
+    }
+  }
+
+  [SlashCommand("taglist", "Shows all tags")]
+  public async Task TagListCommand(InteractionContext ctx) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    try {
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      string result = "";
+      if (Setup.Tags[ctx.Guild.Id].Count == 0) {
+        result = "No tags are defined.";
+      }
+      else {
+        foreach (TagBase tag in Setup.Tags[ctx.Guild.Id]) {
+          result += $"**{tag.Topic}**";
+          if (tag.Alias3 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_)";
+          else if (tag.Alias2 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_)";
+          else if (tag.Alias1 != null) result += $" (_**{tag.Alias1}**_)";
+          result += $", ";
+        }
+      }
+      embed.Title = "List of tags";
+      embed.Color = DiscordColor.Blurple;
+      embed.Description = result[0..^2];
+      embed.Timestamp = DateTime.Now;
+      await ctx.CreateResponseAsync(embed);
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagList", ex));
+    }
+  }
+
+  [SlashCommand("tagalias", "Define aliases for a tag")]
+  public async Task TagAliasCommand(InteractionContext ctx, [Option("tagname", "Tag to be aliased")] string tagname, [Option("alias1", "First alias")] string alias1, [Option("alias2", "Second alias")] string alias2 = null, [Option("alias3", "Third alias")] string alias3 = null) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    try {
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+      // Find it, can be an alias
+      TagBase toAlias = FindTag(ctx.Guild.Id, tagname, false);
+      if (toAlias == null) {
+        embed.Title = "The Topic does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{tagname}` does not exist";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+      // Check if we do not have the alias already
+      if (alias1.Equals(toAlias.Topic, StringComparison.InvariantCultureIgnoreCase) || alias1.Equals(toAlias.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+          alias1.Equals(toAlias.Alias2, StringComparison.InvariantCultureIgnoreCase) || alias1.Equals(toAlias.Alias3, StringComparison.InvariantCultureIgnoreCase) ||
+          (alias2 != null && (alias2.Equals(toAlias.Topic, StringComparison.InvariantCultureIgnoreCase) || alias2.Equals(toAlias.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+                              alias2.Equals(toAlias.Alias2, StringComparison.InvariantCultureIgnoreCase) || alias2.Equals(toAlias.Alias3, StringComparison.InvariantCultureIgnoreCase))) ||
+          (alias3 != null && (alias3.Equals(toAlias.Topic, StringComparison.InvariantCultureIgnoreCase) || alias3.Equals(toAlias.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
+                              alias3.Equals(toAlias.Alias2, StringComparison.InvariantCultureIgnoreCase) || alias3.Equals(toAlias.Alias3, StringComparison.InvariantCultureIgnoreCase)))) {
+        embed.Title = "Alias already existing";
+        embed.Color = DiscordColor.Yellow;
+        embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
+        if (toAlias.Alias3 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_, _**{toAlias.Alias3}**_)";
+        else if (toAlias.Alias2 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_)";
+        else if (toAlias.Alias1 != null) embed.Description += $" (_**{toAlias.Alias1}**_)";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
         return;
       }
 
-      embed.Title = "Error in usage!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = ($"Possible commands are: `Add` or `Remove`, `Remove`, `Edit`, and `Alias`");
+      // Find the first empty alias slot
+      toAlias.Alias1 = alias1;
+      toAlias.Alias2 = alias2;
+      toAlias.Alias3 = alias3;
+      Database.Add(toAlias);
+
+      embed.Title = "Alias accepted";
+      embed.Color = DiscordColor.Green;
+      embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
+      if (toAlias.Alias3 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_, _**{toAlias.Alias3}**_)";
+      else if (toAlias.Alias2 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_)";
+      else if (toAlias.Alias1 != null) embed.Description += $" (_**{toAlias.Alias1}**_)";
       embed.Timestamp = DateTime.Now;
-      var builder = new DiscordMessageBuilder();
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
+      await ctx.CreateResponseAsync(embed);
     } catch (Exception ex) {
-      await ctx.RespondAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "tag", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagAlias", ex));
     }
   }
+
+  [SlashCommand("tagedit", "Edit an existing tag")]
+  public async Task TagEditCommand(InteractionContext ctx, [Option("tagname", "Tag to be modified")] string tagname) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    try {
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+      TagBase toEdit = FindTag(ctx.Guild.Id, tagname, false);
+      if (toEdit == null) {
+        embed.Title = "The Topic does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{tagname}` does not exist";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+
+      embed.Title = $"Editing {tagname}";
+      embed.Color = DiscordColor.Purple;
+      embed.Description = ($"You are editing the {tagname.ToUpperInvariant()}.\nBetter to copy previous text, and edit inside of message.");
+      embed.Timestamp = DateTime.Now;
+      await ctx.CreateResponseAsync(embed);
+
+      var interact = ctx.Client.GetInteractivity();
+      var answer = await interact.WaitForMessageAsync((dm) => {
+        return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+      }, TimeSpan.FromMinutes(5));
+
+      if (answer.Result == null || string.IsNullOrWhiteSpace(answer.Result.Content)) {
+        embed.Title = "Time expired!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = ($"You took too much time to answer. :KO:");
+        embed.Timestamp = DateTime.Now;
+        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+        return;
+      }
+
+      toEdit.Information = answer.Result.Content;
+      Database.Add(toEdit); // adding information to base
+
+      embed.Title = "Changes accepted";
+      embed.Color = DiscordColor.Green;
+      embed.Description = $"New information for {tagname.ToUpperInvariant()}, is:\n\n{answer.Result.Content}\n";
+      embed.Timestamp = DateTime.Now;
+      await ctx.CreateResponseAsync(embed);
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagEdit", ex));
+    }
+  }
+
+
+  [SlashCommand("tagrename", "Rename a tag")]
+  public async Task TagRenameCommand(InteractionContext ctx, [Option("tagname", "Tag to be modified")] string oldname, [Option("newname", "The new name for the tag")] string newname) {
+    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    Utils.LogUserCommand(ctx);
+
+    try {
+      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      TagBase toEdit = FindTag(ctx.Guild.Id, oldname, false);
+      if (toEdit == null) {
+        embed.Title = "Tag does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{oldname}` does not exist!";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+
+      toEdit.Topic = newname.Trim();
+      Database.Add(toEdit); // adding information to base
+
+      embed.Title = "Changes accepted";
+      embed.Color = DiscordColor.Green;
+      embed.Description = $"New name for {oldname.ToUpperInvariant()}, changed to:\n\n{newname}\n";
+      embed.Timestamp = DateTime.Now;
+
+      await ctx.CreateResponseAsync(embed);
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagRename", ex));
+    }
+  }
+
 
   TagBase FindTag(ulong gid, string name, bool getClosest) {
     foreach (TagBase tag in Setup.Tags[gid]) {
@@ -165,274 +349,6 @@ public class Tag : BaseCommandModule {
     }
 
     return null;
-  }
-
-
-  public async Task AddCommand(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-    var builder = new DiscordMessageBuilder();
-
-    foreach (var topics in Setup.Tags[ctx.Guild.Id]) {
-      if (topic.Equals(topics.Topic, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(topics.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(topics.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(topics.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
-        embed.Title = "The Topic exists already!";
-        embed.Color = DiscordColor.Red;
-        embed.Description = ($"You are trying to add topic that already exists!\nIf you want to edit the topic use: `tag edit <topic>` - to edit");
-        embed.Timestamp = DateTime.Now;
-        await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-        return;
-      }
-    }
-
-    embed.Title = "Add topic with information";
-    embed.Color = DiscordColor.Green;
-    embed.Description = ($"Type the content of the {topic}.");
-    embed.Timestamp = DateTime.Now;
-    DiscordMessage question = await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
-
-    var interact = ctx.Client.GetInteractivity();
-    var answer = await interact.WaitForMessageAsync((dm) => {
-      return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-    }, TimeSpan.FromMinutes(5));
-    await question.DeleteAsync();
-
-    if (answer.Result == null) {
-      embed.Title = "Time expired!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = $"You took too much time to type the tag. :KO:";
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-      return;
-    }
-
-    TagBase tagBase = new TagBase(ctx.Guild.Id, topic, answer.Result.Content); // creating line inside of database
-    Database.Add(tagBase); // adding information to base
-    Setup.Tags[ctx.Guild.Id].Add(tagBase);
-
-    embed.Title = "Topic added";
-    embed.Color = DiscordColor.Green;
-    embed.Description = ($"The topic: {topic}, has been created");
-    embed.Timestamp = DateTime.Now;
-    await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-
-  }
-
-  public async Task EditCommand(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
-    TagBase toEdit = FindTag(ctx.Guild.Id, topic, false);
-    if (toEdit == null) {
-      embed.Title = "The Topic does not exist!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = $"The tag `{topic}` does not exist";
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-      return;
-    }
-
-    embed.Title = $"Editing {topic}";
-    embed.Color = DiscordColor.Purple;
-    embed.Description = ($"You are editing the {topic.ToUpperInvariant()}.\nBetter to copy previous text, and edit inside of message.");
-    embed.Timestamp = DateTime.Now;
-    var builder = new DiscordMessageBuilder();
-    DiscordMessage question = await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
-
-    var interact = ctx.Client.GetInteractivity();
-    var answer = await interact.WaitForMessageAsync((dm) => {
-      return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-    }, TimeSpan.FromMinutes(5));
-    await question.DeleteAsync();
-
-    if (answer.Result == null || string.IsNullOrWhiteSpace(answer.Result.Content)) {
-      embed.Title = "Time Passed!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = ($"You have being answering for too long. :KO:");
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-      return;
-    }
-
-    toEdit.Information = answer.Result.Content;
-    Database.Add(toEdit); // adding information to base
-
-    embed.Title = "Changes accepted";
-    embed.Color = DiscordColor.Green;
-    embed.Description = $"New information for {topic.ToUpperInvariant()}, is:\n\n{answer.Result.Content}\n";
-    embed.Timestamp = DateTime.Now;
-    await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-  }
-  public async Task EditTagCommand(CommandContext ctx, string topic)
-  {
-        DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-        TagBase toEdit = FindTag(ctx.Guild.Id, topic, false);
-        if (toEdit == null)
-        {
-            embed.Title = "Tag does not exist!";
-            embed.Color = DiscordColor.Red;
-            embed.Description = $"The tag `{topic}` does not exist!";
-            embed.Timestamp = DateTime.Now;
-            await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-            return;
-        }
-        embed.Title = $"Renaming tag: {topic}";
-        embed.Color = DiscordColor.Purple;
-        embed.Description = ($"You are renaming the {topic.ToUpperInvariant()}.");
-        embed.Timestamp = DateTime.Now;
-        var builder = new DiscordMessageBuilder();
-        DiscordMessage question = await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
-
-        var interact = ctx.Client.GetInteractivity();
-        var answer = await interact.WaitForMessageAsync((dm) => {
-            return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-        }, TimeSpan.FromMinutes(5));
-        await question.DeleteAsync();
-
-        if (answer.Result == null || string.IsNullOrWhiteSpace(answer.Result.Content))
-        {
-            embed.Title = "Time Passed!";
-            embed.Color = DiscordColor.Red;
-            embed.Description = ($"You have being answering for too long. :KO:");
-            embed.Timestamp = DateTime.Now;
-            await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-            return;
-        }
-
-        toEdit.Topic = answer.Result.Content;
-        Database.Add(toEdit); // adding information to base
-
-        embed.Title = "Changes accepted";
-        embed.Color = DiscordColor.Green;
-        embed.Description = $"New name for {topic.ToUpperInvariant()}, changed to:\n\n{answer.Result.Content}\n";
-        embed.Timestamp = DateTime.Now;
-        await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-  }
-
-  public async Task AliasCommand(CommandContext ctx, string topic, string alias) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
-    // Find it, can be an alias
-    TagBase toAlias = FindTag(ctx.Guild.Id, topic, false);
-    if (toAlias == null) {
-      embed.Title = "The Topic does not exist!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = $"The tag `{topic}` does not exist";
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-      return;
-    }
-    // Check if we do not have the alias already
-    if (alias.Equals(toAlias.Topic, StringComparison.InvariantCultureIgnoreCase) ||
-        alias.Equals(toAlias.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
-        alias.Equals(toAlias.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
-        alias.Equals(toAlias.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
-      embed.Title = "Alias already existing";
-      embed.Color = DiscordColor.Yellow;
-      embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
-      if (toAlias.Alias3 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_, _**{toAlias.Alias3}**_)";
-      else if (toAlias.Alias2 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_)";
-      else if (toAlias.Alias1 != null) embed.Description += $" (_**{toAlias.Alias1}**_)";
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-      return;
-    }
-
-    // Find the first empty alias slot
-    if (toAlias.Alias1 == null) toAlias.Alias1 = alias;
-    else if (toAlias.Alias2 == null) toAlias.Alias2 = alias;
-    else if (toAlias.Alias3 == null) toAlias.Alias3 = alias;
-    else { // Shift and replace the last one
-      toAlias.Alias1 = toAlias.Alias2;
-      toAlias.Alias2 = toAlias.Alias3;
-      toAlias.Alias3 = alias;
-    }
-    Database.Add(toAlias);
-
-    embed.Title = "Alias accepted";
-    embed.Color = DiscordColor.Green;
-    embed.Description = $"Aliases for {toAlias.Topic.ToUpperInvariant()}:\n";
-    if (toAlias.Alias3 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_, _**{toAlias.Alias3}**_)";
-    else if (toAlias.Alias2 != null) embed.Description += $" (_**{toAlias.Alias1}**_, _**{toAlias.Alias2}**_)";
-    else if (toAlias.Alias1 != null) embed.Description += $" (_**{toAlias.Alias1}**_)";
-    embed.Timestamp = DateTime.Now;
-    await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-  }
-
-  public async Task RemoveCommand(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
-    TagBase toRemove = FindTag(ctx.Guild.Id, topic, false);
-    foreach (TagBase tag in Setup.Tags[ctx.Guild.Id]) {
-      if (topic.Equals(tag.Topic, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(tag.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(tag.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
-          topic.Equals(tag.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
-        toRemove = tag;
-        break;
-      }
-    }
-    if (toRemove == null) {
-      embed.Title = "The Topic does not exist!";
-      embed.Color = DiscordColor.Red;
-      embed.Description = $"The tag `{topic}` does not exist";
-      embed.Timestamp = DateTime.Now;
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build())));
-      return;
-    }
-    Setup.Tags[ctx.Guild.Id].Remove(toRemove);
-    Database.DeleteByKeys<TagBase>(ctx.Guild.Id, toRemove);
-
-    embed.Title = "Topic deleted";
-    embed.Color = DiscordColor.DarkRed;
-    embed.Description = ($"Topic `{topic}` has been deleted by {ctx.Member.DisplayName}");
-    embed.Timestamp = DateTime.Now;
-    var builder = new DiscordMessageBuilder();
-    await Utils.DeleteDelayed(30, ctx.RespondAsync(builder.AddEmbed(embed.Build())));
-  }
-
-  public async Task ShowAllInformation(CommandContext ctx) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-    string result = "";
-    if (Setup.Tags[ctx.Guild.Id].Count == 0) {
-      result = "No tags are defined.";
-    }
-    else {
-      foreach (TagBase tag in Setup.Tags[ctx.Guild.Id]) {
-        result += $"**{tag.Topic}**";
-        if (tag.Alias3 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_)";
-        else if (tag.Alias2 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_)";
-        else if (tag.Alias1 != null) result += $" (_**{tag.Alias1}**_)";
-        result += $", ";
-      }
-    }
-    embed.Title = "List of tags";
-    embed.Color = DiscordColor.Blurple;
-    embed.Description = result[0..^2];
-    embed.Timestamp = DateTime.Now;
-    var builder = new DiscordMessageBuilder();
-    await ctx.RespondAsync(builder.AddEmbed(embed.Build()));
-  }
-
-  public async Task ShowTopic(CommandContext ctx, string topic) {
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-    int randomnumber = rand.Next(0, randColor.Length);
-    embed.Color = randColor[randomnumber];
-    embed.Timestamp = DateTime.Now;
-
-    TagBase tag = FindTag(ctx.Guild.Id, topic, true);
-    if (tag != null) {
-      embed.Title = tag.Topic;
-      string descr = "";
-      if (tag.Alias3 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_\n";
-      else if (tag.Alias2 != null) descr += $"Aliases: _**{tag.Alias1}**_, _**{tag.Alias2}**_\n";
-      else if (tag.Alias1 != null) descr += $"Alias: _**{tag.Alias1}**_\n";
-      descr += tag.Information;
-      await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.WithDescription(descr).Build()));
-    }
-    else {
-      await Utils.DeleteDelayed(30, ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.WithDescription($"{topic} tag does not exist.").Build())));
-    }
   }
 
   readonly Random rand = new Random();

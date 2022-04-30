@@ -11,11 +11,11 @@ reformat        | *
 delete          | *
 whois           | *
 game            | *
+tag             | *
 
 MemberTracking  | 
 Appreciation    | 
 EmojiForRole    | 
-tag             | 
 stats           | 
 timezone        | 
 setup           | 

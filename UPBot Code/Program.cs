@@ -73,6 +73,8 @@ namespace UPBot {
         slash.RegisterCommands<SlashDelete>(830900174553481236ul);
         slash.RegisterCommands<SlashWhoIs>(830900174553481236ul);
         slash.RegisterCommands<SlashGame>(830900174553481236ul);
+        slash.RegisterCommands<SlashTags>(830900174553481236ul);
+
 
 
         CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
