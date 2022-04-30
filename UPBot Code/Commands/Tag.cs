@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
-using System.Text.RegularExpressions;
-using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 
