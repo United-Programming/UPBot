@@ -10,18 +10,16 @@ unitydocs       | *
 reformat        | *
 delete          | *
 whois           | *
-game            | 
+game            | *
 
 MemberTracking  | 
 Appreciation    | 
 EmojiForRole    | 
-BannedWords     | 
 tag             | 
-bool            | 
-rps             | 
-checklanguage   | 
 stats           | 
 timezone        | 
+setup           | 
+
 
 To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
 

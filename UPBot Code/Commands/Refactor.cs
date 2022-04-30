@@ -329,52 +329,6 @@ public class SlashRefactor : ApplicationCommandModule {
     return res;
   }
 
-  private bool IsBest(string what) {
-    if (what == null) return false;
-    what = what.ToLowerInvariant();
-    if (what == "best") return true;
-    if (what == "what") return true;
-    if (what == "whatis") return true;
-    if (what == "analyze") return true;
-    if (what == "analysis") return true;
-    return false;
-  }
-
-  private bool IsReplace(string what) {
-    if (what == null) return false;
-    what = what.ToLowerInvariant();
-    if (what == "rep") return true;
-    if (what == "repl") return true;
-    if (what == "replace") return true;
-    if (what == "remove") return true;
-    if (what == "change") return true;
-    if (what == "substitute") return true;
-    if (what == "destroy") return true;
-    if (what == "delete") return true;
-    return false;
-  }
-
-  private Langs NormalizeLanguage(string language) {
-    if (language == null) return Langs.NONE;
-    language = language.ToLowerInvariant();
-    if (language == "c#") return Langs.cs;
-    if (language == "cs") return Langs.cs;
-    if (language == "csharp") return Langs.cs;
-    if (language == "cpp") return Langs.cpp;
-    if (language == "c++") return Langs.cpp;
-    if (language == "c") return Langs.cpp;
-    if (language == "java") return Langs.java;
-    if (language == "javascript") return Langs.js;
-    if (language == "jscript") return Langs.js;
-    if (language == "js") return Langs.js;
-    if (language == "json") return Langs.js;
-    if (language == "typescript") return Langs.js;
-    if (language == "phyton") return Langs.python;
-    if (language == "python") return Langs.python;
-    if (language == "py") return Langs.python;
-    return Langs.NONE;
-  }
-
   readonly Regex codeBlock = new Regex("(.*)(\\n|\\r|\\r\\n)?(```[a-z]*(\\n|\\r|\\r\\n)|```[^;]*;(\\n|\\r|\\r\\n))(.*)(```[a-z]*(\\n|\\r|\\r\\n)?)", RegexOptions.Singleline, TimeSpan.FromSeconds(10));
   readonly Regex emptyLines = new Regex("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(10));
 

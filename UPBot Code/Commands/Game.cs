@@ -123,7 +123,7 @@ public class SlashGame : ApplicationCommandModule {
     [ChoiceName("🖖 Spock")] Spock = 4
   }
   enum RPSRes { First, Second, Draw }
-  RPSRes[][] rpslsRes = {
+  readonly RPSRes[][] rpslsRes = {
     //                                  Rock          Paper         Scissors         Lizard         Spock 
     /* Rock     */ new RPSRes[] {RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second },
     /* Paper    */ new RPSRes[] {RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First  },
@@ -131,7 +131,7 @@ public class SlashGame : ApplicationCommandModule {
     /* Lizard   */ new RPSRes[] {RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First  },
     /* Spock    */ new RPSRes[] {RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw   }
   };
-  string[][] rpslsMsgs = {
+  readonly string[][] rpslsMsgs = {
     //                            Rock                    Paper                     Scissors                        Lizard                          Spock 
     /* Rock     */ new string[] {"Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"},
     /* Paper    */ new string[] {"Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock" },

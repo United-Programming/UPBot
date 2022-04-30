@@ -41,7 +41,6 @@ public class Setup : BaseCommandModule {
   readonly public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
   readonly public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
   readonly public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
-  readonly public static Dictionary<ulong, List<string>> BannedWords = new Dictionary<ulong, List<string>>();
   readonly public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
   readonly public static Dictionary<ulong, AffiliationLink> Affiliations = new Dictionary<ulong, AffiliationLink>();
 
@@ -86,17 +85,6 @@ public class Setup : BaseCommandModule {
           WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
         }
       }
-
-      // Banned Words
-      List<BannedWord> words = Database.GetAll<BannedWord>();
-      Utils.Log("Found " + words.Count + " banned words from all servers", null);
-      foreach (BannedWord word in words) {
-        ulong gid = word.Guild;
-        if (!BannedWords.ContainsKey(gid)) BannedWords[gid] = new List<string>();
-        BannedWords[gid].Add(word.Word);
-      }
-      foreach (var bwords in BannedWords.Values)
-        bwords.Sort((a, b) => { return a.CompareTo(b); });
 
       // Reputation Tracking
       List<Reputation> allReps = Database.GetAll<Reputation>();
@@ -189,7 +177,6 @@ public class Setup : BaseCommandModule {
         if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
         if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
         if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
-        if (!BannedWords.ContainsKey(g)) BannedWords[g] = new List<string>();
         if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
         if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
         if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
@@ -293,11 +280,11 @@ public class Setup : BaseCommandModule {
     TrackChannels[gid] = null;
     AdminRoles[gid] = new List<ulong>();
     SpamProtection[gid] = 0;
-    BannedWords[gid] = new List<string>();
     WhatToTracks[gid] = WhatToTrack.None;
     RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
     Tags[gid] = new List<TagBase>();
     Em4Roles[gid] = new List<EmojiForRoleValue>();
+    Affiliations[gid] = new AffiliationLink();
     TempRoleSelected[gid] = null;
     Utils.Log("Guild " + g.Name + " joined", g.Name);
     Utils.Log("Guild " + g.Name + " joined", null);
@@ -589,44 +576,6 @@ public class Setup : BaseCommandModule {
         if (cmdId == "idfeatstats1") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.OnlyAdmins);
         if (cmdId == "idfeatstats2") SetConfigValue(gid, Config.ParamType.Stats, Config.ConfVal.Everybody);
         msg = CreateStatsInteraction(ctx, msg);
-      }
-
-      // ********* Config Banned Words ***********************************************************************
-      else if (cmdId.Length > 12 && cmdId[0..13] == "idfeatbannedw") {
-        if (cmdId == "idfeatbannedwed") {
-          if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
-          else SetConfigValue(gid, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
-        }
-        else if (cmdId == "idfeatbannedwadd") {
-          await ctx.Channel.DeleteMessageAsync(msg);
-          msg = null;
-          DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the word to be banned (at least 4 letters), you have 1 minute before timeout");
-          var answer = await interact.WaitForMessageAsync((dm) => {
-            return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-          }, TimeSpan.FromMinutes(1));
-          if (answer.Result == null || answer.Result.Content.Length < 4) {
-            _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("Config timed out"));
-          }
-          else { // Is it already here? (avoid duplicates)
-            string bw = answer.Result.Content.ToLowerInvariant().Trim();
-            if (BannedWords[gid].Contains(bw)) {
-              _ = Utils.DeleteDelayed(10, ctx.Channel.SendMessageAsync("The word is already there"));
-            }
-            else {
-              BannedWords[gid].Add(bw);
-              Database.Add(new BannedWord(gid, bw));
-            }
-          }
-          await ctx.Channel.DeleteMessageAsync(prompt);
-
-        }
-        else if (cmdId.Length > 13 && cmdId[0..14] == "idfeatbannedwr") {
-          // Get the word by number, remove it. In case there are no more disable the feature
-          int.TryParse(cmdId[13..], out int num);
-          Database.DeleteByKeys<BannedWord>(gid, BannedWords[gid][num]);
-          BannedWords[gid].RemoveAt(num);
-        }
-        msg = CreateBannedWordsInteraction(ctx, msg);
       }
 
       // ********* Config Scoring emojis ***********************************************************************
@@ -934,18 +883,6 @@ public class Setup : BaseCommandModule {
     cfg = GetConfig(gid, Config.ParamType.Stats);
     if (cfg == null) msg += "**Stats**: _not defined (disabled by default)_\n";
     else msg += "**Stats**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
-    // Banned Words ******************************************************
-    cfg = GetConfig(gid, Config.ParamType.BannedWords);
-    if (cfg == null) msg += "**BannedWords**: _not defined (disabled by default)_\n";
-    else {
-      if (BannedWords[gid].Count == 0) msg += "**BannedWords**: _disabled_ (no words defined)\n";
-      else {
-        string bws = "";
-        foreach (var w in BannedWords[gid]) bws += w + ", ";
-        msg += "**BannedWords**: " + bws[0..^2] + ".\n";
-      }
-    }
 
     // Scores ******************************************************
     cfg = GetConfig(gid, Config.ParamType.Scores);
@@ -1482,62 +1419,6 @@ public class Setup : BaseCommandModule {
         return;
       }
 
-      // ****************** BANNEDWORDS *********************************************************************************************************************************************
-      if (cmds[0].Equals("bannedwords")) {
-        if (cmds.Length == 1 || cmds[1].Equals("?", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("help", StringComparison.InvariantCultureIgnoreCase)) { // HELP *******************************************
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `enable` or `disable` to change the status\n`add` _word_ to add a new word to ban\n`remove` _word_ to remove a word from the list\n`clear` to remove all words\n`list` to show all banned words."));
-        }
-        if (cmds.Length > 1) {
-          if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) { // LIST ********************************************************************************************************************
-            if (BannedWords[gid].Count == 0) await Utils.DeleteDelayed(15, ctx.RespondAsync("No banned words are defined"));
-            string bws = "Banned Words: ";
-            foreach (var w in BannedWords[gid]) bws += w + ", ";
-            bws = bws[0..^2];
-            if (GetConfigValue(gid, Config.ParamType.BannedWords) == Config.ConfVal.NotAllowed) bws += " (_disabled_)";
-            else bws += " (_enabled_)";
-            await Utils.DeleteDelayed(15, ctx.RespondAsync(bws));
-
-          } else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
-            SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.Everybody);
-            if (BannedWords[gid].Count == 0)
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _enabled_ (but no banned words are deifned)"));
-            else
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _enabled_"));
-
-          } else if (cmds[1].Equals("disable", StringComparison.InvariantCultureIgnoreCase)) { // DISABLE ******************************************************************************************
-            SetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords, Config.ConfVal.NotAllowed);
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("Banned words command changed to _disabled_"));
-
-          } else if (cmds[1].Equals("add", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // ADD ******************************************************************************************
-            string bw = cmds[2].ToLowerInvariant().Trim();
-            if (BannedWords[gid].Contains(bw)) {
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is already there"));
-            } else {
-              BannedWords[gid].Add(bw);
-              Database.Add(new BannedWord(gid, bw));
-            }
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is added the the list of banned words"));
-
-          } else if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase) && cmds.Length > 2) { // REMOVE *************************************************************************************************
-            string bw = cmds[2].ToLowerInvariant().Trim();
-            if (BannedWords[gid].Contains(bw)) {
-              Database.DeleteByKeys<BannedWord>(gid, bw);
-              BannedWords[gid].Remove(bw);
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is removed from the list of banned words"));
-            } else {
-              await Utils.DeleteDelayed(15, ctx.RespondAsync("The word is not in the list of banned words"));
-            }
-
-          } else if (cmds[1].Equals("clear", StringComparison.InvariantCultureIgnoreCase) || cmds[1].Equals("clean", StringComparison.InvariantCultureIgnoreCase)) { // CLEAR *********************************************
-            foreach (var bw in BannedWords[gid]) {
-              Database.DeleteByKeys<BannedWord>(gid, bw);
-            }
-            BannedWords[gid].Clear();
-          }
-        }
-        return;
-      }
-
       // ****************** SCORES *********************************************************************************************************************************************
       if (cmds[0].Equals("scores")) {
         if (cmds.Length > 1) {
@@ -1748,7 +1629,7 @@ public class Setup : BaseCommandModule {
 
           else if (cmds[1].Equals("enable", StringComparison.InvariantCultureIgnoreCase)) { // ENABLE ******************************************************************************************
             SetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role, Config.ConfVal.Everybody);
-            if (BannedWords[gid].Count == 0)
+            if (Em4Roles[gid].Count == 0)
               await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for Role command changed to _enabled_ (but no roles are deifned)"));
             else
               await Utils.DeleteDelayed(15, ctx.RespondAsync("Emoji for Role command changed to _enabled_"));
@@ -2670,68 +2551,6 @@ public class Setup : BaseCommandModule {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresefe", "Define Fun emojis", false, er)
     };
     builder.AddComponents(actions);
-
-    // - Exit
-    // - Back
-    // - Back to features
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
-    };
-    builder.AddComponents(actions);
-
-    return builder.SendAsync(ctx.Channel).Result;
-  }
-
-  private DiscordMessage CreateBannedWordsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
-
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
-      Title = "UPBot Configuration - Banned Words"
-    };
-    eb.WithThumbnail(ctx.Guild.IconUrl);
-    Config.ConfVal cv = GetConfigValue(ctx.Guild.Id, Config.ParamType.BannedWords);
-    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
-      "The bot can automatically remove messages containing banned words.\n\n";
-
-    if (BannedWords[ctx.Guild.Id].Count == 0) {
-      eb.Description += "No banned words defined.\n\n";
-    } else {
-      eb.Description += "Banned words: ";
-      foreach (var w in BannedWords[ctx.Guild.Id])
-        eb.Description += w + ", ";
-      eb.Description = eb.Description[0..^2] + "\n\n";
-    }
-    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Banned Words** feature is _Disabled_";
-    else eb.Description += "**Banned Words** feature is _Enabled_";
-    eb.WithImageUrl(ctx.Guild.BannerUrl);
-    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
-
-    List<DiscordButtonComponent> actions;
-    var builder = new DiscordMessageBuilder();
-    builder.AddEmbed(eb.Build());
-
-    actions = new List<DiscordButtonComponent> {
-      cv == Config.ConfVal.NotAllowed ?
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idfeatbannedwed", "Enable", false, ey) :
-        new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwed", "Disable", false, en),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatbannedwadd", "Add", false, er)
-    };
-
-    // Goups of 5, but we start at 1 for the global enable/disable
-    int num = 1;
-    int count = 0;
-    foreach (var w in BannedWords[ctx.Guild.Id]) {
-      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idfeatbannedwr" + count, w, false, en));
-      num++;
-      count++;
-      if (num == 5) {
-        builder.AddComponents(actions);
-        actions = new List<DiscordButtonComponent>();
-      }
-    }
-    if (actions.Count > 0) builder.AddComponents(actions);
 
     // - Exit
     // - Back

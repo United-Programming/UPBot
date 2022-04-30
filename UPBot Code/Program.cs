@@ -52,7 +52,6 @@ namespace UPBot {
         Utils.Log("Utils.InitClient", null);
         Database.InitDb();
         Utils.Log("Database.InitDb", null);
-        Database.AddTable<BannedWord>();
         Database.AddTable<Reputation>();
         Database.AddTable<ReputationEmoji>();
         Database.AddTable<EmojiForRoleValue>();
@@ -176,7 +175,6 @@ namespace UPBot {
       client.MessageReactionAdded += EmojisForRole.ReacionAdded;
       client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
-      client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
       client.MessageCreated += async (s, e) => { await Affiliation.CheckMessage(s, e); };
       client.MessageCreated += AppreciationTracking.ThanksAdded;
