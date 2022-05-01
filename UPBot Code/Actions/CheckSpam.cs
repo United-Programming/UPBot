@@ -68,6 +68,9 @@ public class CheckSpam : BaseCommandModule {
     if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net" || s == "discord.gift") return 0;
     if (s == "steamcommunity.com" || s == "store.steampowered.com" || s == "steampowered.com") return 0;
     if (s == "epicgames.com") return 0;
+    if (s == "pastebin.com" || s == "github.com" || s == "controlc.com" || s == "ghostbin.co" || s == "rentry.co" || s == "codiad.com" || s == "zerobin.net" ||
+        s == "toptal.com" || s == "ideone.com" || s == "jsfiddle.net" || s == "textbin.net" || s == "jsbin.com" || s == "ideone.com") return 0;
+
     int extra = 0;
     if (s.IndexOf("nitro") != -1 || s.IndexOf("gift") != -1 || s.IndexOf("give") != -1) extra = 100;
 
@@ -77,31 +80,35 @@ public class CheckSpam : BaseCommandModule {
     // Check how many substrings of discord.com we have in the string
     int valDiscord = 0;
     if (cdisc) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("discord".Substring(j, k)) != -1) valDiscord += k;
+      for (int len = 3; len < 7; len++) {
+        for (int strt = 0; strt < 7 - len; strt++) {
+          if (s.IndexOf("discord"[strt..(strt + len)]) != -1)
+            valDiscord += len;
         }
       }
     }
     int valSteam1 = 0;
     int valSteam2 = 0;
     if (csteam) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("steamcommunity".Substring(j, k)) != -1) valSteam1 += k;
+      for (int len = 3; len < 14; len++) {
+        for (int strt = 0; strt < 14 - len; strt++) {
+          if (s.IndexOf("steamcommunity"[strt..(strt+len)]) != -1) 
+            valSteam1 += len;
         }
       }
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("steampowered".Substring(j, k)) != -1) valSteam2 += k;
+      for (int len = 3; len < 12; len++) {
+        for (int strt = 0; strt < 12 - len; strt++) {
+          if (s.IndexOf("steampowered"[strt..(strt + len)]) != -1)
+            valSteam2 += len;
         }
       }
     }
     int valEpic = 0;
     if (cepic) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("epicgames".Substring(j, k)) != -1) valEpic += k;
+      for (int len = 3; len < 9; len++) {
+        for (int strt = 0; strt < 9 - len; strt++) {
+          if (s.IndexOf("epicgames"[strt..(strt + len)]) != -1)
+            valEpic += len;
         }
       }
     }
