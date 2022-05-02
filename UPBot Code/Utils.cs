@@ -124,12 +124,22 @@ public static class Utils
         toDelete.Add(fi.FullName);
       }
     }
+    LogInfo li = null;
+    if (logs.ContainsKey(guild)) {
+      li = logs[guild];
+      li.sw.Close();
+      li.sw = null;
+    }
+
     int num = 0;
     foreach (var file in toDelete) {
       try {
         File.Delete(file);
         num++;
       } catch { }
+    }
+    if (li != null && li.sw == null) {
+      InitLogs(guild);
     }
     return num;
   }
