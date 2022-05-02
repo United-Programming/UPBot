@@ -67,6 +67,7 @@ namespace UPBot {
         // SlashCommands
         Utils.Log("SlashCommands", null);
         var slash = client.UseSlashCommands();
+        slash.RegisterCommands<SlashVersion>(830900174553481236ul);
         slash.RegisterCommands<SlashPing>(830900174553481236ul); // FIXME this is just for United programming
         slash.RegisterCommands<SlashUnityDocs>(830900174553481236ul);
         slash.RegisterCommands<SlashRefactor>(830900174553481236ul);
@@ -75,7 +76,6 @@ namespace UPBot {
         slash.RegisterCommands<SlashGame>(830900174553481236ul);
         slash.RegisterCommands<SlashTags>(830900174553481236ul);
         slash.RegisterCommands<SlashStats>(830900174553481236ul);
-        slash.RegisterCommands<SlashVersion>(830900174553481236ul);
         slash.RegisterCommands<SlashTimezone>(830900174553481236ul);
 
 

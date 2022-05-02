@@ -12,12 +12,6 @@ using DSharpPlus.SlashCommands;
 
 [SlashCommandGroup("tz", "Commands to check timezones")]
 public class SlashTimezone : ApplicationCommandModule {
-
-
-  // timezone user -> get timezone and current time for user
-  // timezone user timezone... -> set timezone
-
-
   [SlashCommand("whattimeis", "Checks the current local time in a timezone")]
   public async Task TZTimeCommand(InteractionContext ctx, [Option("timezone", "Timezone to check the local time")] string tz) {
     if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
@@ -81,8 +75,6 @@ public class SlashTimezone : ApplicationCommandModule {
     DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzi);
     await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss} ({tzid})");
   }
-
-
 
   [SlashCommand("set", "Set the timezone for a user")]
   public async Task TZSetCommand(InteractionContext ctx, [Option("user", "The user to set the timezone")]DiscordUser user, [Option("timezone", "Timezone to check the local time")] string tz) {
