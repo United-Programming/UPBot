@@ -297,7 +297,8 @@ public class Setup : BaseCommandModule {
     return (role.Permissions.HasFlag(DSharpPlus.Permissions.Administrator)); // Fall back
   }
   internal static bool HasAdminRole(ulong guild, IEnumerable<DiscordRole> roles, bool withManageMessages) {
-    foreach(var r in roles)
+    if (AdminRoles[guild] == null || AdminRoles[guild].Count == 0) return true;
+    foreach (var r in roles)
       if (AdminRoles[guild].Contains(r.Id)) return true;
     foreach (var r in roles)
       if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || (withManageMessages && r.Permissions.HasFlag(DSharpPlus.Permissions.ManageMessages))) return true;
