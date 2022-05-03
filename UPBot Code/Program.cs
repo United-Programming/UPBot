@@ -139,7 +139,7 @@ namespace UPBot {
         await Task.Delay(500);
         if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
 
-        if (times > 10) { // FIXME
+        if (times > 300) {
           if (num > 0) {
             Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
             break;
@@ -171,7 +171,7 @@ namespace UPBot {
         Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""), null);
 
       Utils.Log("LoadingParams", null);
-      Setup.LoadParams();
+      Configs.LoadParams();
 
       Utils.Log("Adding action events", null);
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
@@ -186,7 +186,7 @@ namespace UPBot {
       client.MessageCreated += AppreciationTracking.ThanksAdded;
       Utils.Log("Tracking", null);
 
-      client.GuildCreated += Setup.NewGuildAdded;
+      client.GuildCreated += Configs.NewGuildAdded;
 
       Utils.Log("--->>> Bot ready <<<---", null);
     }

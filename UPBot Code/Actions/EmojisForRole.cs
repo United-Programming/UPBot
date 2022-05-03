@@ -11,8 +11,8 @@ public class EmojisForRole : BaseCommandModule {
   internal static Task ReacionAdded(DiscordClient _, MessageReactionAddEventArgs a) {
     if (a.Guild == null) Task.FromResult(0); // No direct messages
     try {
-      if (Setup.TempRoleSelected.ContainsKey(a.Guild.Id) && Setup.TempRoleSelected[a.Guild.Id] != null && Setup.TempRoleSelected[a.Guild.Id].user == a.User.Id) {
-        TempSetRole tsr = Setup.TempRoleSelected[a.Guild.Id];
+      if (Configs.TempRoleSelected.ContainsKey(a.Guild.Id) && Configs.TempRoleSelected[a.Guild.Id] != null && Configs.TempRoleSelected[a.Guild.Id].user == a.User.Id) {
+        TempSetRole tsr = Configs.TempRoleSelected[a.Guild.Id];
         tsr.channel = a.Channel.Id;
         tsr.message = a.Message.Id;
         tsr.emojiid = a.Emoji.Id;
@@ -22,7 +22,7 @@ public class EmojisForRole : BaseCommandModule {
       }
 
       // Find if we have guild/channel/message/emoji, in case add the role to the user
-      List<EmojiForRoleValue> em4rol = Setup.Em4Roles[a.Guild.Id];
+      List<EmojiForRoleValue> em4rol = Configs.Em4Roles[a.Guild.Id];
       foreach (var e in em4rol) {
         if (e.Guild == a.Guild.Id && e.Channel == a.Channel.Id && e.Message == a.Message.Id && (e.EmojiId == a.Emoji.Id || e.EmojiName == a.Emoji.Name))
           HandleRoleForEmoji(e, a.User, true);
@@ -37,7 +37,7 @@ public class EmojisForRole : BaseCommandModule {
     if (a.Guild == null) Task.FromResult(0); // No direct messages
     try {
       // Find if we have guild/channel/message/emoji, in case add the role to the user
-      List<EmojiForRoleValue> em4rol = Setup.Em4Roles[a.Guild.Id];
+      List<EmojiForRoleValue> em4rol = Configs.Em4Roles[a.Guild.Id];
       foreach (var e in em4rol) {
         if (e.Guild == a.Guild.Id && e.Channel == a.Channel.Id && e.Message == a.Message.Id && (e.EmojiId == a.Emoji.Id || e.EmojiName == a.Emoji.Name))
           HandleRoleForEmoji(e, a.User, false);
@@ -49,7 +49,7 @@ public class EmojisForRole : BaseCommandModule {
   }
 
   static void HandleRoleForEmoji(EmojiForRoleValue em, DiscordUser usr, bool add) {
-    DiscordGuild guild = Setup.TryGetGuild(em.Guild);
+    DiscordGuild guild = Configs.TryGetGuild(em.Guild);
     try {
       bool here = false;
       DiscordMember dm = guild.GetMemberAsync(usr.Id).Result;
@@ -83,11 +83,11 @@ public class EmojisForRole : BaseCommandModule {
   public async Task Em4RoleCommand(CommandContext ctx) {
     if (ctx.Guild == null) return;
     try {
-      if (!Setup.Permitted(ctx.Guild, Config.ParamType.Emoji4RoleList, ctx) || !Setup.Permitted(ctx.Guild, Config.ParamType.Emoji4Role, ctx)) return;
+      if (!Configs.Permitted(ctx.Guild, Config.ParamType.Emoji4RoleList, ctx.Member) || !Configs.Permitted(ctx.Guild, Config.ParamType.Emoji4Role, ctx.Member)) return;
       ulong gid = ctx.Guild.Id;
       DiscordGuild g = ctx.Guild;
 
-      if (Setup.Em4Roles[gid].Count == 0) {
+      if (Configs.Em4Roles[gid].Count == 0) {
         await Utils.DeleteDelayed(15, ctx.RespondAsync("No emoji for roles are defined"));
         return;
       }
@@ -96,7 +96,7 @@ public class EmojisForRole : BaseCommandModule {
       };
 
       string ems = "";
-      foreach (var em4r in Setup.Em4Roles[gid]) {
+      foreach (var em4r in Configs.Em4Roles[gid]) {
         DiscordRole r = g.GetRole(em4r.Role);
         DiscordChannel ch = g.GetChannel(em4r.Channel);
         DiscordMessage m = null;

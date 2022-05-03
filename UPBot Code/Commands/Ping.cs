@@ -21,13 +21,10 @@ public class SlashPing : ApplicationCommandModule {
 
   [SlashCommand("ping", "Checks if the bot is alive")]
   public async Task PingCommand(InteractionContext ctx) {
-    if (ctx.Guild == null) {
+    if (ctx.Guild == null)
       await ctx.CreateResponseAsync("I am alive, but I sould be used only in guilds.", true);
-      return;
-    }
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Ping, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
-    await GeneratePong(ctx);
-
+    else
+      await GeneratePong(ctx);
   }
 
   readonly string[,] answers = {

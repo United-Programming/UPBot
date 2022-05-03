@@ -125,8 +125,8 @@ public class CheckSpam : BaseCommandModule {
   internal static async Task CheckMessage(DiscordClient _, MessageCreateEventArgs args) {
     if (args.Guild == null) return;
     try {
-      if (!Setup.SpamProtection.ContainsKey(args.Guild.Id)) return;
-      ulong spam = Setup.SpamProtection[args.Guild.Id];
+      if (!Configs.SpamProtection.ContainsKey(args.Guild.Id)) return;
+      ulong spam = Configs.SpamProtection[args.Guild.Id];
       if (spam == 0) return;
       bool edisc = (spam & 1) == 1;
       bool esteam = (spam & 2) == 2;
@@ -146,7 +146,7 @@ public class CheckSpam : BaseCommandModule {
         float riskval = dist / (float)Math.Sqrt(leven);
         if (riskval > 3) {
           Utils.Log("Removed spam link message from " + args.Author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, args.Guild.Name);
-          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + "\n" + Setup.GetAdminsMentions(args.Guild.Id) + " please take care,");
+          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(args.Guild.Id) + " please take care,");
           await args.Message.DeleteAsync("Spam link from " + args.Author.Username);
           Utils.DeleteDelayed(10000, warning).Wait();
         }

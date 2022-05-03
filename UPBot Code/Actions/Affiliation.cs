@@ -18,12 +18,12 @@ public class Affiliation : BaseCommandModule {
     try {
       if (args.Author.IsBot) return;
       // Is it from a guild we care?
-      if (!Setup.Affiliations.ContainsKey(args.Guild.Id)) return;
+      if (!Configs.Affiliations.ContainsKey(args.Guild.Id)) return;
       // It is an asset store link?
       Match m = assetStoreLink.Match(args.Message.Content);
       if (!m.Success) return;
 
-      var af = Setup.Affiliations[args.Guild.Id];
+      var af = Configs.Affiliations[args.Guild.Id];
       Match mid = assetStoreLinkId.Match(args.Message.Content);
       if (mid.Success && mid.Groups.Count > 1 && mid.Groups[2].Value == af.AffiliationID) return;
 

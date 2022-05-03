@@ -19,7 +19,6 @@ public class SlashLogs : ApplicationCommandModule {
   [SlashCommand("show", "Allows to see and download guild logs")]
   public async Task LogsCommand(InteractionContext ctx, [Option("NumerOflines", "How many lines of logs to get")][Minimum(5)][Maximum(25)] long numLines) {
     if (ctx.Guild == null) return;
-    if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     string logs = Utils.GetLogsPath(ctx.Guild.Name);
@@ -53,7 +52,6 @@ public class SlashLogs : ApplicationCommandModule {
   [SlashCommand("save", "Creates a zip file of the last logs of the server")]
   public async Task LogsSaveCommand(InteractionContext ctx) {
     if (ctx.Guild == null) return;
-    if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     string logs = Utils.GetLogsPath(ctx.Guild.Name);
@@ -75,7 +73,6 @@ public class SlashLogs : ApplicationCommandModule {
   [SlashCommand("saveall", "Creates a zip file of the all the server logs")]
   public async Task LogsSaveAllCommand(InteractionContext ctx) {
     if (ctx.Guild == null) return;
-    if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     string logsFolder = Utils.GetAllLogsFolder(ctx.Guild.Name);
@@ -92,7 +89,6 @@ public class SlashLogs : ApplicationCommandModule {
   [SlashCommand("delete", "Removes the server logs")]
   public async Task LogsDeleteCommand(InteractionContext ctx, [Option("GuildName", "The name of the guild, case sensitive, to confirm the delete")] string guildname) {
     if (ctx.Guild == null) return;
-    if (!Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     string logs = Utils.GetLogsPath(ctx.Guild.Name);

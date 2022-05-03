@@ -9,23 +9,18 @@ using System.Threading.Tasks;
 /// author: CPU
 /// </summary>
 public class SlashUnityDocs : ApplicationCommandModule {
+  const int numResults = 20;
 
   [SlashCommand("unitydocs", "Get links to official Unity scripts documentation")]
   public async Task UnityDocsCommand(InteractionContext ctx, [Option("What", "A part of the name of the script to search")] string what) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.UnityDocs, ctx)) return;
-    await GenerateDocLink(ctx, what);
-  }
-
-  const int numResults = 20;
-
-  private Task GenerateDocLink(InteractionContext ctx, string what) {
-    if (string.IsNullOrWhiteSpace(what)) return Task.FromResult(0);
+    if (string.IsNullOrWhiteSpace(what)) return;
     Utils.LogUserCommand(ctx);
     try {
       what = what.Trim().ToLowerInvariant();
       foreach (string item in UnityDocItems) {
         if (item.Equals(what, StringComparison.InvariantCultureIgnoreCase)) {
-          return ctx.CreateResponseAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
+          await ctx.CreateResponseAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
+          return;
         }
       }
       // Try to find something similar
@@ -52,7 +47,7 @@ public class SlashUnityDocs : ApplicationCommandModule {
         }
       }
 
-      if (mins[0] > 400) return ctx.CreateResponseAsync("I cannot find anything related to `" + what + "` in Unity documentation");
+      if (mins[0] > 400) { await ctx.CreateResponseAsync("I cannot find anything related to `" + what + "` in Unity documentation"); return; }
 
       int numok = 1;
       float diffSum = mins[0];
@@ -66,7 +61,7 @@ public class SlashUnityDocs : ApplicationCommandModule {
       }
 
       if (numok == 1) {
-        return ctx.CreateResponseAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
+        await ctx.CreateResponseAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
           " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
       } else {
         string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
@@ -76,10 +71,10 @@ public class SlashUnityDocs : ApplicationCommandModule {
         .WithTitle("Possible documents for " + what)
         .WithDescription(msg)
         .WithThumbnail(Utils.GetEmojiURL(EmojiEnum.Unity), 32, 32);
-        return ctx.CreateResponseAsync(e);
+        await ctx.CreateResponseAsync(e);
       }
     } catch (Exception ex) {
-      return ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
     }
   }
 

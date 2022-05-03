@@ -15,7 +15,7 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tag", "Show the contents of a specific tag")]
   public async Task TagCommand(InteractionContext ctx, [Option("tagname", "Tag to be shown")] string tagname) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -44,14 +44,14 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tagadd", "Adds a new tag")]
   public async Task TagAddCommand(InteractionContext ctx, [Option("tagname", "Tag to be added")] string tagname) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
       tagname = tagname.Trim();
 
-      foreach (var topics in Setup.Tags[ctx.Guild.Id]) {
+      foreach (var topics in Configs.Tags[ctx.Guild.Id]) {
         if (tagname.Equals(topics.Topic, StringComparison.InvariantCultureIgnoreCase) ||
             tagname.Equals(topics.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
             tagname.Equals(topics.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
@@ -87,7 +87,7 @@ public class SlashTags : ApplicationCommandModule {
 
       TagBase tagBase = new TagBase(ctx.Guild.Id, tagname, answer.Result.Content); // creating line inside of database
       Database.Add(tagBase); // adding information to base
-      Setup.Tags[ctx.Guild.Id].Add(tagBase);
+      Configs.Tags[ctx.Guild.Id].Add(tagBase);
 
       embed.Title = "Tag added";
       embed.Color = DiscordColor.Green;
@@ -102,7 +102,7 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tagremove", "Removes an existing tag")]
   public async Task TagRemoveCommand(InteractionContext ctx, [Option("tagname", "Tag to be removed")] string tagname) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -117,7 +117,7 @@ public class SlashTags : ApplicationCommandModule {
         await ctx.CreateResponseAsync(embed, true);
         return;
       }
-      Setup.Tags[ctx.Guild.Id].Remove(toRemove);
+      Configs.Tags[ctx.Guild.Id].Remove(toRemove);
       Database.DeleteByKeys<TagBase>(ctx.Guild.Id, toRemove);
 
       embed.Title = "Topic deleted";
@@ -132,17 +132,17 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("taglist", "Shows all tags")]
   public async Task TagListCommand(InteractionContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsUse, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
       string result = "";
-      if (Setup.Tags[ctx.Guild.Id].Count == 0) {
+      if (Configs.Tags[ctx.Guild.Id].Count == 0) {
         result = "No tags are defined.";
       }
       else {
-        foreach (TagBase tag in Setup.Tags[ctx.Guild.Id]) {
+        foreach (TagBase tag in Configs.Tags[ctx.Guild.Id]) {
           result += $"**{tag.Topic}**";
           if (tag.Alias3 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_)";
           else if (tag.Alias2 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_)";
@@ -162,7 +162,7 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tagalias", "Define aliases for a tag")]
   public async Task TagAliasCommand(InteractionContext ctx, [Option("tagname", "Tag to be aliased")] string tagname, [Option("alias1", "First alias")] string alias1, [Option("alias2", "Second alias")] string alias2 = null, [Option("alias3", "Third alias")] string alias3 = null) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -217,7 +217,7 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tagedit", "Edit an existing tag")]
   public async Task TagEditCommand(InteractionContext ctx, [Option("tagname", "Tag to be modified")] string tagname) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -269,7 +269,7 @@ public class SlashTags : ApplicationCommandModule {
 
   [SlashCommand("tagrename", "Rename a tag")]
   public async Task TagRenameCommand(InteractionContext ctx, [Option("tagname", "Tag to be modified")] string oldname, [Option("newname", "The new name for the tag")] string newname) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.Permitted(ctx.Guild, Config.ParamType.TagsDefine, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -300,7 +300,7 @@ public class SlashTags : ApplicationCommandModule {
 
 
   TagBase FindTag(ulong gid, string name, bool getClosest) {
-    foreach (TagBase tag in Setup.Tags[gid]) {
+    foreach (TagBase tag in Configs.Tags[gid]) {
       if (name.Equals(tag.Topic, StringComparison.InvariantCultureIgnoreCase) ||
         name.Equals(tag.Alias1, StringComparison.InvariantCultureIgnoreCase) ||
         name.Equals(tag.Alias2, StringComparison.InvariantCultureIgnoreCase) ||
@@ -313,7 +313,7 @@ public class SlashTags : ApplicationCommandModule {
 
       int min = int.MaxValue;
       TagBase res = null;
-      foreach (TagBase tag in Setup.Tags[gid]) {
+      foreach (TagBase tag in Configs.Tags[gid]) {
         int dist = StringDistance.Distance(name, tag.Topic);
         if (min > dist) {
           min = dist;

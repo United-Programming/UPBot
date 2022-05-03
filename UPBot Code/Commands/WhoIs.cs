@@ -14,7 +14,6 @@ public class SlashWhoIs : ApplicationCommandModule {
 
   [SlashCommand("whois", "Get information about a specific user (or yourself)")]
   public async Task WhoIsCommand(InteractionContext ctx, [Option("user", "The user to get info from")] DiscordUser user = null) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.WhoIs, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {

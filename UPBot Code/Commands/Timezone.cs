@@ -14,7 +14,6 @@ using DSharpPlus.SlashCommands;
 public class SlashTimezone : ApplicationCommandModule {
   [SlashCommand("whattimeis", "Checks the current local time in a timezone")]
   public async Task TZTimeCommand(InteractionContext ctx, [Option("timezone", "Timezone to check the local time")] string tz) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     int best = -1;
@@ -47,12 +46,10 @@ public class SlashTimezone : ApplicationCommandModule {
 
   [SlashCommand("whattimeisfor", "Checks the current local time for an user")]
   public async Task TZTimeGetCommand(InteractionContext ctx, [Option("user", "The user for the time")] DiscordUser user) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
     Timezone utz = Database.GetByKey<Timezone>(user.Id);
-    var tzs = Database.GetAll<Timezone>();
     if (utz == null) {
       await ctx.CreateResponseAsync($"Timezone for user {member.DisplayName} is not defined", true);
       return;
@@ -78,9 +75,8 @@ public class SlashTimezone : ApplicationCommandModule {
 
   [SlashCommand("set", "Set the timezone for a user")]
   public async Task TZSetCommand(InteractionContext ctx, [Option("user", "The user to set the timezone")]DiscordUser user, [Option("timezone", "Timezone to check the local time")] string tz) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
-    if (!Setup.HasAdminRole(ctx.Guild.Id, member.Roles, false) && user.Id != ctx.User.Id) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.HasAdminRole(ctx.Guild.Id, member.Roles, false) && user.Id != ctx.User.Id) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     int best = -1;
@@ -117,8 +113,6 @@ public class SlashTimezone : ApplicationCommandModule {
 
   [SlashCommand("list", "List all timezones with how meny users are in each one")]
   public async Task TZListCommand(InteractionContext ctx) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.TimezoneG, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
-    
     var list = Database.GetAll<Timezone>();
     Dictionary<string, int> count = new Dictionary<string, int>();
     foreach (Timezone t in list) {

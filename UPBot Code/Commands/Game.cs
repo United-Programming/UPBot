@@ -18,9 +18,7 @@ public class SlashGame : ApplicationCommandModule {
 
   [SlashCommand("rockpaperscissors", "Play Rock, Paper, Scissors")]
   public async Task RPSCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSTypes? yourmove = null) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
-
 
     RPSTypes botChoice = (RPSTypes)random.Next(0, 3);
     if (yourmove != null) {
@@ -154,8 +152,6 @@ public class SlashGame : ApplicationCommandModule {
 
   [SlashCommand("rockpaperscissorslizardspock", "Play Rock, Paper, Scissors, Lizard, Spock")]
   public async Task RPSLKCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSLSTypes? yourmove = null) {
-    //[Option("yourmove", "Rock, Paper, or Scissors")] string yourmove = null) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Games, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     RPSLSTypes botChoice = (RPSLSTypes)random.Next(0, 5);

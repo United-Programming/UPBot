@@ -17,24 +17,17 @@ public class Config : Entity {
 
 
   public enum ParamType {
-    Ping = 1,
-    WhoIs = 2,
-    Stats = 3,
+
     MassDel = 4,
-    Games = 5,
-    Refactor = 6,
-    TimezoneS = 7,
-    TimezoneG = 8,
-    UnityDocs = 9,
+
     SpamProtection = 10,
-    BannedWords = 11,
+
     Scores = 12,
     TagsUse = 13,
     TagsDefine = 14,
     Emoji4Role = 15,
     Emoji4RoleList = 16,
     Affiliation = 17,
-    //VideosAbout
   }
 
   public enum ConfVal {

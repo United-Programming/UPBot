@@ -24,14 +24,9 @@ public class SlashRefactor : ApplicationCommandModule {
   }
 
 
-  // whatlanguage
-  // format prev post or last message for user
-  // reformat prev post or last message for user, deleting message
-
   [SlashCommand("whatlanguage", "Checks the programming language of a post")]
   public async Task CheckLanguage(InteractionContext ctx, [Option("Member", "The user that posted the message to check")] DiscordUser user = null) {
-    // Refactors the previous post from specified user, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
+    // Checks the language of some code posted
     Utils.LogUserCommand(ctx);
 
     try {
@@ -61,11 +56,9 @@ public class SlashRefactor : ApplicationCommandModule {
     }
   }
 
-
+  // Refactors the previous post, if it is code, without removing it
   [SlashCommand("format", "Format a specified post (from a user, if specified) as code block")]
   public async Task FactorCommand(InteractionContext ctx, [Option("Member", "The user that posted the message to format")] DiscordUser user = null) {
-    // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
@@ -155,13 +148,10 @@ public class SlashRefactor : ApplicationCommandModule {
     }
   }
 
+  // Refactors the previous post, if it is code, replacing it
   [SlashCommand("reformat", "Reformat a specified post as code block, the original message will be deleted")]
   public async Task RefactorCommand(InteractionContext ctx, [Option("Member", "The user that posted the message to format")] DiscordUser user = null) {
-    // Refactors the previous post, if it is code
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Refactor, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
-
-
 
     try {
       // Get last post that looks like code
@@ -245,7 +235,7 @@ public class SlashRefactor : ApplicationCommandModule {
 
 
       // If we are not an admin, and the message is not from ourselves, do not accept the replace option.
-      if (Setup.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false) || msg.Author.Id != ctx.Member.Id) {
+      if (Configs.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false) || msg.Author.Id != ctx.Member.Id) {
         await msg.DeleteAsync();
       }
 

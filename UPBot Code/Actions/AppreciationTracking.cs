@@ -30,14 +30,14 @@ public class AppreciationTracking : BaseCommandModule {
     if (ctx.Guild == null) return;
     try {
       ulong gid = ctx.Guild.Id;
-      WhatToTrack wtt = Setup.WhatToTracks[gid];
+      WhatToTrack wtt = Configs.WhatToTracks[gid];
 
-      if (Setup.WhatToTracks[gid] == WhatToTrack.None) return;
+      if (Configs.WhatToTracks[gid] == WhatToTrack.None) return;
       Utils.LogUserCommand(ctx);
 
       DiscordEmbedBuilder e = Utils.BuildEmbed("Appreciation", "These are the most appreciated people of this server", DiscordColor.Azure);
 
-      List<Reputation> vals = Setup.GetReputations(gid).ToList();
+      List<Reputation> vals = Configs.GetReputations(gid).ToList();
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) {
         vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
@@ -49,7 +49,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Tnk == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            Setup.Reputations[gid].Remove(r.User);
+            Configs.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -60,7 +60,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Reputation)) {
         vals.Sort((a, b) => { return b.Rep.CompareTo(a.Rep); });
         string emjs = "";
-        foreach (ReputationEmoji emj in Setup.RepEmojis[gid].Values) {
+        foreach (ReputationEmoji emj in Configs.RepEmojis[gid].Values) {
           if (emj.HasFlag(WhatToTrack.Reputation))
             emjs += emj.GetEmoji(ctx.Guild);
         }
@@ -73,7 +73,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Rep == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            Setup.Reputations[gid].Remove(r.User);
+            Configs.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -84,7 +84,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Fun)) {
         vals.Sort((a, b) => { return b.Tnk.CompareTo(a.Tnk); });
         string emjs = "";
-        foreach (ReputationEmoji emj in Setup.RepEmojis[gid].Values) {
+        foreach (ReputationEmoji emj in Configs.RepEmojis[gid].Values) {
           if (emj.HasFlag(WhatToTrack.Fun))
             emjs += emj.GetEmoji(ctx.Guild);
         }
@@ -96,7 +96,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Tnk == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            Setup.Reputations[gid].Remove(r.User);
+            Configs.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -127,7 +127,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (r.Men == 0) break;
           string u = Utils.GetSafeMemberName(ctx, r.User);
           if (u == null) { // Remove
-            Setup.Reputations[gid].Remove(r.User);
+            Configs.Reputations[gid].Remove(r.User);
             Database.Delete(r);
             continue;
           }
@@ -154,7 +154,7 @@ public class AppreciationTracking : BaseCommandModule {
   public async Task ShowRankCommand(CommandContext ctx, [Description("Member for the rank")] DiscordMember user) {
     try {
       ulong gid = ctx.Guild.Id;
-      if (!Setup.WhatToTracks[gid].HasFlag(WhatToTrack.Rank)) return;
+      if (!Configs.WhatToTracks[gid].HasFlag(WhatToTrack.Rank)) return;
       Utils.LogUserCommand(ctx);
 
       List<UserRank> ranks = CalculateRanks(ctx.Guild);
@@ -198,7 +198,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (args.Author.IsBot) Task.FromResult(0);
       ulong gid = args.Guild.Id;
       // Are we tracking this guild and is the tracking active?
-      WhatToTrack wtt = Setup.WhatToTracks[gid];
+      WhatToTrack wtt = Configs.WhatToTracks[gid];
       if (wtt == WhatToTrack.None) return Task.FromResult(0);
 
       if (wtt.HasFlag(WhatToTrack.Thanks)) CheckThanks(args.Message);
@@ -233,7 +233,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (m.Author.IsBot) continue;
           ulong oid = m.Author.Id;
           if (oid != authorId) {
-            Reputation r = Setup.GetReputation(gid, oid);
+            Reputation r = Configs.GetReputation(gid, oid);
             r.Tnk++;
             Database.Update(r);
             return;
@@ -242,7 +242,7 @@ public class AppreciationTracking : BaseCommandModule {
       } else if (msg.Reference != null && !msg.Reference.Message.Author.IsBot) { // By reference
         ulong oid = msg.Reference.Message.Author.Id;
         if (oid != authorId) {
-          Reputation r = Setup.GetReputation(gid, oid);
+          Reputation r = Configs.GetReputation(gid, oid);
           r.Tnk++;
           Database.Update(r);
           return;
@@ -252,7 +252,7 @@ public class AppreciationTracking : BaseCommandModule {
           if (usr.IsBot) continue;
           ulong oid = usr.Id;
           if (oid != authorId) {
-            Reputation r = Setup.GetReputation(gid, oid);
+            Reputation r = Configs.GetReputation(gid, oid);
             r.Tnk++;
             Database.Update(r);
           }
@@ -266,7 +266,7 @@ public class AppreciationTracking : BaseCommandModule {
   static void CheckRanks(ulong gid, DiscordMessage msg) {
     try {
       ulong oid = msg.Author.Id;
-      Reputation r = Setup.GetReputation(gid, oid);
+      Reputation r = Configs.GetReputation(gid, oid);
       if (DateTime.Now - r.LastUpdate < aMinute) return;
 
       string txt = msg.Content.Trim().Replace("\t", " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ");
@@ -290,7 +290,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (msg.Reference != null) rid = msg.Reference.Message.Author.Id;
       foreach (var m in msg.MentionedUsers) {
         if (m.Id == oid || m.IsBot || m.Id == rid) continue;
-        Reputation r = Setup.GetReputation(gid, m.Id);
+        Reputation r = Configs.GetReputation(gid, m.Id);
         r.Men++;
         Database.Add(r);
       }
@@ -308,7 +308,7 @@ public class AppreciationTracking : BaseCommandModule {
       if (mr.User.IsBot) return Task.FromResult(0);
       ulong gid = mr.Guild.Id;
       // Are we tracking this guild and is the tracking active?
-      WhatToTrack wtt = Setup.WhatToTracks[gid];
+      WhatToTrack wtt = Configs.WhatToTracks[gid];
       if (wtt == WhatToTrack.None || (!wtt.HasFlag(WhatToTrack.Reputation) && !wtt.HasFlag(WhatToTrack.Fun))) return Task.FromResult(0);
 
       ulong emojiId = mr.Emoji.Id;
@@ -327,17 +327,17 @@ public class AppreciationTracking : BaseCommandModule {
 
 
       ulong key = ReputationEmoji.GetKeyValue(gid, emojiId, emojiName);
-      if (!Setup.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
-      ReputationEmoji rem = Setup.RepEmojis[gid][key];
+      if (!Configs.RepEmojis[gid].ContainsKey(key)) return Task.FromResult(0);
+      ReputationEmoji rem = Configs.RepEmojis[gid][key];
 
       if (wtt.HasFlag(WhatToTrack.Reputation) && rem.HasFlag(WhatToTrack.Reputation)) {
-        Reputation r = Setup.GetReputation(gid, authorId);
+        Reputation r = Configs.GetReputation(gid, authorId);
         r.Rep++;
         Database.Update(r);
       }
 
       if (wtt.HasFlag(WhatToTrack.Fun) && rem.HasFlag(WhatToTrack.Fun)) {
-        Reputation r = Setup.GetReputation(gid, authorId);
+        Reputation r = Configs.GetReputation(gid, authorId);
         r.Fun++;
         Database.Update(r);
       }
@@ -352,7 +352,7 @@ public class AppreciationTracking : BaseCommandModule {
   internal static List<UserRank> CalculateRanks(DiscordGuild guild) {
     List<UserRank> ranks = new List<UserRank>();
 
-    IReadOnlyCollection<Reputation> reps = Setup.Reputations[guild.Id].Values;
+    IReadOnlyCollection<Reputation> reps = Configs.Reputations[guild.Id].Values;
     foreach (Reputation r in reps) {
       int exp = (int)Math.Round(1.25 * r.Ran + 2.5 * r.Rep + 2.5 * r.Fun + 3.5 * r.Tnk + 3 * r.Men);
       int lev = (int)Math.Floor(Math.Pow(exp - 9.0, .25));

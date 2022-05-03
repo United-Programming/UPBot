@@ -37,7 +37,6 @@ public class SlashStats : ApplicationCommandModule {
 
   [SlashCommand("stats", "Provides server stats, including detailed stats for roles, mentions, and emojis when specified")]
   public async Task StatsCommand(InteractionContext ctx, [Option("what", "What type of stats to show")] StatsTypes? what) {
-    if (!Setup.Permitted(ctx.Guild, Config.ParamType.Stats, ctx)) { Utils.DefaultNotAllowed(ctx); return; }
     Utils.LogUserCommand(ctx);
 
     try {
