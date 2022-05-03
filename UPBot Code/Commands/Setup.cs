@@ -180,14 +180,6 @@ public class Setup : BaseCommandModule {
       }
 
 
-      // ********* Config MassDel ***********************************************************************
-      else if (cmdId == "idfeatmassdel" || cmdId == "idfeatmassdel0" || cmdId == "idfeatmassdel1" || cmdId == "idfeatmassdel2") {
-        if (cmdId == "idfeatmassdel0") Configs.SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.NotAllowed);
-        if (cmdId == "idfeatmassdel1") Configs.SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.OnlyAdmins);
-        if (cmdId == "idfeatmassdel2") Configs.SetConfigValue(gid, Config.ParamType.MassDel, Config.ConfVal.Everybody);
-        msg = CreateMassDelInteraction(ctx, msg);
-      }
-
       // ********* Config Spam Protection ***********************************************************************
       else if (cmdId == "idfeatrespamprotect" || cmdId == "idfeatrespamprotect0" || cmdId == "idfeatrespamprotect1" || cmdId == "idfeatrespamprotect2") {
         Config c = Configs.GetConfig(gid, Config.ParamType.SpamProtection);
@@ -207,17 +199,6 @@ public class Setup : BaseCommandModule {
           Configs.SpamProtection[gid] = val;
         }
         msg = CreateSpamProtectInteraction(ctx, msg);
-      }
-
-      // ********* Config Tags ***********************************************************************
-      else if (cmdId == "idfeattags" || cmdId == "idfeattagss0" || cmdId == "idfeattagss1" || cmdId == "idfeattagss2" || cmdId == "idfeattagsg0" || cmdId == "idfeattagsg1" || cmdId == "idfeattagsg2") {
-        if (cmdId == "idfeattagss0") Configs.SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed);
-        if (cmdId == "idfeattagss1") Configs.SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.OnlyAdmins);
-        if (cmdId == "idfeattagss2") Configs.SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.Everybody);
-        if (cmdId == "idfeattagsg0") { Configs.SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.NotAllowed); Configs.SetConfigValue(gid, Config.ParamType.TagsDefine, Config.ConfVal.NotAllowed); }
-        if (cmdId == "idfeattagsg1") Configs.SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.OnlyAdmins);
-        if (cmdId == "idfeattagsg2") Configs.SetConfigValue(gid, Config.ParamType.TagsUse, Config.ConfVal.Everybody);
-        msg = CreateTagsInteraction(ctx, msg);
       }
 
       // ********* Config Scoring emojis ***********************************************************************
@@ -471,11 +452,6 @@ public class Setup : BaseCommandModule {
       msg += "\n";
     }
 
-    // MassDel ******************************************************
-    cfg = Configs.GetConfig(gid, Config.ParamType.MassDel);
-    if (cfg == null) msg += "**Mass Delete**: _not defined (disabled by default)_\n";
-    else msg += "**Mass Delete**: " + (Config.ConfVal)cfg.IdVal + "\n";
-
     // SpamProtection ******************************************************
     cfg = Configs.GetConfig(gid, Config.ParamType.SpamProtection);
     if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
@@ -516,14 +492,6 @@ public class Setup : BaseCommandModule {
       if (wtt.HasFlag(WhatToTrack.Rank)) msg += " **Rank**";
       if (wtt.HasFlag(WhatToTrack.Mention)) msg += " **Mentions**";
       msg += "\n";
-    }
-
-    // Tags ******************************************************
-    cfg = Configs.GetConfig(gid, Config.ParamType.TagsDefine);
-    cfg2 = Configs.GetConfig(gid, Config.ParamType.TagsUse);
-    if (cfg == null || cfg2 == null) msg += "**Tags**: _not defined (disabled by default)_\n";
-    else {
-      msg += "**Tags**: Set = " + (Config.ConfVal)cfg.IdVal + "; Use = " + (Config.ConfVal)cfg2.IdVal + "\n";
     }
 
     // Emoji for Role ******************************************************
@@ -599,26 +567,6 @@ public class Setup : BaseCommandModule {
         await Utils.DeleteFileDelayed(30, rndName);
         DiscordMessage msg = await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithContent("Setup List in attachment").WithFiles(new Dictionary<string, Stream>() { { rndName, fs } }));
         await Utils.DeleteDelayed(60, msg);
-        return;
-      }
-
-      // ****************** MASSDEL *********************************************************************************************************************************************
-      if (cmds[0].Equals("massdel")) {
-        if (cmds.Length > 1) {
-          char mode = cmds[1][0];
-          Config c = Configs.GetConfig(gid, Config.ParamType.MassDel);
-          if (c == null) {
-            c = new Config(gid, Config.ParamType.MassDel, 1);
-            Configs.TheConfigs[gid].Add(c);
-          }
-          if (mode == 'n' || mode == 'd') c.IdVal = (int)Config.ConfVal.NotAllowed;
-          if (mode == 'a' || mode == 'r' || mode == 'o') c.IdVal = (int)Config.ConfVal.OnlyAdmins;
-          if (mode == 'e' || mode == 'y') c.IdVal = (int)Config.ConfVal.Everybody;
-          Database.Add(c);
-          _ = Utils.DeleteDelayed(15, ctx.Message);
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("MassDel command changed to " + (Config.ConfVal)c.IdVal));
-        } else
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup massdel` _mode_ (modes can be: _everybody_ (**NOT RECOMMENDED!**), _admins_, _disabled_)"));
         return;
       }
 
@@ -1448,31 +1396,17 @@ public class Setup : BaseCommandModule {
     builder.AddEmbed(eb.Build());
 
 
-    // Ping
-    // Whois
-    // Mass delete
-    // Games
-    // Refactor code
-    actions = new List<DiscordButtonComponent>();
-    Config.ConfVal cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatmassdel", "Mass Delete", false, er));
-
-
-    builder.AddComponents(actions);
-
     // Spam protection
     // Tags
     actions = new List<DiscordButtonComponent>();
     Config sc = Configs.GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
     actions.Add(new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er));
-    cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
-    actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeattags", "Tags", false, er));
     builder.AddComponents(actions);
 
     // Ranking/Scores
     // Emogi for roles
     actions = new List<DiscordButtonComponent>();
-    cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.Scores);
+    Config.ConfVal cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.Scores);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatscores", "Scores", false, er));
     cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.Emoji4Role);
     actions.Add(new DiscordButtonComponent(GetStyle(cv), "idfeatem4r", "Emoji for Role", false, er));
@@ -1484,46 +1418,6 @@ public class Setup : BaseCommandModule {
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back", false, el)
-    };
-    builder.AddComponents(actions);
-
-    return builder.SendAsync(ctx.Channel).Result;
-  }
-
-  private DiscordMessage CreateMassDelInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
-
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
-      Title = "UPBot Configuration - Mass Delete"
-    };
-    eb.WithThumbnail(ctx.Guild.IconUrl);
-    Config.ConfVal cv = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.MassDel);
-    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
-      "The **delete** command can mass remove a set of messages from a channel. It is recommended to limit it to admins.\n\n";
-    if (cv == Config.ConfVal.NotAllowed) eb.Description += "**Mass Delete** feature is _Disabled_";
-    if (cv == Config.ConfVal.OnlyAdmins) eb.Description += "**Mass Delete** feature is _Enabled_ for Admins";
-    if (cv == Config.ConfVal.Everybody) eb.Description += "**Mass Delete** feature is _Enabled_ for Everybody";
-    eb.WithImageUrl(ctx.Guild.BannerUrl);
-    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
-
-    List<DiscordButtonComponent> actions;
-    var builder = new DiscordMessageBuilder();
-    builder.AddEmbed(eb.Build());
-
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.NotAllowed), "idfeatmassdel0", "Not allowed", false, GetYN(cv, Config.ConfVal.NotAllowed)),
-      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.OnlyAdmins), "idfeatmassdel1", "Only Admins", false, GetYN(cv, Config.ConfVal.OnlyAdmins)),
-      new DiscordButtonComponent(GetIsStyle(cv, Config.ConfVal.Everybody), "idfeatmassdel2", "Everybody (not recommended)", false, GetYN(cv, Config.ConfVal.Everybody))
-    };
-    builder.AddComponents(actions);
-
-    // - Exit
-    // - Back
-    // - Back to features
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
     };
     builder.AddComponents(actions);
 
@@ -1646,61 +1540,6 @@ public class Setup : BaseCommandModule {
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresere", "Define Reputation emojis", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idfeatscoresefe", "Define Fun emojis", false, er)
-    };
-    builder.AddComponents(actions);
-
-    // - Exit
-    // - Back
-    // - Back to features
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idconfigfeats", "Features", false, el)
-    };
-    builder.AddComponents(actions);
-
-    return builder.SendAsync(ctx.Channel).Result;
-  }
-
-  private DiscordMessage CreateTagsInteraction(CommandContext ctx, DiscordMessage prevMsg) {
-    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
-
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
-      Title = "UPBot Configuration - Tags"
-    };
-    eb.WithThumbnail(ctx.Guild.IconUrl);
-    Config.ConfVal cvs = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsDefine);
-    Config.ConfVal cvg = Configs.GetConfigValue(ctx.Guild.Id, Config.ParamType.TagsUse);
-    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
-      "The **tag** command allows to define some contant and post it quickly with a keyword.\n" +
-      "You can use `list` to have a list to all known tags.\n" +
-      "You can use `add`, `remove`, and `edit` to alter the list of tags.\n\n";
-    if (cvs == Config.ConfVal.NotAllowed) eb.Description += "**Set Tags** is _Disabled_";
-    if (cvs == Config.ConfVal.OnlyAdmins) eb.Description += "**Set Tags** is _Enabled_ for Admins (_recommended_)";
-    if (cvs == Config.ConfVal.Everybody) eb.Description += "**Set Tags** is _Enabled_ for Everybody";
-    if (cvg == Config.ConfVal.NotAllowed) eb.Description += "**Use Tags** is _Disabled_";
-    if (cvg == Config.ConfVal.OnlyAdmins) eb.Description += "**Use Tags** is _Enabled_ for Admins";
-    if (cvg == Config.ConfVal.Everybody) eb.Description += "**Use Tags** is _Enabled_ for Everybody";
-    eb.WithImageUrl(ctx.Guild.BannerUrl);
-    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
-
-    List<DiscordButtonComponent> actions;
-    var builder = new DiscordMessageBuilder();
-    builder.AddEmbed(eb.Build());
-
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabs", "Set tags", true),
-      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.NotAllowed), "idfeattagss0", "Not allowed", false, GetYN(cvs, Config.ConfVal.NotAllowed)),
-      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.OnlyAdmins), "idfeattagss1", "Only Admins (recommended)", false, GetYN(cvs, Config.ConfVal.OnlyAdmins)),
-      new DiscordButtonComponent(GetIsStyle(cvs, Config.ConfVal.Everybody), "idfeattagss2", "Everybody", false, GetYN(cvs, Config.ConfVal.Everybody))
-    };
-    builder.AddComponents(actions);
-
-    actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeattagslabg", "Use tags", true),
-      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.NotAllowed), "idfeattagsg0", "Not allowed", false, GetYN(cvg, Config.ConfVal.NotAllowed)),
-      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.OnlyAdmins), "idfeattagsg1", "Only Admins", false, GetYN(cvg, Config.ConfVal.OnlyAdmins)),
-      new DiscordButtonComponent(GetIsStyle(cvg, Config.ConfVal.Everybody), "idfeattagsg2", "Everybody", false, GetYN(cvg, Config.ConfVal.Everybody))
     };
     builder.AddComponents(actions);
 

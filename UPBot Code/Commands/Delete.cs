@@ -19,7 +19,8 @@ public class SlashDelete : ApplicationCommandModule {
   /// </summary>
   [SlashCommand("massdel", "Deletes all the last messages (massdel 10) or from a user (massdel @User 10) in the channel")]
   public async Task DeleteCommand(InteractionContext ctx, [Option("count", "How many messages to delete")][Minimum(1)][Maximum(50)]long count, [Option("user", "What user' messages to delete")]DiscordUser user=null) {
-    if (!Configs.Permitted(ctx.Guild, Config.ParamType.MassDel, ctx.Member)) { Utils.DefaultNotAllowed(ctx); return; }
+    if (!Configs.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false)) { Utils.DefaultNotAllowed(ctx); return; }
+
     Utils.LogUserCommand(ctx);
     if (count <= 0) {
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatLanguage", $"You can't delete {count} messages. Try to eat {count} apples, does that make sense?"));

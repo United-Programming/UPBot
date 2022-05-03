@@ -18,13 +18,9 @@ public class Config : Entity {
 
   public enum ParamType {
 
-    MassDel = 4,
-
     SpamProtection = 10,
 
     Scores = 12,
-    TagsUse = 13,
-    TagsDefine = 14,
     Emoji4Role = 15,
     Emoji4RoleList = 16,
     Affiliation = 17,

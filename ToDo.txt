@@ -29,8 +29,6 @@ Remove the useless setups
 Split Setup in a slash command for the configuration and Config to store the configs
 Remove most of the interaction configs that are now useless
 Remove all "Permitted",
-  in tags use two sets, with different permissions (define and use)
-  in timezones use two sets, with different permissions (define and use)
 
 Add a startup command in Utils to get the well known emojis
 
