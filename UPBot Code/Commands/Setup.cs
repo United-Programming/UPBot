@@ -26,6 +26,20 @@ public class Setup : BaseCommandModule {
   DiscordComponentEmoji ko = null;
 
 
+
+  /*
+   
+  /setup -> show interation
+  /setup list -> dump config
+  /setup tracking #channel what
+  /setup spamprotection what
+
+   
+   
+   */
+
+
+
   /**************************** Interaction *********************************/
   [Command("Setup")]
   [Description("Configration of the bot (interactive if without parameters)")]
@@ -1347,7 +1361,6 @@ public class Setup : BaseCommandModule {
     var builder = new DiscordMessageBuilder();
     builder.AddEmbed(eb.Build());
 
-
     // - Change channel
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idchangetrackch", "Change channel", false, ok)
@@ -1750,11 +1763,12 @@ public class Setup : BaseCommandModule {
   }
 
   private DSharpPlus.ButtonStyle GetStyle(Config.ConfVal cv) {
-    switch (cv) {
-      case Config.ConfVal.NotAllowed: return DSharpPlus.ButtonStyle.Secondary;
-      case Config.ConfVal.OnlyAdmins: return DSharpPlus.ButtonStyle.Danger;
-      default: return DSharpPlus.ButtonStyle.Primary;
-    }
+    return cv switch
+    {
+      Config.ConfVal.NotAllowed => DSharpPlus.ButtonStyle.Secondary,
+      Config.ConfVal.OnlyAdmins => DSharpPlus.ButtonStyle.Danger,
+      _ => DSharpPlus.ButtonStyle.Primary,
+    };
   }
 
   private DSharpPlus.ButtonStyle GetIsStyle(Config.ConfVal cv, Config.ConfVal what) {

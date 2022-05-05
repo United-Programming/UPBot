@@ -139,14 +139,15 @@ public class SlashGame : ApplicationCommandModule {
   };
 
   private string GetChoice(RPSLSTypes? move) {
-    switch (move) {
-      case RPSLSTypes.Rock: return "🪨 Rock";
-      case RPSLSTypes.Paper: return "📄 Paper";
-      case RPSLSTypes.Scissors: return "✂️ Scissors";
-      case RPSLSTypes.Lizard: return "🦎 Lizard";
-      case RPSLSTypes.Spock: return "🖖 Spock";
-    }
-    return "?";
+    return move switch
+    {
+      RPSLSTypes.Rock => "🪨 Rock",
+      RPSLSTypes.Paper => "📄 Paper",
+      RPSLSTypes.Scissors => "✂️ Scissors",
+      RPSLSTypes.Lizard => "🦎 Lizard",
+      RPSLSTypes.Spock => "🖖 Spock",
+      _ => "?",
+    };
   }
 
 

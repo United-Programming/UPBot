@@ -75,6 +75,7 @@ namespace UPBot {
         slash.RegisterCommands<SlashWhoIs>(830900174553481236ul);
         slash.RegisterCommands<SlashGame>(830900174553481236ul);
         slash.RegisterCommands<SlashTags>(830900174553481236ul);
+        slash.RegisterCommands<SlashTagsEdit>(830900174553481236ul);
         slash.RegisterCommands<SlashStats>(830900174553481236ul);
         slash.RegisterCommands<SlashTimezone>(830900174553481236ul);
         slash.RegisterCommands<SlashLogs>(830900174553481236ul);

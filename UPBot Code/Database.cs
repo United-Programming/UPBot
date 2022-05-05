@@ -317,6 +317,34 @@ public class Database {
     return Convert.ToInt32(cmd.ExecuteScalar());
   }
 
+
+  public static void DeleteTable<T>() {
+    Type t = typeof(T);
+    if (!typeof(Entity).IsAssignableFrom(t))
+      throw new Exception("The class " + t + " does not derive from Entity and cannot be used as database table!");
+
+    // Check if we have the table in the db
+    string tableName = t.ToString();
+    SQLiteCommand command = new SQLiteCommand(connection) {
+      CommandText = "SELECT count(*) FROM " + tableName + ";"
+    };
+    bool exists = true; // Check if table exists
+    try {
+      SQLiteDataReader reader = command.ExecuteReader();
+      reader.Close();
+    } catch (Exception) {
+      exists = false;
+    }
+    if (!exists) return;
+
+    try {
+      command.CommandText = "DROP TABLE IF EXISTS " + tableName;
+      command.ExecuteNonQuery();
+    } catch (Exception ex) {
+      Console.WriteLine(ex.Message);
+    }
+  }
+
   public static void Update<T>(T val) {
     Add(val);
   }

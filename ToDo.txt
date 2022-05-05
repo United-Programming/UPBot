@@ -18,7 +18,7 @@ timezone        | *
 logs            | *
 
 
-MemberTracking  | nothing to do
+MemberTracking  | convert to remove Config
 Appreciation    | 
 EmojiForRole    | 
 Setup           | 

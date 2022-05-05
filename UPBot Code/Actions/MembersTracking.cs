@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class MembersTracking {
-  static Dictionary<ulong, DateTime> tracking = null;
+  static Dictionary<ulong, DateTime> tracking = null; // Use one from COnfig, add nonserializable datetime if we need one
 
   public static async Task DiscordMemberRemoved(DiscordClient _, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
       if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
@@ -41,9 +41,9 @@ public class MembersTracking {
 
   public static async Task DiscordMemberAdded(DiscordClient _client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       tracking[args.Member.Id] = DateTime.Now;
       _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
@@ -55,9 +55,9 @@ public class MembersTracking {
 
   public static async Task DiscordMemberUpdated(DiscordClient _, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
       TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackRoles) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
       IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
