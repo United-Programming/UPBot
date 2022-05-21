@@ -33,31 +33,30 @@ namespace UPBot {
 
     static async Task MainAsync(string token, string prefix) {
       try {
-        Utils.Log("Init MainAsync", null);
+        Utils.Log("Init Main", null);
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
           TokenType = TokenType.Bot, // We are a bot
           Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers
         });
-        Utils.Log("Discord object", null);
 
+        Utils.Log("Use interactivity", null);
         client.UseInteractivity(new InteractivityConfiguration() {
           Timeout = TimeSpan.FromSeconds(120),
           ButtonBehavior = DSharpPlus.Interactivity.Enums.ButtonPaginationBehavior.DeleteMessage,
           ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
-        Utils.Log("Use interactivity", null);
 
-        Utils.InitClient(client);
         Utils.Log("Utils.InitClient", null);
+        Utils.InitClient(client);
         Database.InitDb();
+
         Utils.Log("Database.InitDb", null);
-        Database.AddTable<Config>();
+        Database.AddTable<SpamProtection>();
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
         Database.AddTable<TrackChannel>();
         Database.AddTable<TagBase>();
-        Utils.Log("Added Tables", null);
 
 
         // SlashCommands
@@ -87,13 +86,46 @@ namespace UPBot {
         });
         Utils.Log("CommandsNextExtension", null);
         commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
-        Utils.Log("RegisterCommands", null);
 
         Utils.Log("Connecting to discord...", null);
         client.Ready += Discord_Ready;
 
         await Task.Delay(50);
-        await client.ConnectAsync(); // Connect and wait forever
+        await client.ConnectAsync(); // Connect
+
+        // Check for a while if we have any guild
+        int t = 0;
+        while (Utils.GetClient() == null) { // 10 secs max for client
+          await Task.Delay(1000);
+          if (t++ > 10) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (no client)", null);
+            Console.WriteLine("CRITICAL ERROR: No discord client");
+            return;
+          }
+        }
+
+        // 10 secs max for guilds
+        t = 0;
+        while (Utils.GetClient().Guilds == null) {
+          await Task.Delay(1000);
+          if (t++ > 10) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (no guilds)", null);
+            Console.WriteLine("CRITICAL ERROR: No guilds avilable");
+            return;
+          }
+        }
+
+        // 30 secs max for guilds coubnt
+        t = 0;
+        while (Utils.GetClient().Guilds.Count == 0) {
+          await Task.Delay(1000);
+          if (t++ > 30) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (guilds count is zero)", null);
+            Console.WriteLine("CRITICAL ERROR: The bot seems to be in no guild");
+            return;
+          }
+        }
+
 
       } catch (Exception ex) {
         Utils.Log("with exception: " + ex.Message, null);

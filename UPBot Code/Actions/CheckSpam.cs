@@ -125,13 +125,14 @@ public class CheckSpam : BaseCommandModule {
 
   internal static async Task CheckMessage(DiscordClient _, MessageCreateEventArgs args) {
     if (args.Guild == null) return;
+    if (args.Author.Id == Utils.GetClient().CurrentUser.Id) return; // Do not consider myself
     try {
-      if (!Configs.SpamProtection.ContainsKey(args.Guild.Id)) return;
-      ulong spam = Configs.SpamProtection[args.Guild.Id];
-      if (spam == 0) return;
-      bool edisc = (spam & 1) == 1;
-      bool esteam = (spam & 2) == 2;
-      bool eepic = (spam & 4) == 4;
+      if (!Configs.SpamProtections.ContainsKey(args.Guild.Id)) return;
+      SpamProtection sp = Configs.SpamProtections[args.Guild.Id];
+      if (!sp.protectDiscord && !sp.protectSteam&&!sp.protectDiscord) return;
+      bool edisc = sp.protectDiscord;
+      bool esteam = sp.protectSteam;
+      bool eepic = sp.protectEpic;
 
       string msg = args.Message.Content.ToLowerInvariant();
       Match m = linkRE.Match(msg);

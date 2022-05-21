@@ -37,14 +37,13 @@ public class SlashLogs : ApplicationCommandModule {
 
     int start = lines.Count - (int)numLines;
     if (start < 0) start = 0;
-    string res = $"Last {numLines} lines of logs:\n```";
+    string res = "";
     while (start < lines.Count) {
-      res += lines[start] + "\n";
+      res += lines[start].Replace("```", "\\`\\`\\`") + "\n";
       start++;
     }
     if (res.Length > 1990) res = res[-1990..] + "...\n";
-
-    res += "```";
+    res = $"Last {numLines} lines of logs:\n```\n" + res + "```";
     await ctx.CreateResponseAsync(res);
   }
 

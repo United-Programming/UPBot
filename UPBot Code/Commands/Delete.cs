@@ -41,7 +41,7 @@ public class SlashDelete : ApplicationCommandModule {
         int num = (user == null ? (int)count + 2 : 50) * numMsgs;
         var messages = await ctx.Channel.GetMessagesAsync(num);
         foreach (DiscordMessage m in messages) {
-          if ((user == null || m.Author.Id == user.Id) && !m.Author.IsCurrent) {
+          if ((user == null || m.Author.Id == user.Id) && (m.Author.IsBot || !m.Author.IsCurrent)) {
             toDelete.Add(m);
             numDeleted++;
             if (numDeleted >= count) break;
@@ -51,7 +51,9 @@ public class SlashDelete : ApplicationCommandModule {
       }
       await ctx.Channel.DeleteMessagesAsync(toDelete);
 
-      await ctx.GetOriginalResponseAsync().Result.DeleteAsync();
+      try {
+        await ctx.GetOriginalResponseAsync().Result.DeleteAsync();
+      } catch (Exception) { } // Just ignore the exception, it may happen if we try to delete our own message that is already deleted.
       if (user != null)
         await ctx.Channel.SendMessageAsync($"{numDeleted} messages from {user.Username} deleted");
       else

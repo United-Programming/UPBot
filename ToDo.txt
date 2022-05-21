@@ -18,22 +18,6 @@ timezone        | *
 logs            | *
 
 
-MemberTracking  | convert to remove Config
-Appreciation    | 
-EmojiForRole    | 
-Setup           | 
-Affiliation     | 
-
-Remove the useless setups
-
-Split Setup in a slash command for the configuration and Config to store the configs
-Remove most of the interaction configs that are now useless
-Remove all "Permitted",
-
 Add a startup command in Utils to get the well known emojis
-
-
-DATABASE: add function to remove old table?
-Try to remove Config table
 
 To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands

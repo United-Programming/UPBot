@@ -1,14 +1,14 @@
 ﻿
-public class Config : Entity {
+public class OLDConfig : Entity {
   [Key] public ulong Guild;
   [Key] public int Param;
   public ulong IdVal;
 
   [NotPersistent]
 
-  public Config() { }
+  public OLDConfig() { }
 
-  public Config(ulong guild, ParamType param, ulong val) {
+  public OLDConfig(ulong guild, ParamType param, ulong val) {
     Guild = guild;
     Param = (int)param;
     IdVal = val;
@@ -19,11 +19,6 @@ public class Config : Entity {
   public enum ParamType {
 
     SpamProtection = 10,
-
-    Scores = 12,
-    Emoji4Role = 15,
-    Emoji4RoleList = 16,
-    Affiliation = 17,
   }
 
   public enum ConfVal {

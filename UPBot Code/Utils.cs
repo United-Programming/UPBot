@@ -41,7 +41,7 @@ public static class Utils
   readonly private static Dictionary<string, LogInfo> logs = new Dictionary<string, LogInfo>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/04/28";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/05/21";
   }
 
   public static DiscordClient GetClient() {
@@ -358,7 +358,7 @@ public static class Utils
     Console.WriteLine(guild + ": " + msg);
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
-      logs[guild].sw.WriteLine(msg);
+      logs[guild].sw.WriteLine(msg.Replace("```", ""));
       logs[guild].sw.FlushAsync();
     } catch (Exception e) {
       Console.WriteLine("Log error: " + e.Message);

@@ -37,19 +37,34 @@ public class SlashSetup : ApplicationCommandModule {
    */
 
   [SlashCommand("setup", "Configuration of the features")]
-  public async Task SetupCommand(InteractionContext ctx) {
+  public async Task SetupCommand(InteractionContext ctx, [Option("Command", "Show, List, Set, or Dump")] SetupCommandItem? command = null) {
     if (ctx.Guild == null) {
       await ctx.CreateResponseAsync("I cannot be used in Direct Messages.", true);
       return;
     }
     Utils.LogUserCommand(ctx);
-    ulong gid = ctx.Guild.Id;
+    DiscordGuild g = ctx.Guild;
+    ulong gid = g.Id;
 
     if (!Configs.HasAdminRole(gid, ctx.Member.Roles, false)) {
       await ctx.CreateResponseAsync("Only admins can setup the bot.", true);
       return;
     }
 
+    if (command == null || command == SetupCommandItem.Show) await HandleSetupInteraction(ctx, gid);
+    else if (command == SetupCommandItem.List) await ctx.CreateResponseAsync(GenerateSetupList(g, gid));
+    else if (command == SetupCommandItem.Save) {
+      string theList = GenerateSetupList(g, gid);
+      string rndName = "SetupList" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".txt";
+      File.WriteAllText(rndName, theList);
+      using var fs = new FileStream(rndName, FileMode.Open, FileAccess.Read);
+      await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Setup List in attachment").AddFile(fs));
+      await Utils.DeleteFileDelayed(30, rndName);
+    }
+    else await ctx.CreateResponseAsync("Wrong choice", true);
+  }
+
+  async Task HandleSetupInteraction(InteractionContext ctx, ulong gid) {
     var interact = ctx.Client.GetInteractivity();
     if (ok == null) {
       ok = new DiscordComponentEmoji(Utils.GetEmoji(EmojiEnum.OK));
@@ -57,9 +72,13 @@ public class SlashSetup : ApplicationCommandModule {
     }
 
     // Basic intro message
-    var msg = CreateMainConfigPage(ctx, null);
+    CreateMainConfigPage(ctx, null);
+
+    DiscordMessage msg = await ctx.GetOriginalResponseAsync();
     var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
     var interRes = result.Result;
+    await msg.DeleteAsync();
+    msg = null;
 
     while (interRes != null && interRes.Id != "idexitconfig") {
       interRes.Handled = true;
@@ -67,7 +86,7 @@ public class SlashSetup : ApplicationCommandModule {
 
       // ******************************************************************** Back *************************************************************************
       if (cmdId == "idback") {
-        msg = CreateMainConfigPage(ctx, msg);
+        msg = FollowMainConfigPage(ctx, msg);
       }
 
       // ***************************************************** DefAdmins ***********************************************************************************
@@ -185,22 +204,15 @@ public class SlashSetup : ApplicationCommandModule {
 
       // ********* Config Spam Protection ***********************************************************************
       else if (cmdId == "idfeatrespamprotect" || cmdId == "idfeatrespamprotect0" || cmdId == "idfeatrespamprotect1" || cmdId == "idfeatrespamprotect2") {
-        Config c = Configs.GetConfig(gid, Config.ParamType.SpamProtection);
-        ulong val = 0;
-        if (c != null) val = c.IdVal;
-        ulong old = val;
-        if (cmdId == "idfeatrespamprotect0") val ^= 1ul;
-        if (cmdId == "idfeatrespamprotect1") val ^= 2ul;
-        if (cmdId == "idfeatrespamprotect2") val ^= 4ul;
-        if (val != old) {
-          if (c == null) {
-            c = new Config(gid, Config.ParamType.SpamProtection, val);
-            Configs.TheConfigs[gid].Add(c);
-          }
-          else c.IdVal = val;
-          Database.Add(c);
-          Configs.SpamProtection[gid] = val;
+        SpamProtection sp = Configs.SpamProtections[gid];
+        if (sp == null) {
+          sp = new SpamProtection(gid);
+          Configs.SpamProtections[gid] = sp;
         }
+        if (cmdId == "idfeatrespamprotect0") sp.protectDiscord = !sp.protectDiscord;
+        if (cmdId == "idfeatrespamprotect1") sp.protectSteam = !sp.protectSteam;
+        if (cmdId == "idfeatrespamprotect2") sp.protectEpic = !sp.protectEpic;
+        Database.Add(sp);
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
 
@@ -217,9 +229,7 @@ public class SlashSetup : ApplicationCommandModule {
 
   }
 
-  string GenerateSetupList(DiscordGuild g, ulong gid) {
-    // list
-    Config cfg;
+  string GenerateSetupList(DiscordGuild g, ulong gid) { // list
 
     string msg = "Setup list for Discord Server " + g.Name + "\n";
     string part = "";
@@ -248,280 +258,52 @@ public class SlashSetup : ApplicationCommandModule {
     }
 
     // SpamProtection ******************************************************
-    cfg = Configs.GetConfig(gid, Config.ParamType.SpamProtection);
-    if (cfg == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
-    else if (cfg.IdVal == 0) msg += "**Spam Protection**: _disabled_\n";
-    else msg += "**Spam Protection**: enabled for" +
-        ((cfg.IdVal & 1ul) == 1 ? " _Discord_" : "") +
-        ((cfg.IdVal & 2ul) == 2 ? ((cfg.IdVal & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-        ((cfg.IdVal & 4ul) == 4 ? ((cfg.IdVal & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "") +
-        "\n";
-
+    SpamProtection sp = Configs.SpamProtections[gid];
+    if (sp == null) msg += "**Spam Protection**: _not defined (disabled by default)_\n";
+    else if (sp.protectDiscord) {
+      if (sp.protectSteam) {
+        if (sp.protectEpic) {
+          msg += "**Spam Protection**: enabled for _Discord_, _Steam_, and _Epic_\n";
+        }
+        else {
+          msg += "**Spam Protection**: enabled for _Discord_ and _Steam_\n";
+        }
+      }
+      else {
+        if (sp.protectEpic) {
+          msg += "**Spam Protection**: enabled for _Discord_ and _Epic_\n";
+        }
+        else {
+          msg += "**Spam Protection**: enabled for _Discord_ only\n";
+        }
+      }
+    }
+    else {
+      if (sp.protectSteam) {
+        if (sp.protectEpic) {
+          msg += "**Spam Protection**: enabled for _Steam_ and _Epic_\n";
+        }
+        else {
+          msg += "**Spam Protection**: enabled for _Steam_ only\n";
+        }
+      }
+      else {
+        if (sp.protectEpic) {
+          msg += "**Spam Protection**: enabled for _Epic_ only\n";
+        }
+        else {
+          msg += "**Spam Protection**: _disabled_\n";
+        }
+      }
+    }
 
     return msg;
   }
 
-  [Command("SetupOLD")]
-  [Description("Configration of the bot (interactive if without parameters)")]
-  public async Task SetupCommand(CommandContext ctx, [RemainingText][Description("The setup command to execute")] string command) {
-    if (ctx.Guild == null) {
-      await ctx.RespondAsync("I cannot be used in Direct Messages.");
-      return;
-    }
-    Utils.LogUserCommand(ctx);
-
-    try {
-      DiscordGuild g = ctx.Guild;
-      ulong gid = g.Id;
-      if (!Configs.HasAdminRole(gid, ctx.Member.Roles, false)) {
-        await ctx.RespondAsync("Only admins can setup the bot.");
-        return;
-      }
-
-      string[] cmds = command.Trim().ToLowerInvariant().Split(' ');
-
-      // ****************** LIST *********************************************************************************************************************************************
-      if (cmds[0].Equals("list") || cmds[0].Equals("dump")) {
-        await Utils.DeleteDelayed(60, ctx.RespondAsync(GenerateSetupList(g, gid)));
-        return;
-      }
-
-      if (cmds[0].Equals("save")) {
-        string theList = GenerateSetupList(g, gid);
-        string rndName = "SetupList" + DateTime.Now.Second + "Tmp" + DateTime.Now.Millisecond + ".txt";
-        File.WriteAllText(rndName, theList);
-        using var fs = new FileStream(rndName, FileMode.Open, FileAccess.Read);
-        await Utils.DeleteFileDelayed(30, rndName);
-        DiscordMessage msg = await ctx.Message.RespondAsync(new DiscordMessageBuilder().WithContent("Setup List in attachment").WithFiles(new Dictionary<string, Stream>() { { rndName, fs } }));
-        await Utils.DeleteDelayed(60, msg);
-        return;
-      }
-
-      // ****************** TRACKINGCHANNEL *********************************************************************************************************************************************
-      if (cmds[0].Equals("trackingchannel") || cmds[0].Equals("trackchannel")) {
-        // trch [empty|help] -> help
-        // trch [rem|remove] -> remove
-        // trch channel [j] [l] [r] -> set
-        // trch [j] [l] [r] -> set on existing
-
-        if (cmds.Length > 1) {
-          TrackChannel tc = null;
-          bool j = false;
-          bool l = false;
-          bool r = false;
-          bool atLestOne = false;
-          for (int i = 1; i < cmds.Length; i++) {
-            string cmd = cmds[i].Trim().ToLowerInvariant();
-            if (cmd == "rem") {  // Remove
-              if (!Configs.TrackChannels.ContainsKey(gid) || Configs.TrackChannels[gid] == null) {
-                await Utils.DeleteDelayed(15, ctx.RespondAsync("No tracking channel was defined for this server"));
-              } else {
-                Database.Delete(Configs.TrackChannels[gid]);
-                Configs.TrackChannels[gid] = null;
-              }
-              break;
-            } else if (cmd == "j") {
-              j = true;
-              atLestOne = true;
-            } else if (cmd == "l") {
-              l = true;
-              atLestOne = true;
-            } else if (cmd == "r") {
-              r = true;
-              atLestOne = true;
-            } else { // Is it a channel?
-              DiscordChannel ch = null;
-              if (cmd[0] == '#') cmd = cmd[1..];
-              Match cm = Configs.chnnelRefRE.Match(cmd);
-              if (cm.Success) {
-                if (ulong.TryParse(cm.Groups[1].Value, out ulong cid)) {
-                  DiscordChannel tch = ctx.Guild.GetChannel(cid);
-                  if (tch != null) ch = tch;
-                }
-              }
-              if (ch == null) {
-                foreach (DiscordChannel tch in g.Channels.Values) {
-                  if (tch.Name.Equals(cmd, StringComparison.InvariantCultureIgnoreCase)) {
-                    ch = tch;
-                    break;
-                  }
-                }
-              }
-              if (ch != null) {
-                if (!Configs.TrackChannels.ContainsKey(gid) || Configs.TrackChannels[gid] == null) {
-                  tc = new TrackChannel(gid, ch.Id) {  // Create
-                    trackJoin = true,
-                    trackLeave = true,
-                    trackRoles = true,
-                    channel = ch
-                  };
-                  Configs.TrackChannels[gid] = tc;
-                } else {
-                  tc = Configs.TrackChannels[gid]; // Grab
-                  tc.channel = ch;
-                }
-              }
-            }
-          }
-          if (atLestOne && tc == null && Configs.TrackChannels[gid] != null)
-            tc = Configs.TrackChannels[gid];
-          if (tc != null) {
-            if (atLestOne) {
-              tc.trackJoin = j;
-              tc.trackLeave = l;
-              tc.trackRoles = r;
-            }
-            Database.Add(tc);
-            j = tc.trackJoin;
-            l = tc.trackLeave;
-            r = tc.trackRoles;
-
-            await Utils.DeleteDelayed(15, ctx.RespondAsync("Tracking Channel updated to " + tc.channel.Mention + " for " +
-              ((!j && !l && !r) ? "_no actions_" : "") + (j ? "_Join_ " : "") + (l ? "_Leave_ " : "") + (r ? "_Roles_ " : "")));
-          }
-          _ = Utils.DeleteDelayed(15, ctx.Message);
-        } else
-          await Utils.DeleteDelayed(15, ctx.RespondAsync(
-            "Use: `setup trackingchannel` _#channel_ to set a channel\n`j` to track who joins the server, `l` to track who leaves the server, 'r' to track changes on roles (_the flags can be used alone or after a channel definition_.)\n'rem' to remove the tracking channel"));
-
-        return;
-      }
-
-      // ****************** ADMINROLES *********************************************************************************************************************************************
-      if (cmds[0].Equals("adminroles") || cmds[0].Equals("admins")) {
-        if (cmds.Length > 1) {
-          var errs = "";
-          string msg;
-          // set them, or remove
-          if (cmds[1].Equals("remove", StringComparison.InvariantCultureIgnoreCase)) {
-            foreach (var r in Configs.AdminRoles[gid]) {
-              Database.DeleteByKeys<AdminRole>(gid, r);
-            }
-            Configs.AdminRoles[gid].Clear();
-
-            _ = Utils.DeleteDelayed(15, ctx.Message);
-            msg = "**AdminRoles** removed";
-            await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-            return;
-
-          }
-          else if (cmds[1].Equals("list", StringComparison.InvariantCultureIgnoreCase)) {
-            msg = "**AdminRoles** are: ";
-            if (!Configs.AdminRoles.ContainsKey(gid) || Configs.AdminRoles[gid].Count == 0) {
-              int maxpos = -1;
-              foreach (DiscordRole r in ctx.Guild.Roles.Values) { // Find max position numer
-                if (maxpos < r.Position) maxpos = r.Position;
-              }
-              foreach (DiscordRole r in ctx.Guild.Roles.Values) {
-                if (r.Permissions.HasFlag(DSharpPlus.Permissions.Administrator) || r.Position == maxpos)
-                  msg += "**" + r.Name + "**, ";
-              }
-              msg += "and **_" + ctx.Guild.Owner.DisplayName + "_** (_roles are not defined, default ones are used_)";
-            }
-            else {
-              foreach (var rid in Configs.AdminRoles[gid]) {
-                DiscordRole r = g.GetRole(rid);
-                if (r != null) msg += r.Mention + ", ";
-              }
-              msg = msg[0..^2];
-            }
-            if (errs.Length > 0) msg += " _Errors:_ " + errs;
-            _ = Utils.DeleteDelayed(15, ctx.Message);
-            await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-            return;
-
-          }
-          else {
-            var guildRoles = g.Roles.Values;
-            for (int i = 1; i < cmds.Length; i++) {
-              // Find if we have it (and the id)
-              ulong id = 0;
-              Match rm = Configs.roleSnowflakeRR.Match(cmds[i]);
-              if (rm.Success)
-                ulong.TryParse(rm.Groups[1].Value, out id);
-              else {
-                foreach (var r in guildRoles)
-                  if (r.Name.Equals(cmds[i], StringComparison.InvariantCultureIgnoreCase)) {
-                    id = r.Id;
-                    break;
-                  }
-              }
-              if (id == 0) {
-                errs += cmds[i] + " ";
-                continue;
-              }
-              else {
-                if (!Configs.AdminRoles[gid].Contains(id)) {
-                  Configs.AdminRoles[gid].Add(id);
-                  Database.Add(new AdminRole(gid, id));
-                }
-              }
-            }
-          }
-          // And show the result
-          if (Configs.AdminRoles[gid].Count == 0) msg = "No valid **AdminRoles** defined";
-          else {
-            msg = "**AdminRoles** are: ";
-            foreach (var rid in Configs.AdminRoles[gid]) {
-              DiscordRole r = g.GetRole(rid);
-              if (r != null) msg += "**" + r.Name + "**, ";
-            }
-            msg = msg[0..^2];
-          }
-          if (errs.Length > 0) msg += " _Errors:_ " + errs;
-
-          _ = Utils.DeleteDelayed(15, ctx.Message);
-          await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-        }
-        else
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `setup adminroles` _@role1 @role2 @role3_ ... (adds the roles as admins for the bot.)\nUse: `setup adminroles remove` to remove all admin roles specified\nUse: `setup adminroles list` to show who will be considered an admin (in term of roles or specific users.)"));
-        return;
-      }
-
-      // ****************** SPAMPROTECTION *********************************************************************************************************************************************
-      if ((cmds[0].Equals("spam") || cmds[0].Equals("spamprotection"))) {
-        if (cmds.Length == 1 || cmds[1].Equals("?") || cmds[1].Equals("help")) {
-          await Utils.DeleteDelayed(15, ctx.RespondAsync("Use: `spamprotection` [d] [s] [e] (checks spam links for _Discrod_, _Steam_, _EpicGameStore_, and removed them.)"));
-        }
-        else {
-          bool edisc = false, esteam = false, eepic = false;
-          for (int i = 1; i < cmds.Length; i++) {
-            char mode = cmds[i][0];
-            if (mode == 'd') edisc = true;
-            if (mode == 's') esteam = true;
-            if (mode == 'e') eepic = true;
-          }
-          ulong val = (edisc ? 1ul : 0) | (esteam ? 2ul : 0) | (eepic ? 4ul : 0);
-          Config c = Configs.GetConfig(gid, Config.ParamType.SpamProtection);
-          if (c == null) {
-            c = new Config(gid, Config.ParamType.SpamProtection, val);
-            Configs.TheConfigs[gid].Add(c);
-          }
-          else c.IdVal = val;
-          Configs.SpamProtection[gid] = val;
-
-          string msg = "SpamProtection command changed to ";
-          if (val == 0) msg += "_disabled_\n";
-          else msg += "enabled for" +
-              ((val & 1ul) == 1 ? " _Discord_" : "") +
-              ((val & 2ul) == 2 ? ((val & 1ul) == 1 ? ", _Steam_" : " _Steam_") : "") +
-              ((val & 4ul) == 4 ? ((val & 1ul) != 0 ? ",  _Epic Game Store_" : " _Epic Game Store_") : "");
-
-          Database.Add(c);
-          _ = Utils.DeleteDelayed(15, ctx.Message);
-          await Utils.DeleteDelayed(15, ctx.RespondAsync(msg));
-        }
-        return;
-      }
-
-
-
-
-      await Utils.DeleteDelayed(15, ctx.RespondAsync("I do not understand the command: " + ctx.Message.Content));
-
-    } catch (Exception ex) {
-      Utils.Log("Error in Setup by command line: " + ex.Message, ctx.Guild.Name);
-    }
+  public enum SetupCommandItem {
+    [ChoiceName("Show")] Show = 0,
+    [ChoiceName("List")] List = 1,
+    [ChoiceName("Save")] Save = 2
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
@@ -533,7 +315,39 @@ public class SlashSetup : ApplicationCommandModule {
   }
 
  
-  private DiscordMessage CreateMainConfigPage(InteractionContext ctx, DiscordMessage prevMsg) {
+  private void CreateMainConfigPage(InteractionContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+      Title = "UPBot Configuration"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    var builder = new DiscordInteractionResponseBuilder();
+    builder.AddEmbed(eb.Build());
+
+    //- Set tracking
+    //- Set Admins
+    //- Spam Protection
+    SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
+    bool spdisabled = sp == null || (!sp.protectDiscord && !sp.protectSteam && !sp.protectEpic);
+    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er),
+      new DiscordButtonComponent( spdisabled ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er)
+    };
+    builder.AddComponents(actions);
+
+    //-Exit
+    builder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
+
+    ctx.CreateResponseAsync(builder);
+  }
+
+  private DiscordMessage FollowMainConfigPage(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
     DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
@@ -549,20 +363,23 @@ public class SlashSetup : ApplicationCommandModule {
 
     //- Set tracking
     //- Set Admins
-    //- Spam Protection:
-    Config sc = Configs.GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
+    //- Spam Protection
+    SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
+    bool spdisabled = sp == null || (!sp.protectDiscord && !sp.protectSteam && !sp.protectEpic);
     List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er),
-      new DiscordButtonComponent((sc == null || sc.IdVal == 0) ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er)
+      new DiscordButtonComponent(spdisabled ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er)
     };
     builder.AddComponents(actions);
 
     //-Exit
     builder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec));
 
-    return builder.SendAsync(ctx.Channel).Result;
+    return ctx.Channel.SendMessageAsync(builder).Result;
   }
+
+
 
   private DiscordMessage CreateAdminsInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
@@ -627,7 +444,7 @@ public class SlashSetup : ApplicationCommandModule {
     };
     builder.AddComponents(actions);
 
-    return builder.SendAsync(ctx.Channel).Result;
+    return ctx.Channel.SendMessageAsync(builder).Result;
   }
 
   private DiscordMessage CreateTrackingInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
@@ -681,7 +498,7 @@ public class SlashSetup : ApplicationCommandModule {
     };
     builder.AddComponents(actions);
 
-    return builder.SendAsync(ctx.Channel).Result;
+    return ctx.Channel.SendMessageAsync(builder).Result;
   }
 
   private DiscordMessage CreateSpamProtectInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
@@ -691,10 +508,10 @@ public class SlashSetup : ApplicationCommandModule {
       Title = "UPBot Configuration - Spam Protection"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
-    Config c = Configs.GetConfig(ctx.Guild.Id, Config.ParamType.SpamProtection);
-    bool edisc = c != null && (c.IdVal & 1) == 1;
-    bool esteam = c != null && (c.IdVal & 2) == 2;
-    bool eepic = c != null && (c.IdVal & 4) == 4;
+    SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
+    bool edisc = sp != null && sp.protectDiscord;
+    bool esteam = sp != null && sp.protectSteam;
+    bool eepic = sp != null && sp.protectEpic;
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "The **Spam Protection** is a feature of the bot used to watch all posts contain links.\n" +
       "If the link is a counterfait Discord (or Steam, or Epic) link (usually a false free nitro,\n" +
@@ -724,6 +541,6 @@ public class SlashSetup : ApplicationCommandModule {
     };
     builder.AddComponents(actions);
 
-    return builder.SendAsync(ctx.Channel).Result;
+    return ctx.Channel.SendMessageAsync(builder).Result;
   }
 }

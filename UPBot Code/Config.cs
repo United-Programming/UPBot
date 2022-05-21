@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,10 +32,9 @@ public class TempSetRole {
 /// </summary>
 public class Configs {
   readonly private static Dictionary<ulong, DiscordGuild> Guilds = new Dictionary<ulong, DiscordGuild>();
-  readonly public static Dictionary<ulong, List<Config>> TheConfigs = new Dictionary<ulong, List<Config>>();
   readonly public static Dictionary<ulong, TrackChannel> TrackChannels = new Dictionary<ulong, TrackChannel>();
   readonly public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
-  readonly public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
+  readonly public static Dictionary<ulong, SpamProtection> SpamProtections = new Dictionary<ulong, SpamProtection>();
   readonly public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
 
   readonly public static Dictionary<ulong, TempSetRole> TempRoleSelected = new Dictionary<ulong, TempSetRole>();
@@ -52,26 +50,6 @@ public class Configs {
       foreach (var g in Utils.GetClient().Guilds.Values) {
         Guilds[g.Id] = g;
       }
-
-      List<Config> dbconfig = Database.GetAll<Config>();
-      foreach (var c in dbconfig) {
-        ulong gid = c.Guild;
-
-        if (!TheConfigs.ContainsKey(gid)) TheConfigs[gid] = new List<Config>();
-        TheConfigs[gid].Add(c);
-
-
-        // Guilds
-        if (!Guilds.ContainsKey(gid)) {
-          if (TryGetGuild(gid) == null) continue; // Guild is missing
-        }
-
-        // Spam Protection
-        if (c.IsParam(Config.ParamType.SpamProtection)) {
-          SpamProtection[gid] = c.IdVal;
-        }
-      }
-
 
       // Admin Roles
       List<AdminRole> allAdminRoles = Database.GetAll<AdminRole>();
@@ -110,20 +88,27 @@ public class Configs {
         }
       }
 
+      // SpamProtection
+      List<SpamProtection> spamProtections = Database.GetAll<SpamProtection>();
+      if (spamProtections != null) {
+        foreach (var sp in spamProtections) {
+          SpamProtections[sp.Guild] = sp;
+        }
+      }
+
 
       // Fill all missing guilds
       foreach (var g in Guilds.Keys) {
-        if (!TheConfigs.ContainsKey(g)) TheConfigs[g] = new List<Config>();
         if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
         if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
-        if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
+        if (!SpamProtections.ContainsKey(g)) SpamProtections[g] = null;
         if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
         if (!TempRoleSelected.ContainsKey(g)) TempRoleSelected[g] = null;
       }
 
-      Utils.Log("Params fully loaded. " + TheConfigs.Count + " Discord servers found", null);
+      Utils.Log("Params fully loaded. " + SpamProtections.Count + " Discord servers found", null);
     } catch (Exception ex) {
-      Utils.Log("Error in SetupLoadParams:" + ex.Message, null);
+      Utils.Log("Error in ConfigLoadParams:" + ex.Message, null);
     }
   }
 
@@ -133,11 +118,35 @@ public class Configs {
 
     Task.Delay(1000);
     int t = 0;
-    while (Utils.GetClient() == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no client)", null); }
-    t = 0;
-    while (Utils.GetClient().Guilds == null) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (no guilds)", null); }
 
-    while (Utils.GetClient().Guilds.Count == 0) { t += 1000; Task.Delay(t); if (t > 30000) Utils.Log("We are not connecting! (guilds count is zero", null); }
+    // 10 secs max for client
+    while (Utils.GetClient() == null) {
+      t++; Task.Delay(t);
+      if (t > 10) {
+        Utils.Log("We are not connecting! (no client)", null);
+        throw new Exception("No discord client");
+      }
+    }
+
+    // 10 secs max for guilds
+    t = 0;
+    while (Utils.GetClient().Guilds == null) {
+      t++; Task.Delay(t);
+      if (t > 10) {
+        Utils.Log("We are not connecting! (no guilds)", null);
+        throw new Exception("No guilds avilable");
+      }
+    }
+
+    // 30 secs max for guilds coubnt
+    t = 0;
+    while (Utils.GetClient().Guilds.Count == 0) {
+      t++; Task.Delay(t);
+      if (t > 30) {
+        Utils.Log("We are not connecting! (guilds count is zero)", null);
+        throw new Exception("The bot seems to be in no guild");
+      }
+    }
 
     IReadOnlyDictionary<ulong, DiscordGuild> cguilds = Utils.GetClient().Guilds;
     foreach (var guildId in cguilds.Keys) {
@@ -146,29 +155,6 @@ public class Configs {
     if (Guilds.ContainsKey(id)) return Guilds[id];
 
     return null;
-  }
-
-  internal static bool Disabled(ulong guild, Config.ParamType t) {
-    if (TheConfigs[guild].Count == 0) return false;
-    return GetConfigValue(guild, t) == Config.ConfVal.NotAllowed;
-  }
-
-  internal static bool Permitted(DiscordGuild guild, Config.ParamType t, DiscordMember mbr) {
-    if (guild == null) return false;
-    if (TheConfigs[guild.Id].Count == 0) return false;
-    Config.ConfVal cv = GetConfigValue(guild.Id, t);
-    switch (cv) {
-      case Config.ConfVal.NotAllowed: return false;
-      case Config.ConfVal.Everybody: return true;
-      case Config.ConfVal.OnlyAdmins:
-        if (mbr.IsOwner) return true;
-        IEnumerable<DiscordRole> roles = mbr.Roles;
-        foreach (var role in roles) {
-          if (IsAdminRole(guild.Id, role)) return true;
-        }
-        break;
-    }
-    return false;
   }
 
 
@@ -182,10 +168,9 @@ public class Configs {
       return Task.FromResult(0);
     }
     // Fill all values
-    TheConfigs[gid] = new List<Config>();
     TrackChannels[gid] = null;
     AdminRoles[gid] = new List<ulong>();
-    SpamProtection[gid] = 0;
+    SpamProtections[gid] = null;
     Tags[gid] = new List<TagBase>();
     TempRoleSelected[gid] = null;
     Utils.Log("Guild " + g.Name + " joined", g.Name);
@@ -217,40 +202,5 @@ public class Configs {
     if (res.Length > 0) return res[0..^1];
     return "";
   }
-
-
-  public static Config GetConfig(ulong gid, Config.ParamType t) {
-    List<Config> cs = TheConfigs[gid];
-    foreach (var c in cs) {
-      if (c.IsParam(t)) return c;
-    }
-    return null;
-  }
-  public static Config.ConfVal GetConfigValue(ulong gid, Config.ParamType t) {
-    List<Config> cs = TheConfigs[gid];
-    foreach (var c in cs) {
-      if (c.IsParam(t)) return (Config.ConfVal)c.IdVal;
-    }
-    return Config.ConfVal.NotAllowed;
-  }
-  public static void SetConfigValue(ulong gid, Config.ParamType t, Config.ConfVal v) {
-    List<Config> cs = TheConfigs[gid];
-    Config tc = null;
-    foreach (var c in cs) {
-      if (c.IsParam(t)) {
-        tc = c;
-        break;
-      }
-    }
-    if (tc == null) {
-      tc = new Config(gid, t, (ulong)v);
-      TheConfigs[gid].Add(tc);
-    } else {
-      Database.Delete(tc);
-      tc.SetVal(v); 
-    }
-    Database.Add(tc);
-  }
-
 
 }
