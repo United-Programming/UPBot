@@ -63,6 +63,7 @@ public class CheckSpam : BaseCommandModule {
     // Remove the domain parts before the 2nd
     int pos = s.LastIndexOf('.');
     if (pos > 0) pos = s.LastIndexOf('.', pos - 1);
+    if (pos > 0) pos = s.LastIndexOf('.', pos - 1);
     if (pos > 0) s = s[(pos + 1)..];
 
     if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net" || s == "discord.gift") return 0;

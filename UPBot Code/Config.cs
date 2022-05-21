@@ -38,12 +38,6 @@ public class Configs {
   readonly public static Dictionary<ulong, List<ulong>> AdminRoles = new Dictionary<ulong, List<ulong>>();
   readonly public static Dictionary<ulong, ulong> SpamProtection = new Dictionary<ulong, ulong>();
   readonly public static Dictionary<ulong, List<TagBase>> Tags = new Dictionary<ulong, List<TagBase>>();
-  readonly public static Dictionary<ulong, AffiliationLink> Affiliations = new Dictionary<ulong, AffiliationLink>();
-
-  readonly public static Dictionary<ulong, WhatToTrack> WhatToTracks = new Dictionary<ulong, WhatToTrack>();
-  readonly public static Dictionary<ulong, Dictionary<ulong, ReputationEmoji>> RepEmojis = new Dictionary<ulong, Dictionary<ulong, ReputationEmoji>>();
-  readonly public static Dictionary<ulong, Dictionary<ulong, Reputation>> Reputations = new Dictionary<ulong, Dictionary<ulong, Reputation>>();
-  readonly public static Dictionary<ulong, List<EmojiForRoleValue>> Em4Roles = new Dictionary<ulong, List<EmojiForRoleValue>>();
 
   readonly public static Dictionary<ulong, TempSetRole> TempRoleSelected = new Dictionary<ulong, TempSetRole>();
 
@@ -66,6 +60,7 @@ public class Configs {
         if (!TheConfigs.ContainsKey(gid)) TheConfigs[gid] = new List<Config>();
         TheConfigs[gid].Add(c);
 
+
         // Guilds
         if (!Guilds.ContainsKey(gid)) {
           if (TryGetGuild(gid) == null) continue; // Guild is missing
@@ -75,40 +70,8 @@ public class Configs {
         if (c.IsParam(Config.ParamType.SpamProtection)) {
           SpamProtection[gid] = c.IdVal;
         }
-
-        // Reputation Tracking
-        if (c.IsParam(Config.ParamType.Scores)) {
-          WhatToTracks[c.Guild] = (WhatToTrack)c.IdVal;
-        }
       }
 
-      // Reputation Tracking
-      List<Reputation> allReps = Database.GetAll<Reputation>();
-      foreach (var r in allReps) {
-        if (!Reputations.ContainsKey(r.Guild)) Reputations[r.Guild] = new Dictionary<ulong, Reputation>();
-        Reputations[r.Guild][r.User] = r;
-      }
-
-      // Reputation Emojis
-      List<ReputationEmoji> allEmojis = Database.GetAll<ReputationEmoji>();
-      if (allEmojis != null) {
-        foreach (var r in allEmojis) {
-          ulong gid = r.Guild;
-          if (!RepEmojis.ContainsKey(gid)) RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
-          if (r.For == 0) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": no valid use.", null);
-            continue;
-          }
-          try {
-            RepEmojis[gid].Add(r.GetKeyValue(), r);
-
-          } catch (ArgumentException aex) {
-            Database.Delete(r);
-            Utils.Log("Removed emoji with ID " + r.GetKeyValue() + " from Guild " + r.Guild + ": " + aex.Message, null);
-          }
-        }
-      }
 
       // Admin Roles
       List<AdminRole> allAdminRoles = Database.GetAll<AdminRole>();
@@ -147,25 +110,6 @@ public class Configs {
         }
       }
 
-      // Affiliations
-      List<AffiliationLink> allAffiliations = Database.GetAll<AffiliationLink>();
-      if (allAffiliations != null) {
-        foreach (var af in allAffiliations) {
-          ulong gid = af.Guild;
-          if (!Affiliations.ContainsKey(gid)) Affiliations[gid] = af;
-        }
-      }
-
-      // Emoji for role
-      List<EmojiForRoleValue> allEmj4rs = Database.GetAll<EmojiForRoleValue>();
-      if (allEmj4rs != null) {
-        foreach (var e in allEmj4rs) {
-          ulong gid = e.Guild;
-          if (!Em4Roles.ContainsKey(gid)) Em4Roles[gid] = new List<EmojiForRoleValue>();
-          Em4Roles[gid].Add(e);
-        }
-      }
-
 
       // Fill all missing guilds
       foreach (var g in Guilds.Keys) {
@@ -173,10 +117,7 @@ public class Configs {
         if (!TrackChannels.ContainsKey(g)) TrackChannels[g] = null;
         if (!AdminRoles.ContainsKey(g)) AdminRoles[g] = new List<ulong>();
         if (!SpamProtection.ContainsKey(g)) SpamProtection[g] = 0;
-        if (!WhatToTracks.ContainsKey(g)) WhatToTracks[g] = WhatToTrack.None;
-        if (!RepEmojis.ContainsKey(g)) RepEmojis[g] = new Dictionary<ulong, ReputationEmoji>();
         if (!Tags.ContainsKey(g)) Tags[g] = new List<TagBase>();
-        if (!Em4Roles.ContainsKey(g)) Em4Roles[g] = new List<EmojiForRoleValue>();
         if (!TempRoleSelected.ContainsKey(g)) TempRoleSelected[g] = null;
       }
 
@@ -232,20 +173,6 @@ public class Configs {
 
 
 
-  internal static Reputation GetReputation(ulong gid, ulong uid) {
-    if (!Reputations.ContainsKey(gid)) Reputations[gid] = new Dictionary<ulong, Reputation>();
-    if (!Reputations[gid].ContainsKey(uid)) {
-      Reputations[gid][uid] = new Reputation(gid, uid);
-      Database.Add(Reputations[gid][uid]);
-    }
-    return Reputations[gid][uid];
-  }
-
-  internal static IReadOnlyCollection<Reputation> GetReputations(ulong gid) {
-    if (!Reputations.ContainsKey(gid)) Reputations[gid] = new Dictionary<ulong, Reputation>();
-    return Reputations[gid].Values;
-  }
-
   internal static Task NewGuildAdded(DSharpPlus.DiscordClient _, GuildCreateEventArgs e) {
     DiscordGuild g = e.Guild;
     ulong gid = g.Id;
@@ -259,11 +186,7 @@ public class Configs {
     TrackChannels[gid] = null;
     AdminRoles[gid] = new List<ulong>();
     SpamProtection[gid] = 0;
-    WhatToTracks[gid] = WhatToTrack.None;
-    RepEmojis[gid] = new Dictionary<ulong, ReputationEmoji>();
     Tags[gid] = new List<TagBase>();
-    Em4Roles[gid] = new List<EmojiForRoleValue>();
-    Affiliations[gid] = new AffiliationLink();
     TempRoleSelected[gid] = null;
     Utils.Log("Guild " + g.Name + " joined", g.Name);
     Utils.Log("Guild " + g.Name + " joined", null);

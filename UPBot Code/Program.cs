@@ -52,15 +52,11 @@ namespace UPBot {
         Utils.Log("Utils.InitClient", null);
         Database.InitDb();
         Utils.Log("Database.InitDb", null);
-        Database.AddTable<Reputation>();
-        Database.AddTable<ReputationEmoji>();
-        Database.AddTable<EmojiForRoleValue>();
         Database.AddTable<Config>();
         Database.AddTable<Timezone>();
         Database.AddTable<AdminRole>();
         Database.AddTable<TrackChannel>();
         Database.AddTable<TagBase>();
-        Database.AddTable<AffiliationLink>();
         Utils.Log("Added Tables", null);
 
 
@@ -79,6 +75,7 @@ namespace UPBot {
         slash.RegisterCommands<SlashStats>(830900174553481236ul);
         slash.RegisterCommands<SlashTimezone>(830900174553481236ul);
         slash.RegisterCommands<SlashLogs>(830900174553481236ul);
+        slash.RegisterCommands<SlashSetup>(830900174553481236ul);
 
 
 
@@ -178,13 +175,8 @@ namespace UPBot {
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
-      client.MessageReactionAdded += AppreciationTracking.ReactionAdded;
-      client.MessageReactionAdded += EmojisForRole.ReacionAdded;
-      client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
-      client.MessageCreated += async (s, e) => { await Affiliation.CheckMessage(s, e); };
-      client.MessageCreated += AppreciationTracking.ThanksAdded;
       Utils.Log("Tracking", null);
 
       client.GuildCreated += Configs.NewGuildAdded;

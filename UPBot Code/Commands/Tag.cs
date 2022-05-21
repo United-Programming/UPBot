@@ -100,7 +100,7 @@ public class SlashTags : ApplicationCommandModule {
 
 }
 
-[SlashCommandGroup("tags", "Define tags on the server")]
+[SlashCommandGroup("tags", "Define and manage your tags")]
 public class SlashTagsEdit : ApplicationCommandModule {
 
   [SlashCommand("addtag", "Adds a new tag")]
@@ -200,7 +200,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
           if (tag.Alias3 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_)";
           else if (tag.Alias2 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_)";
           else if (tag.Alias1 != null) result += $" (_**{tag.Alias1}**_)";
-          result += $", ";
+          result += $",\n";
         }
       }
       embed.Title = "List of tags";
