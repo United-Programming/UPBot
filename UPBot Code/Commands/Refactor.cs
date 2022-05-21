@@ -81,18 +81,7 @@ public class SlashRefactor : ApplicationCommandModule {
         return;
       }
 
-      string code = msg.Content;
-
-      // Remove the ``` at begin and end, if any. And the code name after initial ```
-      Match codeMatch = codeBlock.Match(code);
-      if (codeMatch.Success) {
-        if (codeMatch.Groups[3].Value.IndexOf(';') != -1)
-          code = codeMatch.Groups[3].Value[3..] + codeMatch.Groups[6].Value;
-        else
-          code = codeMatch.Groups[6].Value;
-      }
-      code = code.Trim(' ', '\t', '\r', '\n');
-      code = emptyLines.Replace(code, "\n");
+      lang = GetCodeBlock(msg.Content, lang, out string code);
 
       EmojiEnum langEmoji = EmojiEnum.None;
       string lmd = "";
@@ -148,6 +137,54 @@ public class SlashRefactor : ApplicationCommandModule {
     }
   }
 
+  private Langs GetCodeBlock(string content, Langs lang, out string code) {
+    // Find if we have a code block, and (in case) also a closing codeblock
+    string writtenLang = null;
+    code = content;
+    int cbPos = code.IndexOf("```");
+    if (cbPos != -1) {
+      code = code[(cbPos + 3)..];
+      char nl = code[0];
+      if (nl != '\r' && nl != '\r') { // We have a possible language
+        int nlPos1 = code.IndexOf('\n');
+        int nlPos2 = code.IndexOf('\r');
+        int pos = (nlPos1 != -1) ? nlPos1 : -1;
+        if (nlPos2 != -1 && (nlPos2 < pos || pos == -1)) pos = nlPos2;
+        if (pos != -1) {
+          writtenLang = code[..pos].Trim(' ', '\t', '\r', '\n');
+          code = code[pos..].Trim(' ', '\t', '\r', '\n');
+        }
+      }
+      cbPos = code.IndexOf("```");
+      if (cbPos != -1) code = code[..(cbPos - 1)].Trim(' ', '\t', '\r', '\n');
+    }
+    code = emptyLines.Replace(code, "\n");
+    if (writtenLang != null) { // Do another best match with the given language
+      Langs bl = Langs.NONE;
+      switch (writtenLang.ToLowerInvariant()) {
+        case "ph": bl = Langs.python; break;
+        case "phy": bl = Langs.python; break;
+        case "phyton": bl = Langs.python; break;
+        case "pt": bl = Langs.python; break;
+        case "c": bl = Langs.cpp; break;
+        case "c++": bl = Langs.cpp; break;
+        case "cp": bl = Langs.cpp; break;
+        case "cpp": bl = Langs.cpp; break;
+        case "cs": bl = Langs.cs; break;
+        case "csharp": bl = Langs.cs; break;
+        case "c#": bl = Langs.cs; break;
+        case "jv": bl = Langs.java; break;
+        case "java": bl = Langs.java; break;
+        case "js": bl = Langs.js; break;
+        case "json": bl = Langs.js; break;
+        case "jscript": bl = Langs.js; break;
+        case "javascript": bl = Langs.js; break;
+      }
+      return GetBestMatchWithHint(code, bl);
+    }
+    return lang;
+  }
+
   // Refactors the previous post, if it is code, replacing it
   [SlashCommand("reformat", "Reformat a specified post as code block, the original message will be deleted")]
   public async Task RefactorCommand(InteractionContext ctx, [Option("Member", "The user that posted the message to format")] DiscordUser user = null) {
@@ -174,18 +211,7 @@ public class SlashRefactor : ApplicationCommandModule {
       }
 
 
-      string code = msg.Content;
-
-      // Remove the ``` at begin and end, if any. And the code name after initial ```
-      Match codeMatch = codeBlock.Match(code);
-      if (codeMatch.Success) {
-        if (codeMatch.Groups[3].Value.IndexOf(';') != -1)
-          code = codeMatch.Groups[3].Value[3..] + codeMatch.Groups[6].Value;
-        else
-          code = codeMatch.Groups[6].Value;
-      }
-      code = code.Trim(' ', '\t', '\r', '\n');
-      code = emptyLines.Replace(code, "\n");
+      lang = GetCodeBlock(msg.Content, lang, out string code);
 
       EmojiEnum langEmoji = EmojiEnum.None;
       string lmd = "";
@@ -231,8 +257,6 @@ public class SlashRefactor : ApplicationCommandModule {
           Utils.Log("Cannot add an emoji: " + e.Message, ctx.Guild.Name);
         }
       }
-
-
 
       // If we are not an admin, and the message is not from ourselves, do not accept the replace option.
       if (Configs.HasAdminRole(ctx.Guild.Id, ctx.Member.Roles, false) || msg.Author.Id != ctx.Member.Id) {
@@ -296,7 +320,35 @@ public class SlashRefactor : ApplicationCommandModule {
     return res;
   }
 
+  private Langs GetBestMatchWithHint(string code, Langs hint) {
+    _ = GetBestMatch(code, out int weightCs, out int weightCp, out int weightJv, out int weightJs, out int weightPy, out int weightUn);
+    switch (hint) {
+      case Langs.cs: weightCs += 10; break;
+      case Langs.js: weightJs += 10; break;
+      case Langs.cpp: weightCp += 10; break;
+      case Langs.java: weightJv += 10; break;
+      case Langs.python: weightPy += 10; break;
+      case Langs.Unity: weightUn += 10; break;
+    }
+    Langs res = Langs.NONE;
+    int w = 0;
+    if (weightCs > w) { w = weightCs; res = Langs.cs; }
+    if (weightUn > w) { w = weightUn; res = Langs.Unity; }
+    if (weightCp > w) { w = weightCp; res = Langs.cpp; }
+    if (weightJs > w) { w = weightJs; res = Langs.js; }
+    if (weightJv > w) { w = weightJv; res = Langs.java; }
+    if (weightPy > w) { res = Langs.python; }
+    return res;
+  }
+
+
   private Langs GetBestMatch(string code, out int weightCs, out int weightCp, out int weightJv, out int weightJs, out int weightPy, out int weightUn) {
+    if (code.Length > 4 && code[..3] == "```" && code.IndexOf('\n') != -1) {
+      code = code[(code.IndexOf('\n') + 1)..];
+    }
+    if (code.Length > 4 && code[^3..] == "```") {
+      code = code[..^3];
+    }
     weightCs = 0; weightCp = 0; weightJv = 0; weightJs = 0; weightPy = 0; weightUn = 0;
     foreach (LangKWord k in keywords) {
       if (k.regexp.IsMatch(code)) {
@@ -366,7 +418,7 @@ public class SlashRefactor : ApplicationCommandModule {
     new LangKWord{regexp = new Regex("\\.Count", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
     new LangKWord{regexp = new Regex("\\.Length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
     new LangKWord{regexp = new Regex("\\.length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 2, wJv = 0, wJs = 3, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new Regex("\\(.*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
+    new LangKWord{regexp = new Regex("[a-z0-9]\\([^\n]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
     new LangKWord{regexp = new Regex("\\{.*\\}", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
     new LangKWord{regexp = new Regex("\\[.*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
     new LangKWord{regexp = new Regex("#include\\s+[\"<]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
