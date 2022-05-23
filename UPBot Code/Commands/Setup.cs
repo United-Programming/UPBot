@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -23,18 +20,6 @@ public class SlashSetup : ApplicationCommandModule {
   DiscordComponentEmoji ok = null;
   DiscordComponentEmoji ko = null;
 
-
-
-  /*
-   
-  /setup -> show interation
-  /setup list -> dump config
-  /setup tracking #channel what
-  /setup spamprotection what
-
-   
-   
-   */
 
   [SlashCommand("setup", "Configuration of the features")]
   public async Task SetupCommand(InteractionContext ctx, [Option("Command", "Show, List, Set, or Dump")] SetupCommandItem? command = null) {

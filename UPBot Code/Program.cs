@@ -13,15 +13,15 @@ namespace UPBot {
   class Program {
 
     static void Main(string[] args) {
-      if (args.Length >= 3) Utils.LogsFolder = args[2];
-      Utils.Log("Log Started. Woho.", null);
-      if (args.Length < 1) {
-        Utils.Log("You have to specify the bot token as first parameter!", null);
+      if (args.Length != 2) {
+        Utils.Log("You have to specify the bot token as first parameter and the logs path as second parameter!", null);
         return;
       }
+      Utils.LogsFolder = args[1];
+      Utils.Log("Log Started. Woho.", null);
 
       try {
-        MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
+        MainAsync(args[0]).GetAwaiter().GetResult();
       } catch (TaskCanceledException) {
         Utils.Log("Exit for critical failure", null);
       } catch (Exception ex) {
@@ -31,7 +31,7 @@ namespace UPBot {
 
     readonly private static CancellationTokenSource exitToken = new CancellationTokenSource();
 
-    static async Task MainAsync(string token, string prefix) {
+    static async Task MainAsync(string token) {
       try {
         Utils.Log("Init Main", null);
         var client = new DiscordClient(new DiscordConfiguration() {
@@ -49,14 +49,11 @@ namespace UPBot {
 
         Utils.Log("Utils.InitClient", null);
         Utils.InitClient(client);
-        Database.InitDb();
 
+        Database.InitDb(new List<Type>{
+          typeof(SpamProtection), typeof(Timezone), typeof(AdminRole), typeof(TrackChannel), typeof(TagBase) 
+        });
         Utils.Log("Database.InitDb", null);
-        Database.AddTable<SpamProtection>();
-        Database.AddTable<Timezone>();
-        Database.AddTable<AdminRole>();
-        Database.AddTable<TrackChannel>();
-        Database.AddTable<TagBase>();
 
 
         // SlashCommands
@@ -77,15 +74,6 @@ namespace UPBot {
         slash.RegisterCommands<SlashSetup>(830900174553481236ul);
 
 
-
-        CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
-          StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters
-          CaseSensitive = false,
-          EnableDms = true,
-          EnableMentionPrefix = true
-        });
-        Utils.Log("CommandsNextExtension", null);
-        commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
 
         Utils.Log("Connecting to discord...", null);
         client.Ready += Discord_Ready;

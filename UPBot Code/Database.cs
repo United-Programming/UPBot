@@ -10,7 +10,7 @@ public class Database {
   static Dictionary<Type, EntityDef> entities;
 
 
-  public static void InitDb() {
+  public static void InitDb(List<Type> tables) {
     try {
       // Do we have the db?
       if (File.Exists("Database/" + DbName + ".db"))
@@ -23,19 +23,53 @@ public class Database {
       // Open the connection
       connection.Open();
       Console.WriteLine("DB connection open");
+
+      foreach (Type t in tables) {
+        if (!typeof(Entity).IsAssignableFrom(t))
+          throw new Exception("The class " + t + " does not derive from Entity and cannot be used as database table!");
+      }
+
+      SQLiteCommand cmd = new SQLiteCommand("SELECT name FROM sqlite_schema WHERE type = 'table'", connection);
+      SQLiteDataReader reader = cmd.ExecuteReader();
+      List<string> dbTables = new List<string>();
+      while (reader.Read()) {
+        dbTables.Add(reader.GetString(0));
+      }
+
+      foreach(var table in dbTables) {
+        bool delete = true;
+        foreach (Type t in tables) {
+          if (t.ToString() == table) {
+            delete = false;
+            break;
+          }
+        }
+        if (delete) {
+          Console.WriteLine("Removing old Table " + table + ".");
+          try {
+            SQLiteCommand command = new SQLiteCommand(connection) {
+              CommandText = "DROP TABLE IF EXISTS " + table
+            };
+            command.ExecuteNonQuery();
+          } catch (Exception ex) {
+            Console.WriteLine(ex.Message);
+          }
+        }
+      }
+
+      entities = new Dictionary<Type, EntityDef>();
+
+      // Ensure creation
+      foreach (Type t in tables) {
+        AddTable(t);
+      }
+
     } catch (Exception ex) {
       throw new Exception("Cannot open the database: " + ex.Message);
     }
-
-    entities = new Dictionary<Type, EntityDef>();
-
   }
 
-  public static void AddTable<T>() {
-    Type t = typeof(T);
-    if (!typeof(Entity).IsAssignableFrom(t))
-      throw new Exception("The class " + t + " does not derive from Entity and cannot be used as database table!");
-
+  public static void AddTable(Type t) {
     // Check if we have the table in the db
     string tableName = t.ToString();
     SQLiteCommand command = new SQLiteCommand(connection) {
@@ -128,7 +162,7 @@ public class Database {
         if (notnull) sql += " NOT NULL";
         sql += ", ";
       }
-      if (theKey == null) throw new Exception("Missing [Key] for class " + typeof(T));
+      if (theKey == null) throw new Exception("Missing [Key] for class " + t);
       sql += " PRIMARY KEY (" + theKey + "));";
       command.CommandText = sql;
       command.ExecuteNonQuery();
@@ -318,32 +352,6 @@ public class Database {
   }
 
 
-  public static void DeleteTable<T>() {
-    Type t = typeof(T);
-    if (!typeof(Entity).IsAssignableFrom(t))
-      throw new Exception("The class " + t + " does not derive from Entity and cannot be used as database table!");
-
-    // Check if we have the table in the db
-    string tableName = t.ToString();
-    SQLiteCommand command = new SQLiteCommand(connection) {
-      CommandText = "SELECT count(*) FROM " + tableName + ";"
-    };
-    bool exists = true; // Check if table exists
-    try {
-      SQLiteDataReader reader = command.ExecuteReader();
-      reader.Close();
-    } catch (Exception) {
-      exists = false;
-    }
-    if (!exists) return;
-
-    try {
-      command.CommandText = "DROP TABLE IF EXISTS " + tableName;
-      command.ExecuteNonQuery();
-    } catch (Exception ex) {
-      Console.WriteLine(ex.Message);
-    }
-  }
 
   public static void Update<T>(T val) {
     Add(val);
