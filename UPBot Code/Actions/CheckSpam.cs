@@ -1,5 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using System.Threading.Tasks;
 using System;
 using System.Text.RegularExpressions;
@@ -9,7 +8,7 @@ using DSharpPlus.EventArgs;
 /// Command used to check for false nitro links and spam links
 /// author: CPU
 /// </summary>
-public class CheckSpam : BaseCommandModule {
+public class CheckSpam  {
   readonly static Regex linkRE = new Regex(@"http[s]?://([^/]+)/");
   readonly static Regex wwwRE = new Regex(@"^w[^\.]{0,3}.\.");
   readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",

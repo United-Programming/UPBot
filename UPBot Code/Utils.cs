@@ -1,12 +1,10 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -41,7 +39,7 @@ public static class Utils
   readonly private static Dictionary<string, LogInfo> logs = new Dictionary<string, LogInfo>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/05/23";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/05/24";
   }
 
   public static DiscordClient GetClient() {
@@ -144,25 +142,6 @@ public static class Utils
     return num;
   }
 
-  internal static string GetSafeMemberName(CommandContext ctx, ulong userSnoflake) {
-    try {
-      return ctx.Guild.GetMemberAsync(userSnoflake).Result.DisplayName;
-    } catch (Exception e) {
-      Log("Invalid user snowflake: " + userSnoflake + " -> " + e.Message, ctx.Guild.Name);
-      return null;
-    }
-  }
-
-  /// <summary>
-  /// Change a string based on the count it's referring to (e.g. "one apple", "two apples")
-  /// </summary>
-  /// <param name="count">The count, the string is referring to</param>
-  /// <param name="singular">The singular version (referring to only one)</param>
-  /// <param name="plural">The singular version (referring to more than one)</param>
-  public static string PluralFormatter(int count, string singular, string plural) {
-    return count > 1 ? plural : singular;
-  }
-
   /// <summary>
   /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
   /// </summary>
@@ -175,22 +154,6 @@ public static class Utils
       Color = color,
       Description = description
     };
-  }
-
-  /// <summary>
-  /// Builds a Discord embed with a given TITLE, DESCRIPTION and COLOR
-  /// and SENDS the embed as a message
-  /// </summary>
-  /// <param name="title">Embed title</param>
-  /// <param name="description">Embed description</param>
-  /// <param name="color">Embed color</param>
-  /// <param name="ctx">CommandContext, required to send a message</param>
-  /// <param name="respond">Respond to original message or send an independent message?</param>
-  public static async Task<DiscordMessage> BuildEmbedAndExecute(string title, string description, DiscordColor color, 
-    CommandContext ctx, bool respond)
-  {
-    var embedBuilder = BuildEmbed(title, description, color);
-    return await LogEmbed(embedBuilder, ctx, respond);
   }
 
   /// <summary>
@@ -222,20 +185,6 @@ public static class Utils
     Log("Error in " + cmd + ": " + message, guild);
     return e.Build();
   }
-
-  /// <summary>
-  /// Logs an embed as a message in the relevant channel
-  /// </summary>
-  /// <param name="builder">Embed builder with the embed template</param>
-  /// <param name="ctx">CommandContext, required to send a message</param>
-  /// <param name="respond">Respond to original message or send an independent message?</param>
-  public static async Task<DiscordMessage> LogEmbed(DiscordEmbedBuilder builder, CommandContext ctx, bool respond)
-  {
-    if (respond)
-      return await ctx.RespondAsync(builder.Build());
-
-    return await ctx.Channel.SendMessageAsync(builder.Build());
-  } 
 
   private static string[] emojiNames;
   private static string[] emojiUrls;
@@ -314,33 +263,6 @@ public static class Utils
     return "<" + emoji.GetDiscordName() + emoji.Id.ToString() + ">";
   }
 
-
-  /// <summary>
-  /// Used to get the <:UnitedProgramming:831407996453126236> format of an emoji identified by id or name
-  /// </summary>
-  /// <param name="id">The emoji id, if zero then the name is used</param>
-  /// <param name="name">The emoji in Unicode format</param>
-  /// <returns>A string representation of the emoji that can be used in a message</returns>
-  public static string GetEmojiSnowflakeID(ulong id, string name, DiscordGuild g) {
-    if (id == 0) return name;
-    var em = g.GetEmojiAsync(id).Result;
-    if (em == null) return "?";
-    return "<" + em.GetDiscordName() + em.Id.ToString() + ">";
-  }
-
-  /// <summary>
-  /// Adds a line in the logs telling which user used what command
-  /// </summary>
-  /// <param name="ctx"></param>
-  /// <returns></returns>
-  internal static void LogUserCommand(CommandContext ctx) {
-    Log(DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern) + 
-      "=> " + ctx.Command.Name + 
-      " FROM " + ctx.Member.DisplayName + 
-      ": " + ctx.Message.Content,
-      ctx.Guild.Name);
-  }
-
   internal static void LogUserCommand(InteractionContext ctx) {
     string log = $"{DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern)} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
     if (ctx.Interaction.Data.Options != null)
@@ -364,43 +286,6 @@ public static class Utils
       Console.WriteLine("Log error: " + e.Message);
       Console.WriteLine(Environment.StackTrace);
     }
-  }
-
-  internal static async Task ErrorCallback(CommandErrors error, CommandContext ctx, params object[] additionalParams) {
-    DiscordColor red = Red;
-    string message = string.Empty;
-    bool respond = false;
-    switch (error) {
-      case CommandErrors.CommandExists:
-        respond = true;
-        if (additionalParams[0] is string name)
-          message = $"There is already a command containing the alias {name}";
-        else
-          throw new System.ArgumentException("This error type 'CommandErrors.CommandExists' requires a string");
-        break;
-      case CommandErrors.UnknownError:
-        message = "Unknown error!";
-        respond = false;
-        break;
-      case CommandErrors.InvalidParams:
-        message = "The given parameters are invalid. Enter `\\help [commandName]` to get help with the usage of the command.";
-        respond = true;
-        break;
-      case CommandErrors.MissingCommand:
-        message = "There is no command with this name! If it's a CC, please don't use an alias, use the original name!";
-        respond = true;
-        break;
-      case CommandErrors.NoCustomCommands:
-        message = "There are no CC's currently.";
-        respond = false;
-        break;
-      case CommandErrors.CommandNotSpecified:
-        message = "No command name was specified. Enter `\\help ccnew` to get help with the usage of the command.";
-        respond = true;
-        break;
-    }
-
-    await Utils.BuildEmbedAndExecute("Error", message, red, ctx, respond);
   }
 
   /// <summary>
@@ -441,60 +326,6 @@ public static class Utils
   /// <param name="msg1"></param>
   public static Task DeleteDelayed(int seconds, DiscordMessage msg1) {
     Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
-    return Task.FromResult(0);
-  }
-  public static Task DeleteDelayedSend(int seconds, DiscordChannel ch, string msg) {
-    if (msg.Length > 1999) { // Split
-      List<DiscordMessage> msgs = new List<DiscordMessage>();
-      while (msg.Length > 1999) {
-        int pos = msg.LastIndexOf(' ', 2000);
-        if (pos == -1) pos = 1990;
-        string msg1 = msg[0..pos].Trim();
-        msg = msg[pos..].Trim();
-        msgs.Add(ch.SendMessageAsync(msg1).Result);
-      }
-      if (msg.Length > 0) msgs.Add(ch.SendMessageAsync(msg).Result);
-      foreach (var dm in msgs) {
-        Task.Run(() => DelayAfterAWhile(dm, seconds * 1000));
-      }
-    }
-    else {
-      DiscordMessage dmsg = ch.SendMessageAsync(msg).Result;
-      Task.Run(() => DelayAfterAWhile(dmsg, seconds * 1000));
-    }
-    return Task.FromResult(0);
-  }
-
-  /// <summary>
-  /// Used to delete some messages after a while
-  /// </summary>
-  /// <param name="tmsg"></param>
-  public static Task DeleteDelayed(int seconds, Task<DiscordMessage> tmsg) {
-    Task.Run(() => DelayAfterAWhile(tmsg.Result, seconds * 1000));
-    return Task.FromResult(0);
-  }
-
-  /// <summary>
-  /// Used to delete some messages after a while
-  /// </summary>
-  /// <param name="msg1"></param>
-  /// <param name="msg2"></param>
-  public static Task DeleteDelayed(int seconds, DiscordMessage msg1, DiscordMessage msg2) {
-    Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
-    Task.Run(() => DelayAfterAWhile(msg2, seconds * 1000));
-    return Task.FromResult(0);
-  }
-
-  /// <summary>
-  /// Used to delete some messages after a while
-  /// </summary>
-  /// <param name="msg1"></param>
-  /// <param name="msg2"></param>
-  /// <param name="msg3"></param>
-  public static Task DeleteDelayed(int seconds, DiscordMessage msg1, DiscordMessage msg2, DiscordMessage msg3) {
-    Task.Run(() => DelayAfterAWhile(msg1, seconds * 1000));
-    Task.Run(() => DelayAfterAWhile(msg2, seconds * 1000));
-    Task.Run(() => DelayAfterAWhile(msg3, seconds * 1000));
     return Task.FromResult(0);
   }
 
