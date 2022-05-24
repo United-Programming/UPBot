@@ -362,6 +362,7 @@ public static class Utils
       logs[guild].sw.Flush();
     } catch (Exception e) {
       Console.WriteLine("Log error: " + e.Message);
+      Console.WriteLine(Environment.StackTrace);
     }
   }
 
