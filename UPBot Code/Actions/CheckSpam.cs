@@ -128,7 +128,8 @@ public class CheckSpam  {
     try {
       if (!Configs.SpamProtections.ContainsKey(args.Guild.Id)) return;
       SpamProtection sp = Configs.SpamProtections[args.Guild.Id];
-      if (!sp.protectDiscord && !sp.protectSteam&&!sp.protectDiscord) return;
+      if (sp == null) return;
+      if (!sp.protectDiscord && !sp.protectSteam && !sp.protectDiscord) return;
       bool edisc = sp.protectDiscord;
       bool esteam = sp.protectSteam;
       bool eepic = sp.protectEpic;
@@ -147,7 +148,7 @@ public class CheckSpam  {
         float riskval = dist / (float)Math.Sqrt(leven);
         if (riskval > 3) {
           Utils.Log("Removed spam link message from " + args.Author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, args.Guild.Name);
-          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(args.Guild.Id) + " please take care,");
+          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(args.Guild.Id) + ", please take care.");
           await args.Message.DeleteAsync("Spam link from " + args.Author.Username);
           Utils.DeleteDelayed(10000, warning).Wait();
         }

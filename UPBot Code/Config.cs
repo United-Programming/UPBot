@@ -200,7 +200,7 @@ public class Configs {
       if (r != null) res += r.Mention + " ";
     }
     if (res.Length > 0) return res[0..^1];
-    return "";
+    return "Admins";
   }
 
 }
