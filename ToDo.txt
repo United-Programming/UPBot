@@ -21,3 +21,4 @@ logs            | *
 Add a startup command in Utils to get the well known emojis
 
 To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
+

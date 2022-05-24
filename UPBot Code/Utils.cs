@@ -359,7 +359,7 @@ public static class Utils
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
       logs[guild].sw.WriteLine(msg.Replace("```", ""));
-      logs[guild].sw.FlushAsync();
+      logs[guild].sw.Flush();
     } catch (Exception e) {
       Console.WriteLine("Log error: " + e.Message);
     }
