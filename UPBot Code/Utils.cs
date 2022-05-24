@@ -17,6 +17,7 @@ public static class Utils
   public const int vmajor = 0, vminor = 3, vbuild = 0;
   public const char vrev = ' ';
   public static string LogsFolder = "./";
+  static System.Diagnostics.StackTrace sttr = new System.Diagnostics.StackTrace();
 
   /// <summary>
   /// Common colors
@@ -283,8 +284,10 @@ public static class Utils
       logs[guild].sw.WriteLine(msg.Replace("```", ""));
       logs[guild].sw.Flush();
     } catch (Exception e) {
+      Console.WriteLine("Log error with stack trace following");
       Console.WriteLine("Log error: " + e.Message);
-      Console.WriteLine(Environment.StackTrace);
+      Console.WriteLine(sttr.ToString());
+      Console.WriteLine("Log error completed");
     }
   }
 
