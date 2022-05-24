@@ -17,7 +17,7 @@ public static class Utils
   public const int vmajor = 0, vminor = 3, vbuild = 0;
   public const char vrev = ' ';
   public static string LogsFolder = "./";
-  static System.Diagnostics.StackTrace sttr = new System.Diagnostics.StackTrace();
+  public static System.Diagnostics.StackTrace sttr = new System.Diagnostics.StackTrace();
 
   /// <summary>
   /// Common colors

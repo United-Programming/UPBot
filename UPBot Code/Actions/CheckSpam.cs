@@ -153,6 +153,10 @@ public class CheckSpam  {
         }
       }
 
+    } catch (NullReferenceException ex) {
+      Utils.Log(Utils.sttr.ToString(), null);
+      Utils.Log(ex.Message, null);
+      Utils.Log(ex.ToString(), null);
     } catch (Exception ex) {
       await args.Message.RespondAsync(Utils.GenerateErrorAnswer(args.Guild.Name, "CheckSpam.CheckMessage", ex));
     }
