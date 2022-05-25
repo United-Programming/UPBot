@@ -32,6 +32,8 @@ namespace UPBot {
     static async Task MainAsync(string token) {
       try {
         Utils.Log("Init Main", null);
+        Utils.Log("Version: " + Utils.GetVersion(), null);
+
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
           TokenType = TokenType.Bot, // We are a bot
