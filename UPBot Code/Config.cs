@@ -193,7 +193,7 @@ public class Configs {
   }
 
   internal static string GetAdminsMentions(ulong gid) {
-    if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) return "";
+    if (!AdminRoles.ContainsKey(gid) || AdminRoles[gid].Count == 0) return "Admins";
     string res = "";
     foreach (var rid in AdminRoles[gid]) {
       DiscordRole r = Guilds[gid].GetRole(rid);
