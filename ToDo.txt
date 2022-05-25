@@ -20,5 +20,12 @@ logs            | *
 
 Add a startup command in Utils to get the well known emojis
 
-To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
+To authorize UPBotDev on a server: OTI5NzI5Mjk5NTI1Nzk1OTUx.Ydrj4g.1Cg0DW2K17ITV3u8pmN0nmJAajc
+https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
 
+DuckToken: ODc2MTIyNjI0NDY2NTA1Nzc4.GYyjGY.3tZnKzp1g4IUZiEFvsXcS0OtlZiPRaPWNR2O5U
+https://discord.com/api/oauth2/authorize?client_id=876122624466505778&permissions=1644368886994&scope=bot%20applications.commands
+
+
+Fix tz
+Check why reformat was accepted

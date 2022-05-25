@@ -66,6 +66,7 @@ public class CheckSpam  {
     if (pos > 0) s = s[(pos + 1)..];
 
     if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net" || s == "discord.gift") return 0;
+    if (s == "media.discordapp.net" || s == "media.discord.net" || s == "canary.discord.com" || s == "canary.discord.net" || s == "canary.discord.gg") return 0;
     if (s == "steamcommunity.com" || s == "store.steampowered.com" || s == "steampowered.com") return 0;
     if (s == "epicgames.com") return 0;
     if (s == "pastebin.com" || s == "github.com" || s == "controlc.com" || s == "ghostbin.co" || s == "rentry.co" || s == "codiad.com" || s == "zerobin.net" ||
