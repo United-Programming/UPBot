@@ -22,7 +22,7 @@ public class SlashSetup : ApplicationCommandModule {
 
 
   [SlashCommand("setup", "Configuration of the features")]
-  public async Task SetupCommand(InteractionContext ctx, [Option("Command", "Show, List, Set, or Dump")] SetupCommandItem? command = null) {
+  public async Task SetupCommand(InteractionContext ctx, [Option("Command", "Show, List, Admins, or Dump")] SetupCommandItem? command = null) {
     if (ctx.Guild == null) {
       await ctx.CreateResponseAsync("I cannot be used in Direct Messages.", true);
       return;
@@ -86,11 +86,24 @@ public class SlashSetup : ApplicationCommandModule {
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
-        if (answer.Result != null && answer.Result.MentionedRoles.Count > 0) {
-          foreach (var dr in answer.Result.MentionedRoles) {
-            if (!Configs.AdminRoles[gid].Contains(dr.Id)) {
-              Configs.AdminRoles[gid].Add(dr.Id);
-              Database.Add(new AdminRole(gid, dr.Id));
+        if (answer.Result != null) {
+          if (answer.Result.MentionedRoles.Count > 0) {
+            foreach (var dr in answer.Result.MentionedRoles) {
+              if (!Configs.AdminRoles[gid].Contains(dr.Id)) {
+                Configs.AdminRoles[gid].Add(dr.Id);
+                Database.Add(new AdminRole(gid, dr.Id));
+              }
+            }
+          }
+          else { // Try to find if we have a role with the typed name
+            string rname = answer.Result.Content.Trim();
+            foreach (var role in ctx.Guild.Roles.Values) {
+              if (role.Name.Equals(rname, StringComparison.InvariantCultureIgnoreCase)) {
+                if (!Configs.AdminRoles[gid].Contains(role.Id)) {
+                  Configs.AdminRoles[gid].Add(role.Id);
+                  Database.Add(new AdminRole(gid, role.Id));
+                }
+              }
             }
           }
         }
@@ -288,7 +301,14 @@ public class SlashSetup : ApplicationCommandModule {
   public enum SetupCommandItem {
     [ChoiceName("Show")] Show = 0,
     [ChoiceName("List")] List = 1,
-    [ChoiceName("Save")] Save = 2
+    [ChoiceName("Save")] Save = 2,
+    [ChoiceName("Admins")] Admins = 3
+  }
+
+  public enum SetupCommandItem2 {
+    [ChoiceName("Add")] Show = 0,
+    [ChoiceName("Remove")] Remove = 1,
+    [ChoiceName("List")] List = 2,
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {

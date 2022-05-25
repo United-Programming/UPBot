@@ -59,6 +59,7 @@ public class SlashDelete : ApplicationCommandModule {
       else
         await ctx.Channel.SendMessageAsync($"{numDeleted} messages deleted");
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "DeleteMessages", ex));
     }
   }

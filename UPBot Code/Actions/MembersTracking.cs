@@ -33,6 +33,7 @@ public class MembersTracking {
         Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberRemoved: " + ex.Message, args.Guild.Name);
     }
 
@@ -48,6 +49,7 @@ public class MembersTracking {
       tracking[args.Member.Id] = DateTime.Now;
       _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberAdded: " + ex.Message, args.Guild.Name);
     }
     await Task.Delay(10);
@@ -87,6 +89,7 @@ public class MembersTracking {
         Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberUpdated: " + ex.Message, args.Guild.Name);
     }
 

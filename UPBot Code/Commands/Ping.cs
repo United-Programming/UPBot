@@ -78,6 +78,7 @@ public class SlashPing : ApplicationCommandModule {
 
       return ctx.CreateResponseAsync(msg);
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return Task.FromResult(0); // Timed out
       return ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
     }
   }

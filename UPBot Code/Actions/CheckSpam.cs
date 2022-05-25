@@ -160,6 +160,7 @@ public class CheckSpam  {
       Utils.Log(ex.Message, null);
       Utils.Log(ex.ToString(), null);
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       await args.Message.RespondAsync(Utils.GenerateErrorAnswer(args.Guild.Name, "CheckSpam.CheckMessage", ex));
     }
   }
