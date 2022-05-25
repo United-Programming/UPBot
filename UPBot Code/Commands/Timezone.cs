@@ -45,7 +45,7 @@ public class SlashTimezone : ApplicationCommandModule {
       await ctx.CreateResponseAsync($"Current time in the timezone {values[best][0]} is {dest:HH:mm:ss}");
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
-      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIs", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIs", ex), true);
     }
   }
 
@@ -79,7 +79,7 @@ public class SlashTimezone : ApplicationCommandModule {
       await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss} ({tzid})");
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
-      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIsFor", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIsFor", ex), true);
     }
   }
 
@@ -121,7 +121,7 @@ public class SlashTimezone : ApplicationCommandModule {
       await ctx.CreateResponseAsync($"Timezone for user {member.DisplayName} is set to {values[best][0]}. Current time for they is {dest:HH:mm:ss}");
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
-      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Set Timezone", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Set Timezone", ex), true);
     }
   }
 
@@ -183,7 +183,7 @@ public class SlashTimezone : ApplicationCommandModule {
       await ctx.CreateResponseAsync(res);
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
-      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "List Timezones", ex));
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "List Timezones", ex), true);
     }
   }
 

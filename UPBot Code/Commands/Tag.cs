@@ -192,7 +192,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
       DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
       string result = "";
       if (Configs.Tags[ctx.Guild.Id].Count == 0) {
-        result = "No tags are defined.";
+        result = "No tags are defined.  ";
       }
       else {
         foreach (TagBase tag in Configs.Tags[ctx.Guild.Id]) {
