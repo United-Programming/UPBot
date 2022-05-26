@@ -24,7 +24,10 @@ public class SlashTimezone : ApplicationCommandModule {
       }
       else if (tzi != null) {
         DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzi);
-        await ctx.CreateResponseAsync($"Current time in the timezone {tzi.DisplayName} is {dest:HH:mm:ss}");
+        string tzn = tzi.StandardName + " / " + TZConvert.WindowsToIana(tzi.Id) + " (UTC";
+        if (tzi.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
+        tzn += Math.Abs(tzi.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzi.BaseUtcOffset.Minutes).ToString("00") + ")";
+        await ctx.CreateResponseAsync($"Current time in the timezone is {dest:HH:mm:ss}\n{tzn}");
       }
       else {
         string msg = $"Cannot find a timezone for {tz}, best opportunities are:\n";
@@ -62,7 +65,11 @@ public class SlashTimezone : ApplicationCommandModule {
       }
       
       DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzinfo);
-      await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss} ({TZConvert.WindowsToIana(tzinfo.Id)})");
+      string tzn = tzinfo.StandardName + " / " + TZConvert.WindowsToIana(tzinfo.Id) + " (UTC";
+      if (tzinfo.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
+      tzn += Math.Abs(tzinfo.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzinfo.BaseUtcOffset.Minutes).ToString("00") + ")";
+
+      await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss}\n{tzn}");
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIsFor", ex), true);
