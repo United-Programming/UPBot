@@ -24,19 +24,13 @@ public class SlashTimezone : ApplicationCommandModule {
       }
       else if (tzi != null) {
         DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzi);
-        string tzn = tzi.StandardName + " / " + TZConvert.WindowsToIana(tzi.Id) + " (UTC";
-        if (tzi.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
-        tzn += Math.Abs(tzi.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzi.BaseUtcOffset.Minutes).ToString("00") + ")";
-        await ctx.CreateResponseAsync($"Current time in the timezone is {dest:HH:mm:ss}\n{tzn}");
+        await ctx.CreateResponseAsync($"Current time in the timezone is {dest:HH:mm:ss}\n{GetTZName(tzi)}");
       }
       else {
         string msg = $"Cannot find a timezone for {tz}, best opportunities are:\n";
         foreach (var r in res) {
           if (TZConvert.TryGetTimeZoneInfo(r.IanaName, out TimeZoneInfo ttz)) {
-            msg += "(" + r.Score + ") " + ttz.StandardName + " (" + r.IanaName + ") UTC";
-            if (ttz.BaseUtcOffset >= TimeSpan.Zero) msg += "+"; else msg += "-";
-            msg += Math.Abs(ttz.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(ttz.BaseUtcOffset.Minutes).ToString("00");
-            msg += "\n";
+            msg += "(" + r.Score + ") " + GetTZName(ttz) + "\n";
           }
         }
         await ctx.CreateResponseAsync(msg, true);
@@ -65,11 +59,7 @@ public class SlashTimezone : ApplicationCommandModule {
       }
       
       DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzinfo);
-      string tzn = tzinfo.StandardName + " / " + TZConvert.WindowsToIana(tzinfo.Id) + " (UTC";
-      if (tzinfo.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
-      tzn += Math.Abs(tzinfo.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzinfo.BaseUtcOffset.Minutes).ToString("00") + ")";
-
-      await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss}\n{tzn}");
+      await ctx.CreateResponseAsync($"Current time for user {member.DisplayName} is {dest:HH:mm:ss}\n{GetTZName(tzinfo)}");
     } catch (Exception ex) {
       if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "WhatTimeIsFor", ex), true);
@@ -90,7 +80,7 @@ public class SlashTimezone : ApplicationCommandModule {
       else if (tzi != null) {
         DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzi);
         Database.Add(new Timezone(user.Id, TZConvert.WindowsToIana(tzi.Id)));
-        await ctx.CreateResponseAsync($"Timezone for user {member.DisplayName} is set to {tzi.DisplayName}. Current time for they is {dest:HH:mm:ss}");
+        await ctx.CreateResponseAsync($"Timezone for user {member.DisplayName} is set to {GetTZName(tzi)}. Current time for they is {dest:HH:mm:ss}");
       }
       else {
         string msg = $"Cannot find a timezone for {tz}, best opportunities are:\n";
@@ -152,7 +142,15 @@ public class SlashTimezone : ApplicationCommandModule {
   class RankedTimezone { public string IanaName; public int Score; }
   Dictionary<string, string> fullTZList;
 
-  static int GetTZScore(string src, string dst) {
+
+  string GetTZName(TimeZoneInfo tzinfo) {
+    string tzn = tzinfo.StandardName + " / " + TZConvert.WindowsToIana(tzinfo.Id) + " (UTC";
+    if (tzinfo.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
+    tzn += Math.Abs(tzinfo.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzinfo.BaseUtcOffset.Minutes).ToString("00") + ")";
+    return tzn;
+  }
+
+  int GetTZScore(string src, string dst) {
     if (src.Equals(dst, StringComparison.InvariantCultureIgnoreCase)) return 100;
     if (dst.Contains(src, StringComparison.InvariantCultureIgnoreCase)) return (int)(100f * src.Length / dst.Length);
 
@@ -164,7 +162,7 @@ public class SlashTimezone : ApplicationCommandModule {
       foreach (var s in srcpts) {
         if (string.IsNullOrWhiteSpace(s)) continue;
         if (d.Equals(s)) score += 12;
-        else if (s.Equals("east") || s.Equals("eastern")) {
+        else if (s.Equals("est") || s.Equals("east") || s.Equals("eastern")) {
           if (d.Equals("e.")) score += 8;
         }
         else if (s.Equals("west") || s.Equals("western")) {
