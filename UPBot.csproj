@@ -12,6 +12,7 @@
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0" />
     <PackageReference Include="SQLite" Version="3.13.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
+    <PackageReference Include="TimeZoneConverter" Version="5.0.0" />
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.3" />
   </ItemGroup>
 

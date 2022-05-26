@@ -6,6 +6,7 @@ using DSharpPlus;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using TimeZoneConverter;
 
 namespace UPBot {
   class Program {

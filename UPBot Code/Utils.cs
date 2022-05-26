@@ -40,7 +40,7 @@ public static class Utils
   readonly private static Dictionary<string, LogInfo> logs = new Dictionary<string, LogInfo>();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/05/25";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/05/26";
   }
 
   public static DiscordClient GetClient() {
