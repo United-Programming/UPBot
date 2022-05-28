@@ -197,7 +197,8 @@ namespace UPBot {
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
 
-      client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
+      client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessageCreate(s, e); };
+      client.MessageUpdated += async (s, e) => { await CheckSpam.CheckMessageUpdate(s, e); };
       Utils.Log("Tracking", null);
 
       client.GuildCreated += Configs.NewGuildAdded;
