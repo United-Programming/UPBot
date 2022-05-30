@@ -14,6 +14,7 @@ public class CheckSpam  {
   readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",
+
     "discorx.gift", "dljscord.com", "disboard.org", "dischrdapp.com","discord-cpp.com", "discord-nitro.ru.com","discörd.com","disçordapp.com","dlscord.space",
     "discod.art", "discord-nitro.site", "disscord-nitro.com", "dirscod.com", "dlscord.in", "discorcl.link", "discorb.co", "discord-nitro.su", "dlscord.org", "discord-give.org",
 
@@ -69,7 +70,7 @@ public class CheckSpam  {
     if (s == "steamcommunity.com" || s == "store.steampowered.com" || s == "steampowered.com") return 0;
     if (s == "epicgames.com") return 0;
     if (s == "pastebin.com" || s == "github.com" || s == "controlc.com" || s == "ghostbin.co" || s == "rentry.co" || s == "codiad.com" || s == "zerobin.net" ||
-        s == "toptal.com" || s == "ideone.com" || s == "jsfiddle.net" || s == "textbin.net" || s == "jsbin.com" || s == "ideone.com") return 0;
+        s == "toptal.com" || s == "ideone.com" || s == "jsfiddle.net" || s == "textbin.net" || s == "jsbin.com" || s == "ideone.com" || s == "pythondiscord.com") return 0;
 
     int extra = 0;
     if (s.IndexOf("nitro") != -1 || s.IndexOf("gift") != -1 || s.IndexOf("give") != -1) extra = 100;
