@@ -87,7 +87,15 @@ public class CheckSpam  {
             valDiscord += len;
         }
       }
+      if (s.IndexOf("xyz") != -1) valDiscord += 5;
+      for (int len = 4; len < 7; len++) {
+        for (int strt = 0; strt < 7 - len; strt++) {
+          if (s.IndexOf("diczord"[strt..(strt + len)]) != -1)
+            valDiscord += len;
+        }
+      }
     }
+
     int valSteam1 = 0;
     int valSteam2 = 0;
     if (csteam) {
