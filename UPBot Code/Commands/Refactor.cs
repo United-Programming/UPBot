@@ -281,12 +281,75 @@ public class SlashRefactor : ApplicationCommandModule {
   readonly Regex singleLineBlocksWHILE = new Regex("^while\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
   readonly Regex operatorsEnd = new Regex("(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
   readonly Regex operatorsStart = new Regex("^(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+  readonly Regex doubleBrackets = new Regex("{[^\\n]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+  readonly Regex closeBrackets = new Regex("[^\n{]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
 
   private string FixIndentation(string code) {
-    string[] lines = code.Split('\n');
-    for (int i = 0; i < lines.Length; i++)
-      lines[i] = lines[i].Trim(' ', '\t', '\r', '\n');
-    for (int i = 1; i < lines.Length; i++) {
+    string[] prelines = code.Split('\n');
+    for (int i = 0; i < prelines.Length; i++)
+      prelines[i] = prelines[i].Trim(' ', '\t', '\r', '\n');
+
+    List<string> lines = new List<string>();
+    foreach (var l in prelines) {
+      string line = l;
+      bool found = true;
+      while (found) {
+        if (doubleBrackets.IsMatch(line)) {
+          // Check it is not inside a string
+          bool instrings = false;
+          bool instringd = false;
+          int pos = 1;
+          bool afterfirst = false;
+          foreach (char c in line) {
+            if (c == '"') instringd = !instringd;
+            if (c == '\'') instrings = !instrings;
+            if (c == '{' && pos != 1) {
+              afterfirst = true;
+              break;
+            }
+            pos++;
+          }
+          if (!instringd && !instrings && afterfirst) {
+            lines.Add(line[..pos].Trim(' ', '\t', '\r', '\n'));
+            line = line[pos..].Trim(' ', '\t', '\r', '\n');
+          }
+          else {
+            lines.Add(line);
+            found = false;
+          }
+        }
+        else if (closeBrackets.IsMatch(line)) {
+          // Check it is not inside a string
+          bool instrings = false;
+          bool instringd = false;
+          int pos = 0;
+          bool afterfirst = false;
+          foreach (char c in line) {
+            if (c == '"') instringd = !instringd;
+            if (c == '\'') instrings = !instrings;
+            if (c == '}' && pos != 0) {
+              afterfirst = true;
+              break;
+            }
+            pos++;
+          }
+          if (!instringd && !instrings && afterfirst) {
+            lines.Add(line[..pos].Trim(' ', '\t', '\r', '\n'));
+            line = line[pos..].Trim(' ', '\t', '\r', '\n');
+          }
+          else {
+            lines.Add(line);
+            found = false;
+          }
+        }
+        else {
+          lines.Add(line);
+          found = false;
+        }
+      }
+    }
+
+    for (int i = 1; i < lines.Count; i++) {
       if (lineOpenBlock.IsMatch(lines[i])) {
         lines[i - 1] += " " + lines[i];
         lines[i] = null;
@@ -301,7 +364,7 @@ public class SlashRefactor : ApplicationCommandModule {
     int indent = 0;
     string res = "";
     bool nextLineIndent = false;
-    for (int i = 0; i < lines.Length; i++) {
+    for (int i = 0; i < lines.Count; i++) {
       bool tempRemoveIndent = false;
       string line = lines[i];
       if (line == null) continue;
