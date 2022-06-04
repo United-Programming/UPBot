@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
@@ -213,7 +214,47 @@ public class SlashSetup : ApplicationCommandModule {
         Database.Add(sp);
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
+      else if (cmdId == "idfeatrespamprotectadd") { // Ask for the link, clean it up, and add it
+        await ctx.Channel.DeleteMessageAsync(msg);
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the url that should be considered spam");
+        var answer = await interact.WaitForMessageAsync((dm) => {
+          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
+        }, TimeSpan.FromMinutes(2));
+        if (string.IsNullOrWhiteSpace(answer.Result.Content) || answer.Result.Content.IndexOf('.')==-1) {
+          await interRes.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
+          return;
+        }
 
+        string link = answer.Result.Content.Trim();
+        Regex urlparts = new Regex("[0-9a-z\\.\\-_~]+");
+        foreach (Match m in urlparts.Matches(link)) {
+          string url = m.Value.ToLowerInvariant();
+          if (url.IndexOf('.') == -1) continue;
+
+          int leftmostdot = url.LastIndexOf('.');
+          int seconddot = url.LastIndexOf('.', leftmostdot - 1);
+          if (seconddot != -1) url = url[(seconddot + 1)..].Trim();
+
+          Database.Add(new SpamLink(gid, url));
+          bool found = false;
+          foreach (var s in Configs.SpamLinks[gid]) {
+            if (s.Equals(url)) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) Configs.SpamLinks[gid].Add(url);
+        }
+        msg = CreateSpamProtectInteraction(ctx, msg);
+      }
+      else if (cmdId.Length>25 && cmdId[0..25] == "idfeatrespamprotectremove") {
+        if (int.TryParse(cmdId[25..], out int num)) {
+          string link = Configs.SpamLinks[gid][num];
+          Configs.SpamLinks[gid].RemoveAt(num);
+          Database.DeleteByKeys<SpamLink>(gid, link);
+        }
+        msg = CreateSpamProtectInteraction(ctx, msg);
+      }
 
       // ***************************************************** UNKNOWN ***********************************************************************************
       else {
@@ -294,6 +335,17 @@ public class SlashSetup : ApplicationCommandModule {
         }
       }
     }
+    if (Configs.SpamLinks.ContainsKey(gid) && Configs.SpamLinks[gid].Count > 0) {
+      msg += "**Specific spam links**: ";
+      bool first = true;
+      foreach (string sl in Configs.SpamLinks[gid]) {
+        if (!first) {
+          msg += ", ";
+          first = false;
+        }
+        msg += sl;
+      }
+    }
 
     return msg;
   }
@@ -303,12 +355,6 @@ public class SlashSetup : ApplicationCommandModule {
     [ChoiceName("List")] List = 1,
     [ChoiceName("Save")] Save = 2,
     [ChoiceName("Admins")] Admins = 3
-  }
-
-  public enum SetupCommandItem2 {
-    [ChoiceName("Add")] Show = 0,
-    [ChoiceName("Remove")] Remove = 1,
-    [ChoiceName("List")] List = 2,
   }
 
   private void AlterTracking(ulong gid, bool j, bool l, bool r) {
@@ -534,9 +580,25 @@ public class SlashSetup : ApplicationCommandModule {
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en),
       new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Steam", false, esteam ? ey : en),
-      new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en)
+      new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectadd", "Add custom spam url", false, ok)
     };
     builder.AddComponents(actions);
+
+    // List all custom spam links
+    int counter = 0;
+    actions = new List<DiscordButtonComponent>();
+    foreach (string sl in Configs.SpamLinks[ctx.Guild.Id]) {
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, $"idfeatrespamprotectremove{counter}", sl, false, ko));
+      counter++;
+      if (counter == 4) {
+        counter = 0;
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
+      }
+    }
+    if (actions.Count > 0) builder.AddComponents(actions);
+
 
     // - Exit
     // - Back

@@ -139,7 +139,7 @@ public class CheckSpam  {
 
   static async Task CheckMessage(DiscordGuild guild, DiscordUser author, DiscordMessage message) {
     if (guild == null) return;
-    if (author.Id == Utils.GetClient().CurrentUser.Id) return; // Do not consider myself
+    if (author == null || author.Id == Configs.BotId) return; // Do not consider myself
     try {
       if (!Configs.SpamProtections.ContainsKey(guild.Id)) return;
       SpamProtection sp = Configs.SpamProtections[guild.Id];
@@ -150,22 +150,34 @@ public class CheckSpam  {
       bool eepic = sp.protectEpic;
 
       string msg = message.Content.ToLowerInvariant();
-      Match m = linkRE.Match(msg);
-      if (!m.Success) return;
-      string link = m.Groups[1].Value;
 
-      float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
-      if (dist != 0) {
-        link = link.Replace("app", "");
+      foreach (Match m in linkRE.Matches(msg)) {
+        if (!m.Success) continue;
+        string link = m.Groups[1].Value;
 
-        float leven = StringDistance.DLDistance(link, probableSite);
-        if (link == probableSite) leven = 1;
-        float riskval = dist / (float)Math.Sqrt(leven);
-        if (riskval > 3) {
-          Utils.Log("Removed spam link message from " + author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, guild.Name);
-          DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
-          await message.DeleteAsync("Spam link from " + author.Username);
-          Utils.DeleteDelayed(10000, warning).Wait();
+        foreach (var s in Configs.SpamLinks[guild.Id]) {
+          if (link.IndexOf(s) != -1) {
+            Utils.Log("Removed spam link message from " + author.Username + ", matched a custom spam link.\noriginal link: " + msg, guild.Name);
+            DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + ", matched a custom spam link.\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
+            await message.DeleteAsync("Spam link from " + author.Username);
+            Utils.DeleteDelayed(10000, warning).Wait();
+            return;
+          }
+        }
+
+        float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
+        if (dist != 0) {
+          link = link.Replace("app", "");
+
+          float leven = StringDistance.DLDistance(link, probableSite);
+          if (link == probableSite) leven = 1;
+          float riskval = dist / (float)Math.Sqrt(leven);
+          if (riskval > 3) {
+            Utils.Log("Removed spam link message from " + author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, guild.Name);
+            DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
+            await message.DeleteAsync("Spam link from " + author.Username);
+            Utils.DeleteDelayed(10000, warning).Wait();
+          }
         }
       }
 

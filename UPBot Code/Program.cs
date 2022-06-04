@@ -52,7 +52,7 @@ namespace UPBot {
         Utils.InitClient(client);
 
         Database.InitDb(new List<Type>{
-          typeof(SpamProtection), typeof(Timezone), typeof(AdminRole), typeof(TrackChannel), typeof(TagBase) 
+          typeof(SpamProtection), typeof(Timezone), typeof(AdminRole), typeof(TrackChannel), typeof(TagBase), typeof(SpamLink)
         });
         Utils.Log("Database.InitDb", null);
 
