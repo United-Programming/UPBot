@@ -79,7 +79,9 @@ public class SlashTimezone : ApplicationCommandModule {
       }
       else if (tzi != null) {
         DateTime dest = TimeZoneInfo.ConvertTime(DateTime.Now, tzi);
-        Database.Add(new Timezone(user.Id, TZConvert.WindowsToIana(tzi.Id)));
+        string tzid = tzi.Id;
+        if (TZConvert.TryWindowsToIana(tzid, out string tzname)) tzid = tzname;
+        Database.Add(new Timezone(user.Id, tzid));
         await ctx.CreateResponseAsync($"Timezone for user {member.DisplayName} is set to {GetTZName(tzi)}. Current time for they is {dest:HH:mm:ss}");
       }
       else {
@@ -116,7 +118,9 @@ public class SlashTimezone : ApplicationCommandModule {
       int numbads = 0;
       foreach (var tzcode in count.Keys) {
         if (TZConvert.TryGetTimeZoneInfo(tzcode, out var tzinfo)) {
-          string tzname = TZConvert.WindowsToIana(tzinfo.Id) + " (" + tzinfo.DisplayName + ") UTC";
+          string tzid = tzinfo.Id;
+          if (TZConvert.TryWindowsToIana(tzid, out string tzidname)) tzid = tzidname;
+          string tzname = tzid + " (" + tzinfo.DisplayName + ") UTC";
           if (tzinfo.BaseUtcOffset >= TimeSpan.Zero) tzname += "+"; else tzname += "-";
           tzname += Math.Abs(tzinfo.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzinfo.BaseUtcOffset.Minutes).ToString("00");
           res += count[tzcode] + (count[tzcode] == 1 ? " user   " : " users  ") + tzname + "\n";
@@ -216,7 +220,8 @@ public class SlashTimezone : ApplicationCommandModule {
     foreach (var t in TZConvert.KnownIanaTimeZoneNames)
       work[t] = t;
     foreach (var t in TZConvert.KnownWindowsTimeZoneIds) {
-      string key = TZConvert.WindowsToIana(t);
+      string key = t;
+      if (TZConvert.TryWindowsToIana(t, out string tzidname)) key = tzidname;
       if (!work.ContainsKey(key)) work[key] = t;
       else work[key] += " " + t;
     }
