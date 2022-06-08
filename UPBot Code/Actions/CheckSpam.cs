@@ -11,6 +11,7 @@ using DSharpPlus.EventArgs;
 public class CheckSpam {
   readonly static Regex linkRE = new(@"http[s]?://([^/]+)/");
   readonly static Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
+  public static DiscordUser SpamCheckTimeout = null;
   readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",
@@ -140,6 +141,11 @@ public class CheckSpam {
   static async Task CheckMessage(DiscordGuild guild, DiscordUser author, DiscordMessage message) {
     if (guild == null) return;
     if (author == null || author.Id == Configs.BotId) return; // Do not consider myself
+    if (SpamCheckTimeout != null && SpamCheckTimeout.Id == author.Id) { // Was probably from the setup
+      SpamCheckTimeout = null;
+      Utils.Log("Probably self post of spam ignored.", guild.Name);
+      return;
+    }
     try {
       if (!Configs.SpamProtections.ContainsKey(guild.Id)) return;
       SpamProtection sp = Configs.SpamProtections[guild.Id];

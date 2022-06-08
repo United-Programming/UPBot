@@ -243,7 +243,11 @@ public class SlashSetup : ApplicationCommandModule {
               break;
             }
           }
-          if (!found) Configs.SpamLinks[gid].Add(url);
+          if (!found) {
+            CheckSpam.SpamCheckTimeout = ctx.Member;
+            Configs.SpamLinks[gid].Add(url);
+            await ctx.Channel.SendMessageAsync("New spam URL added.");
+          }
         }
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
