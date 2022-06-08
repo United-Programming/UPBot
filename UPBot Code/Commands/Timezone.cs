@@ -143,8 +143,10 @@ public class SlashTimezone : ApplicationCommandModule {
   Dictionary<string, string> fullTZList;
 
 
-  string GetTZName(TimeZoneInfo tzinfo) {
-    string tzn = tzinfo.StandardName + " / " + TZConvert.WindowsToIana(tzinfo.Id) + " (UTC";
+  static string GetTZName(TimeZoneInfo tzinfo) {
+    string tzid = tzinfo.Id;
+    if (TZConvert.TryWindowsToIana(tzinfo.Id, out string tzname)) tzid = tzname;
+    string tzn = tzinfo.StandardName + " / " + tzid + " (UTC";
     if (tzinfo.BaseUtcOffset >= TimeSpan.Zero) tzn += "+"; else tzn += "-";
     tzn += Math.Abs(tzinfo.BaseUtcOffset.Hours).ToString("00") + ":" + Math.Abs(tzinfo.BaseUtcOffset.Minutes).ToString("00") + ")";
     return tzn;
