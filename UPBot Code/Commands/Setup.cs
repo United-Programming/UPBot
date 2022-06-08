@@ -18,8 +18,8 @@ public class SlashSetup : ApplicationCommandModule {
   readonly DiscordComponentEmoji el = new(DiscordEmoji.FromUnicode("↖️"));
   readonly DiscordComponentEmoji er = new(DiscordEmoji.FromUnicode("↘️"));
   readonly DiscordComponentEmoji ec = new(DiscordEmoji.FromUnicode("❌"));
-  DiscordComponentEmoji ok = null;
-  DiscordComponentEmoji ko = null;
+  static DiscordComponentEmoji ok = null;
+  static DiscordComponentEmoji ko = null;
 
 
   [SlashCommand("setup", "Configuration of the features")]
@@ -433,8 +433,6 @@ public class SlashSetup : ApplicationCommandModule {
 
     return ctx.Channel.SendMessageAsync(builder).Result;
   }
-
-
 
   private DiscordMessage CreateAdminsInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();

@@ -13,9 +13,9 @@ using DSharpPlus.SlashCommands;
 
 public class SlashPing : ApplicationCommandModule {
   const int MaxTrackedRequests = 10;
-  readonly Random random = new Random();
-  int lastGlobal = -1;
-  List<LastRequestByMember> lastRequests = null;
+  readonly Random random = new();
+  static int lastGlobal = -1;
+  static List<LastRequestByMember> lastRequests = null;
 
 
 

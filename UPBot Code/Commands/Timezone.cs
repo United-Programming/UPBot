@@ -109,7 +109,7 @@ public class SlashTimezone : ApplicationCommandModule {
     try {
       string res = "```\n";
       var list = Database.GetAll<Timezone>();
-      Dictionary<string, int> count = new Dictionary<string, int>();
+      Dictionary<string, int> count = new();
       foreach (Timezone t in list) {
         if (!count.ContainsKey(t.TimeZoneName)) count[t.TimeZoneName] = 1;
         else count[t.TimeZoneName]++;
@@ -144,7 +144,7 @@ public class SlashTimezone : ApplicationCommandModule {
 
 
   class RankedTimezone { public string IanaName; public int Score; }
-  Dictionary<string, string> fullTZList;
+  static Dictionary<string, string> fullTZList;
 
 
   static string GetTZName(TimeZoneInfo tzinfo) {
@@ -189,7 +189,7 @@ public class SlashTimezone : ApplicationCommandModule {
   }
 
   List<RankedTimezone> CheckProx(string inp) {
-    List<RankedTimezone> res = new List<RankedTimezone>();
+    List<RankedTimezone> res = new();
     foreach (string key in fullTZList.Keys) {
       int score = GetTZScore(inp, key);
       if (score > 8) {
@@ -214,7 +214,7 @@ public class SlashTimezone : ApplicationCommandModule {
   }
 
 
-  void InitTimeZones() {
+  static void InitTimeZones() {
     fullTZList = new Dictionary<string, string>();
     var work = new Dictionary<string, string>();
     foreach (var t in TZConvert.KnownIanaTimeZoneNames)

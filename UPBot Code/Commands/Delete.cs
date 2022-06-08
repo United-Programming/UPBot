@@ -12,8 +12,6 @@ using DSharpPlus.SlashCommands;
 /// 
 
 public class SlashDelete : ApplicationCommandModule {
-
-
   /// <summary>
   /// Delete the last x messages of any user
   /// </summary>

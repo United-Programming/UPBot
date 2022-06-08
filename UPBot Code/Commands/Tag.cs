@@ -16,7 +16,7 @@ public class SlashTags : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
       int randomnumber = rand.Next(0, randColor.Length);
       embed.Color = randColor[randomnumber];
       embed.Timestamp = DateTime.Now;
@@ -88,8 +88,8 @@ public class SlashTags : ApplicationCommandModule {
     return null;
   }
 
-  readonly Random rand = new Random();
-  readonly DiscordColor[] randColor = { DiscordColor.Aquamarine, DiscordColor.Azure, DiscordColor.Black, DiscordColor.Blue, DiscordColor.Blurple,
+  readonly static Random rand = new();
+  readonly static DiscordColor[] randColor = { DiscordColor.Aquamarine, DiscordColor.Azure, DiscordColor.Black, DiscordColor.Blue, DiscordColor.Blurple,
             DiscordColor.Brown, DiscordColor.Chartreuse, DiscordColor.CornflowerBlue, DiscordColor.Cyan, DiscordColor.DarkBlue,
             DiscordColor.DarkButNotBlack, DiscordColor.DarkGray, DiscordColor.DarkGreen, DiscordColor.DarkRed, DiscordColor.Gold,
             DiscordColor.Goldenrod, DiscordColor.Gray, DiscordColor.Grayple, DiscordColor.Green, DiscordColor.HotPink, DiscordColor.IndianRed,
@@ -108,7 +108,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
       tagname = tagname.Trim();
 
       if (SlashTags.FindTag(ctx.Guild.Id, tagname, false) != null) {
@@ -160,7 +160,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
 
       TagBase toRemove = SlashTags.FindTag(ctx.Guild.Id, tagname, false);
       if (toRemove == null) {
@@ -189,7 +189,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
       string result = "";
       if (Configs.Tags[ctx.Guild.Id].Count == 0) {
         result = "No tags are defined.  ";
@@ -218,7 +218,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
 
       // Find it, can be an alias
       TagBase toAlias = SlashTags.FindTag(ctx.Guild.Id, tagname, false);
@@ -286,7 +286,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
 
       TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, tagname, false);
       if (toEdit == null) {
@@ -337,7 +337,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+      DiscordEmbedBuilder embed = new();
       TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, oldname, false);
       if (toEdit == null) {
         embed.Title = "Tag does not exist!";

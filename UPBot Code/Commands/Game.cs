@@ -14,7 +14,7 @@ using DSharpPlus.SlashCommands;
 
 [SlashCommandGroup("game", "Commands to play games with the bot")]
 public class SlashGame : ApplicationCommandModule {
-  readonly Random random = new Random();
+  readonly Random random = new();
 
   [SlashCommand("rockpaperscissors", "Play Rock, Paper, Scissors")]
   public async Task RPSCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSTypes? yourmove = null) {
@@ -138,9 +138,8 @@ public class SlashGame : ApplicationCommandModule {
     /* Spock    */ new string[] {"Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw" }
   };
 
-  private string GetChoice(RPSLSTypes? move) {
-    return move switch
-    {
+  static private string GetChoice(RPSLSTypes? move) {
+    return move switch {
       RPSLSTypes.Rock => "🪨 Rock",
       RPSLSTypes.Paper => "📄 Paper",
       RPSLSTypes.Scissors => "✂️ Scissors",

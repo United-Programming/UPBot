@@ -1,6 +1,5 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -13,8 +12,6 @@ using System.Threading.Tasks;
 /// </summary>
 [SlashCommandGroup("logs", "Commands to show the logs")]
 public class SlashLogs : ApplicationCommandModule {
-
-
 
   [SlashCommand("show", "Allows to see and download guild logs")]
   public async Task LogsCommand(InteractionContext ctx, [Option("NumerOflines", "How many lines of logs to get")][Minimum(5)][Maximum(25)] long numLines) {

@@ -87,8 +87,8 @@ public class SlashStats : ApplicationCommandModule {
   }
 
 
-  DiscordEmbedBuilder GenerateStatsEmbed(InteractionContext ctx) {
-    DiscordEmbedBuilder e = new DiscordEmbedBuilder();
+  static DiscordEmbedBuilder GenerateStatsEmbed(InteractionContext ctx) {
+    DiscordEmbedBuilder e = new();
     DiscordGuild g = ctx.Guild;
 
     e.Description = " ----  ---- Stats ----  ---- \n_" + g.Description + "_";
@@ -137,8 +137,8 @@ public class SlashStats : ApplicationCommandModule {
     return e;
   }
 
-  async Task<string> CalculateEmojis(InteractionContext ctx) {
-    Dictionary<string, int> count = new Dictionary<string, int>();
+  static async Task<string> CalculateEmojis(InteractionContext ctx) {
+    Dictionary<string, int> count = new();
 
     var msgs = await ctx.Channel.GetMessagesAsync(1000);
     foreach (var m in msgs) {
@@ -150,7 +150,7 @@ public class SlashStats : ApplicationCommandModule {
         else count[snowflake] = r.Count;
       }
     }
-    List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>();
+    List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
     list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
@@ -162,9 +162,9 @@ public class SlashStats : ApplicationCommandModule {
     return res;
   }
 
-  async Task<string> CalculateUserMentions(InteractionContext ctx) {
-    Dictionary<string, int> count = new Dictionary<string, int>();
-    Dictionary<ulong, int> askers = new Dictionary<ulong, int>();
+  static async Task<string> CalculateUserMentions(InteractionContext ctx) {
+    Dictionary<string, int> count = new();
+    Dictionary<ulong, int> askers = new();
 
     var msgs = await ctx.Channel.GetMessagesAsync(1000);
     foreach (var m in msgs) {
@@ -180,11 +180,11 @@ public class SlashStats : ApplicationCommandModule {
         else askers[m.Author.Id]++;
       }
     }
-    List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>();
+    List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
     list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
-    List<KeyValuePair<string, int>> listask = new List<KeyValuePair<string, int>>();
+    List<KeyValuePair<string, int>> listask = new();
     foreach (var k in askers.Keys) {
       DiscordUser u = await ctx.Channel.Guild.GetMemberAsync(k);
       if (u == null) continue;
@@ -207,9 +207,9 @@ public class SlashStats : ApplicationCommandModule {
     return res;
   }
 
-  async Task<string> CalculateRoleMentions(InteractionContext ctx) {
-    Dictionary<string, int> count = new Dictionary<string, int>();
-    Dictionary<ulong, int> askers = new Dictionary<ulong, int>();
+  static async Task<string> CalculateRoleMentions(InteractionContext ctx) {
+    Dictionary<string, int> count = new();
+    Dictionary<ulong, int> askers = new();
 
     var msgs = await ctx.Channel.GetMessagesAsync(1000);
     foreach (var m in msgs) {
@@ -225,11 +225,11 @@ public class SlashStats : ApplicationCommandModule {
         else askers[m.Author.Id]++;
       }
     }
-    List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>();
+    List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
     list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
 
-    List<KeyValuePair<string, int>> listask = new List<KeyValuePair<string, int>>();
+    List<KeyValuePair<string, int>> listask = new();
     foreach (var k in askers.Keys) {
       DiscordUser u = await ctx.Channel.Guild.GetMemberAsync(k);
       if (u == null) continue;

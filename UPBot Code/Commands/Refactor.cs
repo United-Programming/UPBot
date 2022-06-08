@@ -270,7 +270,6 @@ public class SlashRefactor : ApplicationCommandModule {
 
 
 
-
   readonly Regex lineOpenBlock = new("^{(\\s*//.*|\\s*/\\*/.*)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
   readonly Regex afterOpenBlock = new("^{(.+)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
   readonly Regex cppModifiers = new("^\\s*(private|public|protected):\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
