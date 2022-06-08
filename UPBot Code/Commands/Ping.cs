@@ -29,13 +29,13 @@ public class SlashPing : ApplicationCommandModule {
 
   readonly string[,] answers = {
     /* Good */ { "I am alive!", "Pong", "Ack", "I am here", "I am here $$$", "I am here @@@", "Pong, $$$" },
-    /* Again? */ { "Again, I am alive", "Pong", "Another Ack", "I told you, I am here", "Yes, I am here $$$", "@@@, I told you I am here", "Pong, $$$. You don't get it?" },
+    /* Again? */ { "Again, I am alive", "Again, Pong", "Another Ack", "I told you, I am here", "Yes, I am here $$$", "@@@, I told you I am here", "Pong, $$$. You don't get it?" },
     /* Testing? */ { "Are you testing something?", "Are you doing some debug?", "Are you testing something, $$$?", "Are you doing some debug, @@@?", "Yeah, I am here.",
       "There is something wrong?", "Do you really miss me or is this a joke?" },
-    /* Light annoyed */ {"This is no more funny", "Yeah, @@@, I am a bot", "I am contractually obliged to answer. But I do not like it", "I will start pinging you when you are asleep, @@@", "Looks guys! $$$ has nothing better to do than pinging me!",
+    /* Light annoyed */ {"This is no more funny", "Yeah, @@@, I am a bot", "I am contractually obliged to answer. But I do not like it", "I will start pinging you when you are asleep, @@@", "Look guys! $$$ has nothing better to do than pinging me!",
     "I am alive, but I am also annoyed", "ƃuoԀ" },
     /* Menacing */ {"Stop it.", "I will probably write your name in my black list", "Why do you insist?", "Find another bot to harass", "<the bot is not working>", "Request time out.", "You are consuming your keyboard" },
-    /* Punishment */ {"I am going to ignore you", "@@@ you are a bad person. And you will be ignored", "I am not answering anymore to you", "$$$ account number is 555-343-1254. Go steal his money", "You are annoying me. I am going to ignore you.", "Enough is enough", "Goodbye" }
+    /* Punishment */ {"I am going to **_ignore_** you", "@@@ you are a bad person. And you will be **_ignored_**", "I am not answering **_anymore_** to you", "$$$ account number is 555-343-1254. Go steal his money", "You are annoying me. I am going to **_ignore_** you.", "Enough is enough", "Goodbye" }
   };
 
 
@@ -65,7 +65,9 @@ public class SlashPing : ApplicationCommandModule {
       else {
         annoyedLevel = lastRequest.AddRequest();
       }
-      if (annoyedLevel == -1) return ctx.CreateResponseAsync("");; // No answer
+      if (annoyedLevel == -1) {
+        return ctx.DeleteResponseAsync(); // ctx.CreateResponseAsync(""); ; // No answer
+      }
 
       // Was the request already done recently?
       int rnd = random.Next(0, 7);
@@ -74,7 +76,6 @@ public class SlashPing : ApplicationCommandModule {
       lastGlobal = rnd; // Record for the next time
       string msg = answers[annoyedLevel, rnd];
       msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
-
 
       return ctx.CreateResponseAsync(msg);
     } catch (Exception ex) {
@@ -143,42 +144,42 @@ public class SlashPing : ApplicationCommandModule {
       switch (num) {
         case 1: break;
         case 2:
-          if (averageBetweenRequests < 5) index = 2; // Testing?
+          if (averageBetweenRequests < 3) index = 2; // Testing?
           else if (averageBetweenRequests < 10) index = 1; // Again?
           break;
         case 3:
           if (averageBetweenRequests < 5) index = 3; // Light annoyed
           else if (averageBetweenRequests < 10) index = 2; // Testing?
-          else if (averageBetweenRequests < 30) index = 1; // Again?
+          else if (averageBetweenRequests < 20) index = 1; // Again?
           break;
         case 4:
           if (averageBetweenRequests < 5) index = 4; // Menacing
           else if (averageBetweenRequests < 10) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 30) index = 2; // Testing?
-          else if (averageBetweenRequests < 60) index = 1; // Again?
+          else if (averageBetweenRequests < 20) index = 2; // Testing?
+          else if (averageBetweenRequests < 30) index = 1; // Again?
           break;
         case 5:
           if (averageBetweenRequests < 5) index = 5; // Punishment
           else if (averageBetweenRequests < 20) index = 4; // Menacing
-          else if (averageBetweenRequests < 45) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 60) index = 2; // Testing?
-          else if (averageBetweenRequests < 90) index = 1; // Again?
+          else if (averageBetweenRequests < 30) index = 3; // Light annoyed
+          else if (averageBetweenRequests < 40) index = 2; // Testing?
+          else if (averageBetweenRequests < 50) index = 1; // Again?
           break;
         case 6:
           if (averageBetweenRequests < 5) index = -1; // no answer
           else if (averageBetweenRequests < 20) index = 5; // Punishment
-          else if (averageBetweenRequests < 45) index = 4; // Menacing
-          else if (averageBetweenRequests < 60) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 75) index = 2; // Testing?
-          else if (averageBetweenRequests < 90) index = 1; // Again?
+          else if (averageBetweenRequests < 30) index = 4; // Menacing
+          else if (averageBetweenRequests < 40) index = 3; // Light annoyed
+          else if (averageBetweenRequests < 50) index = 2; // Testing?
+          else if (averageBetweenRequests < 60) index = 1; // Again?
           break;
         case 7:
           if (averageBetweenRequests < 5) index = -1; // no answer
-          else if (averageBetweenRequests < 15) index = 5; // Punishment
-          else if (averageBetweenRequests < 25) index = 4; // Menacing
-          else if (averageBetweenRequests < 35) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 45) index = 2; // Testing?
-          else if (averageBetweenRequests < 55) index = 1; // Again?
+          else if (averageBetweenRequests < 10) index = 5; // Punishment
+          else if (averageBetweenRequests < 20) index = 4; // Menacing
+          else if (averageBetweenRequests < 30) index = 3; // Light annoyed
+          else if (averageBetweenRequests < 40) index = 2; // Testing?
+          else if (averageBetweenRequests < 50) index = 1; // Again?
           break;
         case 8:
           if (averageBetweenRequests < 10) index = -1; // no answer
@@ -190,11 +191,11 @@ public class SlashPing : ApplicationCommandModule {
           break;
         case 9:
           if (averageBetweenRequests < 10) index = -1; // no answer
-          else if (averageBetweenRequests < 20) index = 5; // Punishment
-          else if (averageBetweenRequests < 30) index = 4; // Menacing
-          else if (averageBetweenRequests < 38) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 46) index = 2; // Testing?
-          else if (averageBetweenRequests < 54) index = 1; // Again?
+          else if (averageBetweenRequests < 15) index = 5; // Punishment
+          else if (averageBetweenRequests < 20) index = 4; // Menacing
+          else if (averageBetweenRequests < 25) index = 3; // Light annoyed
+          else if (averageBetweenRequests < 30) index = 2; // Testing?
+          else if (averageBetweenRequests < 35) index = 1; // Again?
           break;
         default:
           if (averageBetweenRequests < 10) index = -1; // no answer
