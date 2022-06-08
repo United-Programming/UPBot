@@ -164,7 +164,7 @@ public static class Utils
     DiscordEmbedBuilder e = new() {
       Color = Red,
       Title = "Error in " + cmd,
-      Description = exception.Message + "\n" + sttr.ToString()
+      Description = exception.Message + "\n" + exception.StackTrace
     };
     Log("Error in " + cmd + ": " + exception.Message, guild);
     return e.Build();
