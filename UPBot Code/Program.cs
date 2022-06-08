@@ -28,7 +28,7 @@ namespace UPBot {
       }
     }
 
-    readonly private static CancellationTokenSource exitToken = new CancellationTokenSource();
+    readonly private static CancellationTokenSource exitToken = new();
 
     static async Task MainAsync(string token) {
       try {
@@ -136,7 +136,7 @@ namespace UPBot {
     }
 
     private static async Task WaitForGuildsTask(DiscordClient client) {
-      Dictionary<ulong, bool> guilds = new Dictionary<ulong, bool>();
+      Dictionary<ulong, bool> guilds = new();
       int toGet = client.Guilds.Count;
       foreach (ulong key in client.Guilds.Keys) 
         guilds[key] = false;

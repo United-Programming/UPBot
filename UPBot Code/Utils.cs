@@ -17,30 +17,29 @@ public static class Utils
   public const int vmajor = 0, vminor = 3, vbuild = 0;
   public const char vrev = ' ';
   public static string LogsFolder = "./";
-  public static System.Diagnostics.StackTrace sttr = new System.Diagnostics.StackTrace();
+  public readonly static System.Diagnostics.StackTrace sttr = new();
 
   /// <summary>
   /// Common colors
   /// </summary>
-  public static readonly DiscordColor Red = new DiscordColor("#f50f48");
-  public static readonly DiscordColor Green = new DiscordColor("#32a852");
+  public static readonly DiscordColor Red = new("#f50f48");
+  public static readonly DiscordColor Green = new("#32a852");
 
-  public static readonly DiscordColor LightBlue = new DiscordColor("#34cceb");
-  public static readonly DiscordColor Yellow = new DiscordColor("#f5bc42");
+  public static readonly DiscordColor LightBlue = new("#34cceb");
+  public static readonly DiscordColor Yellow = new("#f5bc42");
   
   // Fields relevant for InitClient()
   private static DiscordClient client;
-  private static DateTimeFormatInfo sortableDateTimeFormat;
 
   private class LogInfo {
     public StreamWriter sw;
     public string path;
   }
 
-  readonly private static Dictionary<string, LogInfo> logs = new Dictionary<string, LogInfo>();
+  readonly private static Dictionary<string, LogInfo> logs = new();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/06/04";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/06/08";
   }
 
   public static DiscordClient GetClient() {
@@ -72,7 +71,6 @@ public static class Utils
     };
     emojiUrls = new string[emojiNames.Length];
     emojiSnowflakes = new string[emojiNames.Length];
-    sortableDateTimeFormat = CultureInfo.GetCultureInfo("en-US").DateTimeFormat;
   }
 
   public static void InitLogs(string guild) {
@@ -96,18 +94,18 @@ public static class Utils
   public static string GetLastLogsFolder(string guild, string logPath) {
     string zipFolder = Path.Combine(LogsFolder, guild + " ZippedLog/");
     if (!Directory.Exists(zipFolder)) Directory.CreateDirectory(zipFolder);
-    FileInfo fi = new FileInfo(logPath);
+    FileInfo fi = new(logPath);
     File.Copy(fi.FullName, Path.Combine(zipFolder, fi.Name), true);
     return zipFolder;
   }
 
   public static string GetAllLogsFolder(string guild) {
-    Regex logsRE = new Regex(@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
+    Regex logsRE = new(@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
     string zipFolder = Path.Combine(LogsFolder, guild + " ZippedLogs/");
     if (!Directory.Exists(zipFolder)) Directory.CreateDirectory(zipFolder);
     foreach (var file in Directory.GetFiles(LogsFolder, "*.logs")) {
       if (logsRE.IsMatch(file)) {
-        FileInfo fi = new FileInfo(file);
+        FileInfo fi = new(file);
         File.Copy(fi.FullName, Path.Combine(zipFolder, fi.Name), true);
       }
     }
@@ -115,11 +113,11 @@ public static class Utils
   }
 
   public static int DeleteAllLogs(string guild) {
-    Regex logsRE = new Regex(@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
-    List<string> toDelete = new List<string>();
+    Regex logsRE = new (@"BotLogs\s" + guild + @"\s[0-9]{8}\.logs", RegexOptions.IgnoreCase);
+    List<string> toDelete = new();
     foreach (var file in Directory.GetFiles(LogsFolder, "*.logs")) {
       if (logsRE.IsMatch(file)) {
-        FileInfo fi = new FileInfo(file);
+        FileInfo fi = new(file);
         toDelete.Add(fi.FullName);
       }
     }
@@ -163,7 +161,7 @@ public static class Utils
   /// <param name="error">The error to display</param>
   /// <returns></returns>
   internal static DiscordEmbed GenerateErrorAnswer(string guild, string cmd, Exception exception) {
-    DiscordEmbedBuilder e = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder e = new() {
       Color = Red,
       Title = "Error in " + cmd,
       Description = exception.Message
@@ -178,7 +176,7 @@ public static class Utils
   /// <param name="error">The error to display</param>
   /// <returns></returns>
   internal static DiscordEmbed GenerateErrorAnswer(string guild, string cmd, string message) {
-    DiscordEmbedBuilder e = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder e = new() {
       Color = Red,
       Title = "Error in " + cmd,
       Description = message
@@ -265,7 +263,7 @@ public static class Utils
   }
 
   internal static void LogUserCommand(InteractionContext ctx) {
-    string log = $"{DateTime.Now.ToString(sortableDateTimeFormat.SortableDateTimePattern)} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
+    string log = $"{DateTime.Now:yyyy/MM/dd hh:mm:ss} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
     if (ctx.Interaction.Data.Options != null)
       foreach (var p in ctx.Interaction.Data.Options) log += $" [{p.Name}]{p.Value}";
     Log(log, ctx.Guild.Name);

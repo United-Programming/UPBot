@@ -8,9 +8,9 @@ using DSharpPlus.EventArgs;
 /// Command used to check for false nitro links and spam links
 /// author: CPU
 /// </summary>
-public class CheckSpam  {
-  readonly static Regex linkRE = new Regex(@"http[s]?://([^/]+)/");
-  readonly static Regex wwwRE = new Regex(@"^w[^\.]{0,3}.\.");
+public class CheckSpam {
+  readonly static Regex linkRE = new(@"http[s]?://([^/]+)/");
+  readonly static Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
   readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",

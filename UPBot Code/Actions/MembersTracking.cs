@@ -40,6 +40,7 @@ public class MembersTracking {
     await Task.Delay(50);
   }
 
+#pragma warning disable IDE0060 // Remove unused parameter
   public static async Task DiscordMemberAdded(DiscordClient _client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try {
       TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
@@ -54,6 +55,7 @@ public class MembersTracking {
     }
     await Task.Delay(10);
   }
+#pragma warning restore IDE0060 // Remove unused parameter
 
   public static async Task DiscordMemberUpdated(DiscordClient _, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
@@ -63,7 +65,7 @@ public class MembersTracking {
 
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
       IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
-      List<DiscordRole> rolesAdded = new List<DiscordRole>();
+      List<DiscordRole> rolesAdded = new();
       // Changed role? We can track only additions. Removals are not really sent
 
       foreach (DiscordRole r1 in rolesAfter) {

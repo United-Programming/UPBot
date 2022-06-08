@@ -13,11 +13,11 @@ using DSharpPlus.SlashCommands;
 /// </summary>
 public class SlashSetup : ApplicationCommandModule {
 
-  readonly DiscordComponentEmoji ey = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("✅"));
-  readonly DiscordComponentEmoji en = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❎"));
-  readonly DiscordComponentEmoji el = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↖️"));
-  readonly DiscordComponentEmoji er = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("↘️"));
-  readonly DiscordComponentEmoji ec = new DiscordComponentEmoji(DiscordEmoji.FromUnicode("❌"));
+  readonly DiscordComponentEmoji ey = new(DiscordEmoji.FromUnicode("✅"));
+  readonly DiscordComponentEmoji en = new(DiscordEmoji.FromUnicode("❎"));
+  readonly DiscordComponentEmoji el = new(DiscordEmoji.FromUnicode("↖️"));
+  readonly DiscordComponentEmoji er = new(DiscordEmoji.FromUnicode("↘️"));
+  readonly DiscordComponentEmoji ec = new(DiscordEmoji.FromUnicode("❌"));
   DiscordComponentEmoji ok = null;
   DiscordComponentEmoji ko = null;
 
@@ -144,7 +144,7 @@ public class SlashSetup : ApplicationCommandModule {
 
         if (answer.Result.MentionedChannels.Count > 0) {
           if (Configs.TrackChannels[gid] == null) {
-            TrackChannel tc = new TrackChannel();
+            TrackChannel tc = new();
             Configs.TrackChannels[gid] = tc;
             tc.trackJoin = true;
             tc.trackLeave = true;
@@ -220,16 +220,16 @@ public class SlashSetup : ApplicationCommandModule {
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
-        if (string.IsNullOrWhiteSpace(answer.Result.Content) || answer.Result.Content.IndexOf('.')==-1) {
+        if (string.IsNullOrWhiteSpace(answer.Result.Content) || !answer.Result.Content.Contains('.')) {
           await interRes.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().WithContent("Config timed out"));
           return;
         }
 
         string link = answer.Result.Content.Trim();
-        Regex urlparts = new Regex("[0-9a-z\\.\\-_~]+");
+        Regex urlparts = new("[0-9a-z\\.\\-_~]+");
         foreach (Match m in urlparts.Matches(link)) {
           string url = m.Value.ToLowerInvariant();
-          if (url.IndexOf('.') == -1) continue;
+          if (!url.Contains('.')) continue;
 
           int leftmostdot = url.LastIndexOf('.');
           int seconddot = url.LastIndexOf('.', leftmostdot - 1);
@@ -268,7 +268,7 @@ public class SlashSetup : ApplicationCommandModule {
 
   }
 
-  string GenerateSetupList(DiscordGuild g, ulong gid) { // list
+  static string GenerateSetupList(DiscordGuild g, ulong gid) { // list
 
     string msg = "Setup list for Discord Server " + g.Name + "\n";
     string part = "";
@@ -357,7 +357,7 @@ public class SlashSetup : ApplicationCommandModule {
     [ChoiceName("Admins")] Admins = 3
   }
 
-  private void AlterTracking(ulong gid, bool j, bool l, bool r) {
+  private static void AlterTracking(ulong gid, bool j, bool l, bool r) {
     TrackChannel tc = Configs.TrackChannels[gid];
     if (j) tc.trackJoin = !tc.trackJoin;
     if (l) tc.trackLeave = !tc.trackLeave;
@@ -369,7 +369,7 @@ public class SlashSetup : ApplicationCommandModule {
   private void CreateMainConfigPage(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder eb = new() {
       Title = "UPBot Configuration"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
@@ -385,7 +385,7 @@ public class SlashSetup : ApplicationCommandModule {
     //- Spam Protection
     SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
     bool spdisabled = sp == null || (!sp.protectDiscord && !sp.protectSteam && !sp.protectEpic);
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+    List<DiscordButtonComponent> actions = new() {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er),
       new DiscordButtonComponent( spdisabled ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er)
@@ -401,7 +401,7 @@ public class SlashSetup : ApplicationCommandModule {
   private DiscordMessage FollowMainConfigPage(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder eb = new() {
       Title = "UPBot Configuration"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
@@ -417,7 +417,7 @@ public class SlashSetup : ApplicationCommandModule {
     //- Spam Protection
     SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
     bool spdisabled = sp == null || (!sp.protectDiscord && !sp.protectSteam && !sp.protectEpic);
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+    List<DiscordButtonComponent> actions = new() {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefineadmins", "Define Admins", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "iddefinetracking", "Define Tracking channel", false, er),
       new DiscordButtonComponent(spdisabled ? DSharpPlus.ButtonStyle.Secondary : DSharpPlus.ButtonStyle.Primary, "idfeatrespamprotect", "Spam Protection", false, er)
@@ -435,7 +435,7 @@ public class SlashSetup : ApplicationCommandModule {
   private DiscordMessage CreateAdminsInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder eb = new() {
       Title = "UPBot Configuration - Admin roles"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
@@ -465,7 +465,7 @@ public class SlashSetup : ApplicationCommandModule {
     builder.AddEmbed(eb.Build());
 
     // - Define roles
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent>();
+    List<DiscordButtonComponent> actions = new();
     builder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "idroleadd", "Add roles", false, ok));
     // - Remove roles
     int num = 0;
@@ -503,7 +503,7 @@ public class SlashSetup : ApplicationCommandModule {
 
     TrackChannel tc = Configs.TrackChannels[ctx.Guild.Id];
 
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder eb = new() {
       Title = "UPBot Configuration - Tracking channel"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
@@ -555,7 +555,7 @@ public class SlashSetup : ApplicationCommandModule {
   private DiscordMessage CreateSpamProtectInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
     if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
 
-    DiscordEmbedBuilder eb = new DiscordEmbedBuilder {
+    DiscordEmbedBuilder eb = new() {
       Title = "UPBot Configuration - Spam Protection"
     };
     eb.WithThumbnail(ctx.Guild.IconUrl);
