@@ -140,7 +140,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
         return;
       }
 
-      TagBase tagBase = new TagBase(ctx.Guild.Id, tagname, answer.Result.Content); // creating line inside of database
+      TagBase tagBase = new(ctx.Guild.Id, tagname, answer.Result.Content); // creating line inside of database
       Database.Add(tagBase); // adding information to base
       Configs.Tags[ctx.Guild.Id].Add(tagBase);
 
