@@ -4,24 +4,28 @@
 [future] add something to save/load a config
 
 
-                  Errors    DelAnsw   EmbedRes    TryCatch    Log@Begin   UseSQL
-MemberTracking  |         |         |           |    X      |          |          |
-Appreciation    |         |         |           |    X      |    X     |    X     |
-EmojiForRole    |         |         |           |    X      |    X     |    X     |
-BannedWords     |         |    X    |           |    X      |    X     |    X     |
-tag             |    X    |    X    |     X     |    X      |    X     |    X     |
-delete          |    X    |    X    |           |    X      |    X     |          |
-game            |         |         |           |           |    X     |          |
-bool            |         |         |           |           |    X     |          |
-rps             |         |         |           |           |    X     |          |
-ping            |         |    X    |           |    X      |    X     |          |
-checklanguage   |         |         |           |    X      |    X     |          |
-reformat        |         |         |           |    X      |    X     |          |
-stats           |         |         |     X     |    X      |    X     |          |
-whois           |         |         |     X     |    X      |    X     |          |
-timezone        |         |    X    |           |    X      |          |    X     |
-unitydocs       |    X    |         |           |    X      |          |          |
+                
+ping            | *
+unitydocs       | *
+reformat        | *
+delete          | *
+whois           | *
+game            | *
+tag             | *
+stats           | *
+version         | *
+timezone        | *
+logs            | *
 
-To authorize UPBotDev on a server: https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=1541290192083&scope=bot
+
+Add a startup command in Utils to get the well known emojis
+
+To authorize UPBotDev
 https://discord.com/api/oauth2/authorize?client_id=929729299525795951&permissions=294205647936&scope=bot%20applications.commands
+
+
+
+
+
+Fix tz
 

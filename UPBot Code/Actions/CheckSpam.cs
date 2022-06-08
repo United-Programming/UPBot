@@ -1,5 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using System.Threading.Tasks;
 using System;
 using System.Text.RegularExpressions;
@@ -9,12 +8,14 @@ using DSharpPlus.EventArgs;
 /// Command used to check for false nitro links and spam links
 /// author: CPU
 /// </summary>
-public class CheckSpam : BaseCommandModule {
-  readonly static Regex linkRE = new Regex(@"http[s]?://([^/]+)/");
-  readonly static Regex wwwRE = new Regex(@"^w[^\.]{0,3}.\.");
+public class CheckSpam {
+  readonly static Regex linkRE = new(@"http[s]?://([^/]+)/");
+  readonly static Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
+  public static DiscordUser SpamCheckTimeout = null;
   readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",
+
     "discorx.gift", "dljscord.com", "disboard.org", "dischrdapp.com","discord-cpp.com", "discord-nitro.ru.com","discörd.com","disçordapp.com","dlscord.space",
     "discod.art", "discord-nitro.site", "disscord-nitro.com", "dirscod.com", "dlscord.in", "discorcl.link", "discorb.co", "discord-nitro.su", "dlscord.org", "discord-give.org",
 
@@ -65,9 +66,13 @@ public class CheckSpam : BaseCommandModule {
     if (pos > 0) pos = s.LastIndexOf('.', pos - 1);
     if (pos > 0) s = s[(pos + 1)..];
 
-    if (s == "discord.com" || s == "discord.gg" || s == "discordapp.com" || s == "discordapp.net" || s == "discord.gift") return 0;
+    if (s == "discord.com" || s == "discord.gg"  || s == "discord.net" || s == "discordapp.com"  || s == "discordapp.net" || s == "discord.gift") return 0;
+    if (s == "media.discordapp.net" || s == "media.discord.net" || s == "canary.discord.com" || s == "canary.discord.net" || s == "canary.discord.gg") return 0;
     if (s == "steamcommunity.com" || s == "store.steampowered.com" || s == "steampowered.com") return 0;
     if (s == "epicgames.com") return 0;
+    if (s == "pastebin.com" || s == "github.com" || s == "controlc.com" || s == "ghostbin.co" || s == "rentry.co" || s == "codiad.com" || s == "zerobin.net" ||
+        s == "toptal.com" || s == "ideone.com" || s == "jsfiddle.net" || s == "textbin.net" || s == "jsbin.com" || s == "ideone.com" || s == "pythondiscord.com") return 0;
+
     int extra = 0;
     if (s.IndexOf("nitro") != -1 || s.IndexOf("gift") != -1 || s.IndexOf("give") != -1) extra = 100;
 
@@ -77,31 +82,43 @@ public class CheckSpam : BaseCommandModule {
     // Check how many substrings of discord.com we have in the string
     int valDiscord = 0;
     if (cdisc) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("discord".Substring(j, k)) != -1) valDiscord += k;
+      for (int len = 4; len < 7; len++) {
+        for (int strt = 0; strt < 7 - len; strt++) {
+          if (s.IndexOf("discord"[strt..(strt + len)]) != -1)
+            valDiscord += len;
+        }
+      }
+      if (s.IndexOf("xyz") != -1) valDiscord += 5;
+      for (int len = 4; len < 7; len++) {
+        for (int strt = 0; strt < 7 - len; strt++) {
+          if (s.IndexOf("diczord"[strt..(strt + len)]) != -1)
+            valDiscord += len;
         }
       }
     }
+
     int valSteam1 = 0;
     int valSteam2 = 0;
     if (csteam) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("steamcommunity".Substring(j, k)) != -1) valSteam1 += k;
+      for (int len = 5; len < 14; len++) {
+        for (int strt = 0; strt < 14 - len; strt++) {
+          if (s.IndexOf("steamcommunity"[strt..(strt+len)]) != -1) 
+            valSteam1 += len;
         }
       }
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("steampowered".Substring(j, k)) != -1) valSteam2 += k;
+      for (int len = 5; len < 12; len++) {
+        for (int strt = 0; strt < 12 - len; strt++) {
+          if (s.IndexOf("steampowered"[strt..(strt + len)]) != -1)
+            valSteam2 += len;
         }
       }
     }
     int valEpic = 0;
     if (cepic) {
-      for (int j = 0; j < 7; j++) {
-        for (int k = 1; k < 7 - j; k++) {
-          if (s.IndexOf("epicgames".Substring(j, k)) != -1) valEpic += k;
+      for (int len = 4; len < 9; len++) {
+        for (int strt = 0; strt < 9 - len; strt++) {
+          if (s.IndexOf("epicgames"[strt..(strt + len)]) != -1)
+            valEpic += len;
         }
       }
     }
@@ -113,40 +130,70 @@ public class CheckSpam : BaseCommandModule {
   }
 
 
+  internal static async Task CheckMessageUpdate(DiscordClient _, MessageUpdateEventArgs args) {
+    await CheckMessage(args.Guild, args.Author, args.Message);
+  }
 
+  internal static async Task CheckMessageCreate(DiscordClient _, MessageCreateEventArgs args) {
+    await CheckMessage(args.Guild, args.Author, args.Message);
+  }
 
-  internal static async Task CheckMessage(DiscordClient _, MessageCreateEventArgs args) {
-    if (args.Guild == null) return;
+  static async Task CheckMessage(DiscordGuild guild, DiscordUser author, DiscordMessage message) {
+    if (guild == null) return;
+    if (author == null || author.Id == Configs.BotId) return; // Do not consider myself
+    if (SpamCheckTimeout != null && SpamCheckTimeout.Id == author.Id) { // Was probably from the setup
+      SpamCheckTimeout = null;
+      Utils.Log("Probably self post of spam ignored.", guild.Name);
+      return;
+    }
     try {
-      if (!Setup.SpamProtection.ContainsKey(args.Guild.Id)) return;
-      ulong spam = Setup.SpamProtection[args.Guild.Id];
-      if (spam == 0) return;
-      bool edisc = (spam & 1) == 1;
-      bool esteam = (spam & 2) == 2;
-      bool eepic = (spam & 4) == 4;
+      if (!Configs.SpamProtections.ContainsKey(guild.Id)) return;
+      SpamProtection sp = Configs.SpamProtections[guild.Id];
+      if (sp == null) return;
+      if (!sp.protectDiscord && !sp.protectSteam && !sp.protectDiscord) return;
+      bool edisc = sp.protectDiscord;
+      bool esteam = sp.protectSteam;
+      bool eepic = sp.protectEpic;
 
-      string msg = args.Message.Content.ToLowerInvariant();
-      Match m = linkRE.Match(msg);
-      if (!m.Success) return;
-      string link = m.Groups[1].Value;
+      string msg = message.Content.ToLowerInvariant();
 
-      float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
-      if (dist != 0) {
-        link = link.Replace("app", "");
+      foreach (Match m in linkRE.Matches(msg)) {
+        if (!m.Success) continue;
+        string link = m.Groups[1].Value;
 
-        float leven = StringDistance.DLDistance(link, probableSite);
-        if (link == probableSite) leven = 1;
-        float riskval = dist / (float)Math.Sqrt(leven);
-        if (riskval > 3) {
-          Utils.Log("Removed spam link message from " + args.Author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, args.Guild.Name);
-          DiscordMessage warning = await args.Message.Channel.SendMessageAsync("Removed spam link message from " + args.Author.Username + " possible counterfeit site: " + probableSite + "\n" + Setup.GetAdminsMentions(args.Guild.Id) + " please take care,");
-          await args.Message.DeleteAsync("Spam link from " + args.Author.Username);
-          Utils.DeleteDelayed(10000, warning).Wait();
+        foreach (var s in Configs.SpamLinks[guild.Id]) {
+          if (link.IndexOf(s) != -1) {
+            Utils.Log("Removed spam link message from " + author.Username + ", matched a custom spam link.\noriginal link: " + msg, guild.Name);
+            DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + ", matched a custom spam link.\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
+            await message.DeleteAsync("Spam link from " + author.Username);
+            Utils.DeleteDelayed(10000, warning).Wait();
+            return;
+          }
+        }
+
+        float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
+        if (dist != 0) {
+          link = link.Replace("app", "");
+
+          float leven = StringDistance.DLDistance(link, probableSite);
+          if (link == probableSite) leven = 1;
+          float riskval = dist / (float)Math.Sqrt(leven);
+          if (riskval > 3) {
+            Utils.Log("Removed spam link message from " + author.Username + "\nPossible counterfeit site: " + probableSite + "\noriginal link: " + msg, guild.Name);
+            DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + " possible counterfeit site: " + probableSite + "\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
+            await message.DeleteAsync("Spam link from " + author.Username);
+            Utils.DeleteDelayed(10000, warning).Wait();
+          }
         }
       }
 
+    } catch (NullReferenceException ex) {
+      Utils.Log(Utils.sttr.ToString(), null);
+      Utils.Log(ex.Message, null);
+      Utils.Log(ex.ToString(), null);
     } catch (Exception ex) {
-      await args.Message.RespondAsync(Utils.GenerateErrorAnswer(args.Guild.Name, "CheckSpam.CheckMessage", ex));
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
+      await message.RespondAsync(Utils.GenerateErrorAnswer(guild.Name, "CheckSpam.CheckMessage", ex));
     }
   }
 }

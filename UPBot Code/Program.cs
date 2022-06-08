@@ -1,27 +1,26 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using TimeZoneConverter;
 
 namespace UPBot {
   class Program {
 
     static void Main(string[] args) {
-      if (args.Length >= 3) Utils.LogsFolder = args[2];
-      Utils.Log("Log Started. Woho.", null);
-      if (args.Length < 1) {
-        Utils.Log("You have to specify the bot token as first parameter!", null);
+      if (args.Length != 2) {
+        Utils.Log("You have to specify the bot token as first parameter and the logs path as second parameter!", null);
         return;
       }
+      Utils.LogsFolder = args[1];
+      Utils.Log("Log Started. Woho.", null);
 
       try {
-        MainAsync(args[0], (args.Length > 1 && args[1].Length > 0) ? args[1] : "\\").GetAwaiter().GetResult();
+        MainAsync(args[0]).GetAwaiter().GetResult();
       } catch (TaskCanceledException) {
         Utils.Log("Exit for critical failure", null);
       } catch (Exception ex) {
@@ -29,61 +28,93 @@ namespace UPBot {
       }
     }
 
-    readonly private static CancellationTokenSource exitToken = new CancellationTokenSource();
+    readonly private static CancellationTokenSource exitToken = new();
 
-    static async Task MainAsync(string token, string prefix) {
+    static async Task MainAsync(string token) {
       try {
-        Utils.Log("Init MainAsync", null);
+        Utils.Log("Init Main", null);
+        Utils.Log("Version: " + Utils.GetVersion(), null);
+
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
           TokenType = TokenType.Bot, // We are a bot
           Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers
         });
-        Utils.Log("Discord object", null);
 
+        Utils.Log("Use interactivity", null);
         client.UseInteractivity(new InteractivityConfiguration() {
           Timeout = TimeSpan.FromSeconds(120),
           ButtonBehavior = DSharpPlus.Interactivity.Enums.ButtonPaginationBehavior.DeleteMessage,
           ResponseBehavior = DSharpPlus.Interactivity.Enums.InteractionResponseBehavior.Ack
         });
-        Utils.Log("Use interactivity", null);
 
-        Utils.InitClient(client);
         Utils.Log("Utils.InitClient", null);
-        Database.InitDb();
-        Utils.Log("Database.InitDb", null);
-        Database.AddTable<BannedWord>();
-        Database.AddTable<Reputation>();
-        Database.AddTable<ReputationEmoji>();
-        Database.AddTable<EmojiForRoleValue>();
-        Database.AddTable<Config>();
-        Database.AddTable<Timezone>();
-        Database.AddTable<AdminRole>();
-        Database.AddTable<TrackChannel>();
-        Database.AddTable<TagBase>();
-        Database.AddTable<AffiliationLink>();
-        Utils.Log("Added Tables", null);
+        Utils.InitClient(client);
 
-
-
-        var slash = client.UseSlashCommands();
-        slash.RegisterCommands<SlashPing>(830900174553481236ul);
-
-        CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration() {
-          StringPrefixes = new[] { prefix[0].ToString() }, // The backslash will be the default command prefix if not specified in the parameters
-          CaseSensitive = false,
-          EnableDms = true,
-          EnableMentionPrefix = true
+        Database.InitDb(new List<Type>{
+          typeof(SpamProtection), typeof(Timezone), typeof(AdminRole), typeof(TrackChannel), typeof(TagBase), typeof(SpamLink)
         });
-        Utils.Log("CommandsNextExtension", null);
-        commands.RegisterCommands(Assembly.GetExecutingAssembly()); // Registers all defined commands
-        Utils.Log("RegisterCommands", null);
+        Utils.Log("Database.InitDb", null);
+
+
+        // SlashCommands
+        Utils.Log("SlashCommands", null);
+        var slash = client.UseSlashCommands();
+        slash.RegisterCommands<SlashVersion>();
+        slash.RegisterCommands<SlashPing>();
+        slash.RegisterCommands<SlashUnityDocs>();
+        slash.RegisterCommands<SlashRefactor>();
+        slash.RegisterCommands<SlashDelete>();
+        slash.RegisterCommands<SlashWhoIs>();
+        slash.RegisterCommands<SlashGame>();
+        slash.RegisterCommands<SlashTags>();
+        slash.RegisterCommands<SlashTagsEdit>();
+        slash.RegisterCommands<SlashStats>();
+        slash.RegisterCommands<SlashTimezone>();
+        slash.RegisterCommands<SlashLogs>();
+        slash.RegisterCommands<SlashSetup>();
+
+
 
         Utils.Log("Connecting to discord...", null);
         client.Ready += Discord_Ready;
 
         await Task.Delay(50);
-        await client.ConnectAsync(); // Connect and wait forever
+        await client.ConnectAsync(); // Connect
+
+        // Check for a while if we have any guild
+        int t = 0;
+        while (Utils.GetClient() == null) { // 10 secs max for client
+          await Task.Delay(1000);
+          if (t++ > 10) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (no client)", null);
+            Console.WriteLine("CRITICAL ERROR: No discord client");
+            return;
+          }
+        }
+
+        // 10 secs max for guilds
+        t = 0;
+        while (Utils.GetClient().Guilds == null) {
+          await Task.Delay(1000);
+          if (t++ > 10) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (no guilds)", null);
+            Console.WriteLine("CRITICAL ERROR: No guilds avilable");
+            return;
+          }
+        }
+
+        // 30 secs max for guilds coubnt
+        t = 0;
+        while (Utils.GetClient().Guilds.Count == 0) {
+          await Task.Delay(1000);
+          if (t++ > 30) {
+            Utils.Log("CRITICAL ERROR: We are not connecting! (guilds count is zero)", null);
+            Console.WriteLine("CRITICAL ERROR: The bot seems to be in no guild");
+            return;
+          }
+        }
+
 
       } catch (Exception ex) {
         Utils.Log("with exception: " + ex.Message, null);
@@ -105,7 +136,7 @@ namespace UPBot {
     }
 
     private static async Task WaitForGuildsTask(DiscordClient client) {
-      Dictionary<ulong, bool> guilds = new Dictionary<ulong, bool>();
+      Dictionary<ulong, bool> guilds = new();
       int toGet = client.Guilds.Count;
       foreach (ulong key in client.Guilds.Keys) 
         guilds[key] = false;
@@ -127,7 +158,7 @@ namespace UPBot {
         await Task.Delay(500);
         if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
 
-        if (times > 10) { // FIXME
+        if (times > 300) {
           if (num > 0) {
             Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
             break;
@@ -159,23 +190,18 @@ namespace UPBot {
         Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""), null);
 
       Utils.Log("LoadingParams", null);
-      Setup.LoadParams();
+      Configs.LoadParams();
 
       Utils.Log("Adding action events", null);
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
       client.GuildMemberUpdated += MembersTracking.DiscordMemberUpdated;
-      client.MessageReactionAdded += AppreciationTracking.ReactionAdded;
-      client.MessageReactionAdded += EmojisForRole.ReacionAdded;
-      client.MessageReactionRemoved += EmojisForRole.ReactionRemoved;
 
-      client.MessageCreated += async (s, e) => { await BannedWords.CheckMessage(s, e); };
-      client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessage(s, e); };
-      client.MessageCreated += async (s, e) => { await Affiliation.CheckMessage(s, e); };
-      client.MessageCreated += AppreciationTracking.ThanksAdded;
+      client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessageCreate(s, e); };
+      client.MessageUpdated += async (s, e) => { await CheckSpam.CheckMessageUpdate(s, e); };
       Utils.Log("Tracking", null);
 
-      client.GuildCreated += Setup.NewGuildAdded;
+      client.GuildCreated += Configs.NewGuildAdded;
 
       Utils.Log("--->>> Bot ready <<<---", null);
     }

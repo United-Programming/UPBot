@@ -165,7 +165,7 @@ public static class StringDistance {
     b = b.ToLowerInvariant();
     if (a == b) return 0;
 
-    float dist = 10000;
+    float dist = 1000;
     if (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) dist = 1000;
 
     string[] pa = a.Replace('-', '.').Split('.');

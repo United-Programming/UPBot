@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class MembersTracking {
-  static Dictionary<ulong, DateTime> tracking = null;
+  static Dictionary<ulong, DateTime> tracking = null; // Use one from COnfig, add nonserializable datetime if we need one
 
   public static async Task DiscordMemberRemoved(DiscordClient _, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];
+      TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
       if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
@@ -33,36 +33,39 @@ public class MembersTracking {
         Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberRemoved: " + ex.Message, args.Guild.Name);
     }
 
     await Task.Delay(50);
   }
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Double _ for double ignored parameter")]
+#pragma warning disable IDE0060 // Remove unused parameter
   public static async Task DiscordMemberAdded(DiscordClient _client, DSharpPlus.EventArgs.GuildMemberAddEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];
+      TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       tracking[args.Member.Id] = DateTime.Now;
       _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberAdded: " + ex.Message, args.Guild.Name);
     }
     await Task.Delay(10);
   }
+#pragma warning restore IDE0060 // Remove unused parameter
 
   public static async Task DiscordMemberUpdated(DiscordClient _, DSharpPlus.EventArgs.GuildMemberUpdateEventArgs args) {
     try {
-      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
-      TrackChannel trackChannel = Setup.TrackChannels[args.Guild.Id];
+      TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
       if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackRoles) return;
+      if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
 
       IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
       IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
-      List<DiscordRole> rolesAdded = new List<DiscordRole>();
+      List<DiscordRole> rolesAdded = new();
       // Changed role? We can track only additions. Removals are not really sent
 
       foreach (DiscordRole r1 in rolesAfter) {
@@ -88,6 +91,7 @@ public class MembersTracking {
         Utils.Log(msgL, args.Guild.Name);
       }
     } catch (Exception ex) {
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
       Utils.Log("Error in DiscordMemberUpdated: " + ex.Message, args.Guild.Name);
     }
 
