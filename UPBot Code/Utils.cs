@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
@@ -18,6 +18,7 @@ public static class Utils
   public const char vrev = ' ';
   public static string LogsFolder = "./";
   public readonly static System.Diagnostics.StackTrace sttr = new();
+  private static int lines = 0;
 
   /// <summary>
   /// Common colors
@@ -166,7 +167,9 @@ public static class Utils
       Title = "Error in " + cmd,
       Description = exception.Message + "\n" + exception.StackTrace
     };
-    Log("Error in " + cmd + ": " + exception.Message, guild);
+    Console.ForegroundColor = ConsoleColor.Red;
+    Log($"Error in " + cmd + ": " + exception.Message, guild);
+    Console.ForegroundColor = ConsoleColor.White;
     return e.Build();
   }
 
@@ -181,7 +184,9 @@ public static class Utils
       Title = "Error in " + cmd,
       Description = message
     };
-    Log("Error in " + cmd + ": " + message, guild);
+    Console.ForegroundColor = ConsoleColor.Red;
+    Log($"Error in " + cmd + ": " + message, guild);
+    Console.ForegroundColor = ConsoleColor.White;
     return e.Build();
   }
 
@@ -199,11 +204,15 @@ public static class Utils
   public static DiscordEmoji GetEmoji(EmojiEnum emoji) {
     int index = (int)emoji;
     if (index < 0 || index >= emojiNames.Length) {
+      Console.ForegroundColor = ConsoleColor.Yellow;
       Console.WriteLine("WARNING: Requested wrong emoji");
+      Console.ForegroundColor = ConsoleColor.White;
       return thinkingAsError;
     }
     if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
-      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
+      Console.ForegroundColor = ConsoleColor.Yellow;
+      Console.WriteLine($"WARNING: Cannot get requested emoji: {emoji.ToString()}");
+      Console.ForegroundColor = ConsoleColor.White;
       return thinkingAsError;
     }
     return res;
@@ -219,13 +228,17 @@ public static class Utils
   public static string GetEmojiURL(EmojiEnum emoji) {
     int index = (int)emoji;
     if (index < 0 || index >= emojiNames.Length) {
-      Console.WriteLine("WARNING: Requested wrong emoji");
+      Console.ForegroundColor = ConsoleColor.Yellow;
+      Console.WriteLine($"WARNING: Requested wrong emoji");
+      Console.ForegroundColor = ConsoleColor.White;
       return thinkingAsError.Url;
     }
 
     if (!string.IsNullOrEmpty(emojiUrls[index])) return emojiUrls[index];
     if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
-      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
+      Console.ForegroundColor = ConsoleColor.Yellow;
+      Console.WriteLine($"WARNING: Cannot get requested emoji: {emoji.ToString()}");
+      Console.ForegroundColor = ConsoleColor.White;
       return thinkingAsError;
     }
     emojiUrls[index] = res.Url;
@@ -245,8 +258,10 @@ public static class Utils
 
     if (!string.IsNullOrEmpty(emojiSnowflakes[index])) return emojiSnowflakes[index];
     if (!DiscordEmoji.TryFromName(client, emojiNames[index], out DiscordEmoji res)) {
-      Console.WriteLine("WARNING: Cannot get requested emoji: " + emoji.ToString());
-      return thinkingAsError;
+      Console.ForegroundColor = ConsoleColor.Yellow;
+      Console.WriteLine($"WARNING: Cannot get requested emoji: {emoji.ToString()}");
+      Console.ForegroundColor = ConsoleColor.White;
+            return thinkingAsError;
     }
     emojiSnowflakes[index] = "<" + res.GetDiscordName() + res.Id.ToString() + ">";
     return emojiSnowflakes[index];
@@ -263,10 +278,12 @@ public static class Utils
   }
 
   internal static void LogUserCommand(InteractionContext ctx) {
+    Console.ForegroundColor = ConsoleColor.Blue;
     string log = $"{DateTime.Now:yyyy/MM/dd hh:mm:ss} => {ctx.CommandName} FROM {ctx.Member.DisplayName}";
-    if (ctx.Interaction.Data.Options != null)
+        if (ctx.Interaction.Data.Options != null)
       foreach (var p in ctx.Interaction.Data.Options) log += $" [{p.Name}]{p.Value}";
     Log(log, ctx.Guild.Name);
+    Console.ForegroundColor = ConsoleColor.White;
   }
 
   /// <summary>
@@ -276,16 +293,19 @@ public static class Utils
   /// <returns></returns>
   internal static void Log(string msg, string guild) {
     if (guild == null) guild = "GLOBAL";
-    Console.WriteLine(guild + ": " + msg);
+    lines++;
+    Console.WriteLine(lines + " line: " + guild + ": " + msg);
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
       logs[guild].sw.WriteLine(msg.Replace("```", ""));
       logs[guild].sw.Flush();
     } catch (Exception e) {
+      Console.ForegroundColor = ConsoleColor.Red;
       Console.WriteLine("Log error with stack trace following");
       Console.WriteLine("Log error: " + e.Message);
       Console.WriteLine(sttr.ToString());
-      Console.WriteLine("Log error completed");
+      Console.WriteLine("Log error completed.");
+      Console.ForegroundColor = ConsoleColor.White;
     }
   }
 
@@ -299,7 +319,9 @@ public static class Utils
         Task.Delay(seconds * 1000).Wait();
         Directory.Delete(path, true);
       } catch (Exception ex) {
-        Console.WriteLine("Cannot delete folder: " + path + ": " + ex.Message);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Cannot delete file: " + path + ": " + ex.Message);
+        Console.ForegroundColor = ConsoleColor.White;
       }
     });
     return Task.FromResult(0);
@@ -315,7 +337,9 @@ public static class Utils
         Task.Delay(seconds * 1000).Wait();
         File.Delete(path);
       } catch (Exception ex) {
-        Console.WriteLine("Cannot delete file: " + path + ": " + ex.Message);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Cannot delete file: " + path + ": " + ex.Message);
+        Console.ForegroundColor = ConsoleColor.White;
       }
     });
     return Task.FromResult(0);
