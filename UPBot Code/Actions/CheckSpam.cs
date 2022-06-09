@@ -82,8 +82,8 @@ public class CheckSpam {
     // Check how many substrings of discord.com we have in the string
     int valDiscord = 0;
     if (cdisc) {
-      for (int len = 4; len < 7; len++) {
-        for (int strt = 0; strt < 7 - len; strt++) {
+      for (int len = 4; len < 8; len++) {
+        for (int strt = 0; strt < 8 - len; strt++) {
           if (s.IndexOf("discord"[strt..(strt + len)]) != -1)
             valDiscord += len;
         }
@@ -122,6 +122,11 @@ public class CheckSpam {
         }
       }
     }
+
+    if (s.Contains("discord")) { valDiscord+=2; valSteam1++; valSteam2++; valEpic++; }
+    if (s.Contains("steam")) { valDiscord++; valSteam1+=2; valSteam2+=2; valEpic++; }
+    if (s.Contains("epic")) { valDiscord++; valSteam1++; valSteam2++; valEpic+=2; }
+
     int max = valDiscord; siteToCheck = "discord.com";
     if (valSteam1 > max) { max = valSteam1; siteToCheck = "steamcommunity.com"; }
     if (valSteam2 > max) { max = valSteam2; siteToCheck = "steampowered.com"; }
