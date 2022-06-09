@@ -6,24 +6,32 @@ using DSharpPlus;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using TimeZoneConverter;
 
 namespace UPBot {
   class Program {
 
     static void Main(string[] args) {
       if (args.Length != 2) {
+        Console.ForegroundColor = ConsoleColor.Red;
         Utils.Log("You have to specify the bot token as first parameter and the logs path as second parameter!", null);
         return;
       }
       Utils.LogsFolder = args[1];
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("Log Started. Woho.", null);
+      Console.ForegroundColor = ConsoleColor.White;
 
       try {
         MainAsync(args[0]).GetAwaiter().GetResult();
       } catch (TaskCanceledException) {
+        Console.ForegroundColor = ConsoleColor.Red;
         Utils.Log("Exit for critical failure", null);
+        Console.ForegroundColor = ConsoleColor.White;
       } catch (Exception ex) {
+        Console.ForegroundColor = ConsoleColor.Red;
         Utils.Log("Exit by error: " + ex.Message, null);
+        Console.ForegroundColor = ConsoleColor.White;
       }
     }
 
@@ -31,8 +39,11 @@ namespace UPBot {
 
     static async Task MainAsync(string token) {
       try {
+        Console.ForegroundColor = ConsoleColor.Green;
         Utils.Log("Init Main", null);
+        Console.ForegroundColor = ConsoleColor.Yellow;
         Utils.Log("Version: " + Utils.GetVersion(), null);
+        Console.ForegroundColor = ConsoleColor.White;
 
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
@@ -86,6 +97,7 @@ namespace UPBot {
         while (Utils.GetClient() == null) { // 10 secs max for client
           await Task.Delay(1000);
           if (t++ > 10) {
+            Console.ForegroundColor = ConsoleColor.Red;
             Utils.Log("CRITICAL ERROR: We are not connecting! (no client)", null);
             Console.WriteLine("CRITICAL ERROR: No discord client");
             return;
@@ -97,6 +109,7 @@ namespace UPBot {
         while (Utils.GetClient().Guilds == null) {
           await Task.Delay(1000);
           if (t++ > 10) {
+            Console.ForegroundColor = ConsoleColor.Red;
             Utils.Log("CRITICAL ERROR: We are not connecting! (no guilds)", null);
             Console.WriteLine("CRITICAL ERROR: No guilds avilable");
             return;
@@ -108,6 +121,7 @@ namespace UPBot {
         while (Utils.GetClient().Guilds.Count == 0) {
           await Task.Delay(1000);
           if (t++ > 30) {
+            Console.ForegroundColor = ConsoleColor.Red;
             Utils.Log("CRITICAL ERROR: We are not connecting! (guilds count is zero)", null);
             Console.WriteLine("CRITICAL ERROR: The bot seems to be in no guild");
             return;
@@ -116,7 +130,9 @@ namespace UPBot {
 
 
       } catch (Exception ex) {
+        Console.ForegroundColor = ConsoleColor.Red;
         Utils.Log("with exception: " + ex.Message, null);
+        Console.ForegroundColor = ConsoleColor.White;
       }
 
       // Wait forever
@@ -124,13 +140,15 @@ namespace UPBot {
     }
 
     private static async Task Discord_Ready(DiscordClient client, DSharpPlus.EventArgs.ReadyEventArgs e) {
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("connected", null);
-
+      Console.ForegroundColor = ConsoleColor.White;
       Utils.Log("Logging [re]Started at: " + DateTime.Now.ToString("yyyy/MM/dd HH:mm:dd") + " --------------------------------", null);
 
       await Task.Delay(500);
-
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("Setup complete, waiting guilds to be ready", null);
+      Console.ForegroundColor = ConsoleColor.White;
       _ = WaitForGuildsTask(client);
     }
 
@@ -155,15 +173,23 @@ namespace UPBot {
           break;
         }
         await Task.Delay(500);
-        if (times % 21 == 20) Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
+        if (times % 21 == 20){
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Utils.Log("Tried " + times + " got only " + num + "/" + toGet, null);
+            Console.ForegroundColor = ConsoleColor.White;
+        }
 
         if (times > 300) {
           if (num > 0) {
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Utils.Log("Stopping the wait, got only " + num + " over " + toGet, null);
+            Console.ForegroundColor = ConsoleColor.White;
             break;
           }
           else {
+            Console.ForegroundColor = ConsoleColor.Red;
             Utils.Log("[CRITICAL] Stopping. We cannot find any valid Discord server.", null);
+            Console.ForegroundColor = ConsoleColor.White;
             exitToken.Cancel();
             return;
           }
@@ -173,24 +199,30 @@ namespace UPBot {
       if (cleanOldGuilds) {
         foreach (var g in client.Guilds.Values) {
           if (g.IsUnavailable || string.IsNullOrEmpty(g.Name)) {
+            Console.ForegroundColor = ConsoleColor.White;
             Utils.Log("Leaving guild with id: " + g.Id, null);
             try {
               _ = g.LeaveAsync();
             } catch (Exception e) {
+              Console.ForegroundColor = ConsoleColor.Red;
               Utils.Log("Error in Leaving guild: " + e.Message, null);
+              Console.ForegroundColor = ConsoleColor.White;
             }
           }
         }
       }
 
-
-      Utils.Log("Got all guilds after " + times, null);
+      Console.ForegroundColor = ConsoleColor.Green;
+      Utils.Log($"Got all guilds after {Console.ForegroundColor = ConsoleColor.Yellow} '{times}' {Console.ForegroundColor = ConsoleColor.White}", null);
       foreach (var g in client.Guilds.Values)
-        Utils.Log(">> " + g.Name + (g.IsUnavailable ? " (NOT WORKING)" : ""), null);
+      Utils.Log(">> " + g.Name + (g.IsUnavailable ? $"{Console.ForegroundColor = ConsoleColor.Red} (NOT WORKING) {Console.ForegroundColor = ConsoleColor.White}" : ""), null);
 
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("LoadingParams", null);
       Configs.LoadParams();
+      Console.ForegroundColor = ConsoleColor.White;
 
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("Adding action events", null);
       client.GuildMemberAdded += MembersTracking.DiscordMemberAdded;
       client.GuildMemberRemoved += MembersTracking.DiscordMemberRemoved;
@@ -198,12 +230,16 @@ namespace UPBot {
 
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessageCreate(s, e); };
       client.MessageUpdated += async (s, e) => { await CheckSpam.CheckMessageUpdate(s, e); };
+      Console.ForegroundColor = ConsoleColor.White;
+
+      Console.ForegroundColor = ConsoleColor.Yellow;
       Utils.Log("Tracking", null);
+      Console.ForegroundColor = ConsoleColor.White;
 
       client.GuildCreated += Configs.NewGuildAdded;
-
+      Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("--->>> Bot ready <<<---", null);
+      Console.ForegroundColor = ConsoleColor.White;
     }
   }
-
 }
