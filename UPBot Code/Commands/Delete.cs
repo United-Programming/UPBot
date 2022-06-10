@@ -34,7 +34,7 @@ public class SlashDelete : ApplicationCommandModule {
     try {
       int numMsgs = 1;
       int numDeleted = 0;
-      List<DiscordMessage> toDelete = new List<DiscordMessage>();
+      List<DiscordMessage> toDelete = new();
       while (numMsgs < 5 && numDeleted < count) {
         int num = (user == null ? (int)count + 2 : 50) * numMsgs;
         var messages = await ctx.Channel.GetMessagesAsync(num);

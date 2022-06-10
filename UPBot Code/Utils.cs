@@ -39,7 +39,7 @@ public static class Utils {
   readonly private static Dictionary<string, LogInfo> logs = new();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/06/09";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2022/06/10";
   }
 
   public static DiscordClient GetClient() {

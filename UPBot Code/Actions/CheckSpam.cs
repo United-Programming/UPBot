@@ -175,6 +175,14 @@ public class CheckSpam {
             return;
           }
         }
+        bool whitelisted = false;
+        foreach (var s in Configs.WhiteListLinks[guild.Id]) {
+          if (link.IndexOf(s) != -1) {
+            whitelisted = true;
+            break;
+          }
+        }
+        if (whitelisted) continue;
 
         float dist = CalculateDistance(link, edisc, esteam, eepic, out string probableSite);
         if (dist != 0) {

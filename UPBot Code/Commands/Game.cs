@@ -61,7 +61,7 @@ public class SlashGame : ApplicationCommandModule {
     await ctx.CreateResponseAsync("Pick your move");
 
     var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, or ✂️");
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+    List<DiscordButtonComponent> actions = new() {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors")
@@ -175,7 +175,7 @@ public class SlashGame : ApplicationCommandModule {
 
 
     var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, ✂️, 🦎, or 🖖");
-    List<DiscordButtonComponent> actions = new List<DiscordButtonComponent> {
+    List<DiscordButtonComponent> actions = new() {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors"),
@@ -214,7 +214,6 @@ public class SlashGame : ApplicationCommandModule {
   public async Task CoinFlipCommand(InteractionContext ctx, [Option("firstoption", "Optional: You have to do this is the coin is Head")] string firstOption = null, [Option("secondoption", "Optional: You have to do this is the coin is Tails")] string secondOption = null) {
     Utils.LogUserCommand(ctx);
     int randomNumber;
-    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
     if (firstOption == null || secondOption == null) {
       randomNumber = random.Next(0, 2);
       switch (randomNumber) {

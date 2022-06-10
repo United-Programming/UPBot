@@ -214,9 +214,17 @@ public class SlashSetup : ApplicationCommandModule {
         Database.Add(sp);
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
-      else if (cmdId == "idfeatrespamprotectadd") { // Ask for the link, clean it up, and add it
+      else if (cmdId == "idfeatrespamprotectbl") {
+        msg = CreateSpamBlackListInteraction(ctx, msg);
+      }
+      else if (cmdId == "idfeatrespamprotectwl") {
+        msg = CreateSpamWhiteListInteraction(ctx, msg);
+      }
+      else if (cmdId.Length > 21 && cmdId[0..22] == "idfeatrespamprotectadd") { // Ask for the link, clean it up, and add it
         await ctx.Channel.DeleteMessageAsync(msg);
-        DiscordMessage prompt = await ctx.Channel.SendMessageAsync(ctx.Member.Mention + ", type the url that should be considered spam");
+        bool whitelist = (cmdId == "idfeatrespamprotectaddwl");
+
+        DiscordMessage prompt = await ctx.Channel.SendMessageAsync($"{ctx.Member.Mention}, type the url that should be {(whitelist ? "white listed" : "considered spam")}");
         var answer = await interact.WaitForMessageAsync((dm) => {
           return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
         }, TimeSpan.FromMinutes(2));
@@ -235,9 +243,10 @@ public class SlashSetup : ApplicationCommandModule {
           int seconddot = url.LastIndexOf('.', leftmostdot - 1);
           if (seconddot != -1) url = url[(seconddot + 1)..].Trim();
 
-          Database.Add(new SpamLink(gid, url));
+          Database.Add(new SpamLink(gid, url, whitelist));
           bool found = false;
-          foreach (var s in Configs.SpamLinks[gid]) {
+          var list = whitelist ? Configs.WhiteListLinks : Configs.SpamLinks;
+          foreach (var s in list) {
             if (s.Equals(url)) {
               found = true;
               break;
@@ -245,18 +254,37 @@ public class SlashSetup : ApplicationCommandModule {
           }
           if (!found) {
             CheckSpam.SpamCheckTimeout = ctx.Member;
-            Configs.SpamLinks[gid].Add(url);
-            await ctx.Channel.SendMessageAsync("New spam URL added.");
+            if (whitelist) {
+              Configs.WhiteListLinks[gid].Add(url);
+              await ctx.Channel.SendMessageAsync("New white list URL added.");
+              msg = null;
+            }
+            else {
+              Configs.SpamLinks[gid].Add(url);
+              await ctx.Channel.SendMessageAsync("New spam URL added.");
+              msg = null;
+            }
           }
         }
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
-      else if (cmdId.Length>25 && cmdId[0..25] == "idfeatrespamprotectremove") {
-        if (int.TryParse(cmdId[25..], out int num)) {
+      else if (cmdId.Length > 27 && cmdId[0..27] == "idfeatrespamprotectremovebl") {
+        if (int.TryParse(cmdId[27..], out int num)) {
           string link = Configs.SpamLinks[gid][num];
           Configs.SpamLinks[gid].RemoveAt(num);
           Database.DeleteByKeys<SpamLink>(gid, link);
         }
+        msg = CreateSpamProtectInteraction(ctx, msg);
+      }
+      else if (cmdId.Length > 27 && cmdId[0..27] == "idfeatrespamprotectremovewl") {
+        if (int.TryParse(cmdId[27..], out int num)) {
+          string link = Configs.WhiteListLinks[gid][num];
+          Configs.WhiteListLinks[gid].RemoveAt(num);
+          Database.DeleteByKeys<SpamLink>(gid, link);
+        }
+        msg = CreateSpamProtectInteraction(ctx, msg);
+      }
+      else if (cmdId == "idbackspam") {
         msg = CreateSpamProtectInteraction(ctx, msg);
       }
 
@@ -582,16 +610,59 @@ public class SlashSetup : ApplicationCommandModule {
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(edisc ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect0", "Discord Nitro", false, edisc ? ey : en),
       new DiscordButtonComponent(esteam ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect1", "Steam", false, esteam ? ey : en),
-      new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectadd", "Add custom spam url", false, ok)
+      new DiscordButtonComponent(eepic ? DSharpPlus.ButtonStyle.Success : DSharpPlus.ButtonStyle.Danger, "idfeatrespamprotect2", "Epic", false, eepic ? ey : en)
+    };
+    builder.AddComponents(actions);
+
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectbl", "Manage Blck List", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectwl", "Manage White List", false, er)
+    };
+    builder.AddComponents(actions);
+
+    // - Exit
+    // - Back
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return ctx.Channel.SendMessageAsync(builder).Result;
+  }
+
+  private DiscordMessage CreateSpamWhiteListInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new() {
+      Title = "UPBot Configuration - Spam Protection"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
+    bool edisc = sp != null && sp.protectDiscord;
+    bool esteam = sp != null && sp.protectSteam;
+    bool eepic = sp != null && sp.protectEpic;
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "White List of links for the **Spam Protection**, these links will always be allowed.\n" +
+      "Add with the button a link that will always be accepted in all posted messages.\n" +
+      "Click on an existing link button to remove it from the white list";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions;
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectaddwl", "Add custom non spam url", false, ok)
     };
     builder.AddComponents(actions);
 
     // List all custom spam links
     int counter = 0;
     actions = new List<DiscordButtonComponent>();
-    foreach (string sl in Configs.SpamLinks[ctx.Guild.Id]) {
-      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, $"idfeatrespamprotectremove{counter}", sl, false, ko));
+    foreach (string sl in Configs.WhiteListLinks[ctx.Guild.Id]) {
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, $"idfeatrespamprotectremovewl{counter}", sl, false, ko));
       counter++;
       if (counter == 4) {
         counter = 0;
@@ -606,7 +677,62 @@ public class SlashSetup : ApplicationCommandModule {
     // - Back
     actions = new List<DiscordButtonComponent> {
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el)
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idbackspam", "Back to Spam Protection", false, el)
+    };
+    builder.AddComponents(actions);
+
+    return ctx.Channel.SendMessageAsync(builder).Result;
+  }
+
+  private DiscordMessage CreateSpamBlackListInteraction(InteractionContext ctx, DiscordMessage prevMsg) {
+    if (prevMsg != null) ctx.Channel.DeleteMessageAsync(prevMsg).Wait();
+
+    DiscordEmbedBuilder eb = new() {
+      Title = "UPBot Configuration - Spam Protection"
+    };
+    eb.WithThumbnail(ctx.Guild.IconUrl);
+    SpamProtection sp = Configs.SpamProtections[ctx.Guild.Id];
+    bool edisc = sp != null && sp.protectDiscord;
+    bool esteam = sp != null && sp.protectSteam;
+    bool eepic = sp != null && sp.protectEpic;
+    eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
+      "Black List of links for the **Spam Protection**\n" +
+      "Add with the button a link that will be banned from all messages posted.\n" +
+      "Click on an existing link button to remove it from the blck list";
+    eb.WithImageUrl(ctx.Guild.BannerUrl);
+    eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
+
+    List<DiscordButtonComponent> actions;
+    var builder = new DiscordMessageBuilder();
+    builder.AddEmbed(eb.Build());
+
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectaddbl", "Add custom spam url", false, ok)
+    };
+    builder.AddComponents(actions);
+
+    // List all custom spam links
+    int counter = 0;
+    actions = new List<DiscordButtonComponent>();
+    foreach (string sl in Configs.SpamLinks[ctx.Guild.Id]) {
+      actions.Add(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, $"idfeatrespamprotectremovebl{counter}", sl, false, ko));
+      counter++;
+      if (counter == 4) {
+        counter = 0;
+        builder.AddComponents(actions);
+        actions = new List<DiscordButtonComponent>();
+      }
+    }
+    if (actions.Count > 0) builder.AddComponents(actions);
+
+
+    // - Exit
+    // - Back
+    actions = new List<DiscordButtonComponent> {
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "idexitconfig", "Exit", false, ec),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idback", "Back to Main", false, el),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "idbackspam", "Back to Spam Protection", false, el)
     };
     builder.AddComponents(actions);
 
