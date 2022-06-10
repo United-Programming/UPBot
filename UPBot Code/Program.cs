@@ -213,10 +213,13 @@ namespace UPBot {
       }
 
       Console.ForegroundColor = ConsoleColor.Green;
-      Utils.Log($"Got all guilds after {Console.ForegroundColor = ConsoleColor.Yellow} '{times}' {Console.ForegroundColor = ConsoleColor.White}", null);
-      foreach (var g in client.Guilds.Values)
-        Utils.Log(">> " + g.Name + (g.IsUnavailable ? $"{Console.ForegroundColor = ConsoleColor.Red} (NOT WORKING) {Console.ForegroundColor = ConsoleColor.White}" : ""), null);
-
+      Utils.Log($"Got all guilds after '{times}'", null);
+      Console.ForegroundColor = ConsoleColor.White;
+      foreach (var g in client.Guilds.Values){
+        Console.ForegroundColor = ConsoleColor.Red;
+        Utils.Log(">> " + g.Name + (g.IsUnavailable ? $"(NOT WORKING)" : ""), null);
+        Console.ForegroundColor = ConsoleColor.White;
+      }
       Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("LoadingParams", null);
       Configs.LoadParams();
