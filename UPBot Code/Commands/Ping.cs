@@ -39,7 +39,7 @@ public class SlashPing : ApplicationCommandModule {
   };
 
 
-  Task GeneratePong(InteractionContext ctx) {
+  async Task GeneratePong(InteractionContext ctx) {
     Utils.LogUserCommand(ctx);
     try {
 
@@ -66,7 +66,10 @@ public class SlashPing : ApplicationCommandModule {
         annoyedLevel = lastRequest.AddRequest();
       }
       if (annoyedLevel == -1) {
-        return ctx.DeleteResponseAsync(); // ctx.CreateResponseAsync(""); ; // No answer
+        Task t = ctx.CreateResponseAsync("...");
+        DiscordMessage empty = ctx.GetOriginalResponseAsync().Result;
+        await empty.DeleteAsync(); // No answer
+        return;
       }
 
       // Was the request already done recently?
@@ -77,10 +80,10 @@ public class SlashPing : ApplicationCommandModule {
       string msg = answers[annoyedLevel, rnd];
       msg = msg.Replace("$$$", member.DisplayName).Replace("@@@", member.Mention);
 
-      return ctx.CreateResponseAsync(msg);
+      await ctx.CreateResponseAsync(msg);
     } catch (Exception ex) {
-      if (ex is DSharpPlus.Exceptions.NotFoundException) return Task.FromResult(0); // Timed out
-      return ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
+      if (ex is DSharpPlus.Exceptions.NotFoundException) return; // Timed out
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Ping", ex));
     }
   }
 
