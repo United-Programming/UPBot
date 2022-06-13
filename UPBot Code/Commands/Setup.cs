@@ -615,7 +615,7 @@ public class SlashSetup : ApplicationCommandModule {
     builder.AddComponents(actions);
 
     actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectbl", "Manage Blck List", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectbl", "Manage Balck List", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectwl", "Manage White List", false, er)
     };
     builder.AddComponents(actions);
@@ -699,7 +699,7 @@ public class SlashSetup : ApplicationCommandModule {
     eb.Description = "Configuration of the UP Bot for the Discord Server **" + ctx.Guild.Name + "**\n\n" +
       "Black List of links for the **Spam Protection**\n" +
       "Add with the button a link that will be banned from all messages posted.\n" +
-      "Click on an existing link button to remove it from the blck list";
+      "Click on an existing link button to remove it from the black list";
     eb.WithImageUrl(ctx.Guild.BannerUrl);
     eb.WithFooter("Member that started the configuration is: " + ctx.Member.DisplayName, ctx.Member.AvatarUrl);
 
