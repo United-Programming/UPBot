@@ -3,7 +3,6 @@ using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,7 +16,6 @@ public static class Utils {
   public const char vrev = ' ';
   public static string LogsFolder = "./";
   public readonly static System.Diagnostics.StackTrace sttr = new();
-  private static int lines = 0;
 
   /// <summary>
   /// Common colors
@@ -292,8 +290,7 @@ public static class Utils {
   /// <returns></returns>
   internal static void Log(string msg, string guild) {
     if (guild == null) guild = "GLOBAL";
-    lines++;
-    Console.WriteLine(lines + " line: " + guild + ": " + msg);
+    Console.WriteLine($"{guild}: {msg}");
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
       logs[guild].sw.WriteLine(msg.Replace("```", ""));

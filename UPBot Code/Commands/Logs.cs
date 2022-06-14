@@ -24,7 +24,7 @@ public class SlashLogs : ApplicationCommandModule {
       return;
     }
 
-    List<string> lines = new List<string>();
+    List<string> lines = new();
     using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
       using var sr = new StreamReader(fs);
       while (!sr.EndOfStream) {
@@ -60,7 +60,7 @@ public class SlashLogs : ApplicationCommandModule {
     ZipFile.CreateFromDirectory(logsFolder, outfile);
 
 
-    using (FileStream fs = new FileStream(outfile, FileMode.Open, FileAccess.Read))
+    using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
       await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Zipped log in attachment").AddFile(fs));
     await Utils.DeleteFileDelayed(30, outfile);
     await Utils.DeleteFolderDelayed(30, logsFolder);
@@ -76,7 +76,7 @@ public class SlashLogs : ApplicationCommandModule {
     string outfile = logsFolder[0..^1] + ".zip";
     ZipFile.CreateFromDirectory(logsFolder, outfile);
 
-    using (FileStream fs = new FileStream(outfile, FileMode.Open, FileAccess.Read))
+    using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
       await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Zipped logs in attachment").AddFile(fs));
     await Utils.DeleteFileDelayed(30, outfile);
     await Utils.DeleteFolderDelayed(30, logsFolder);
