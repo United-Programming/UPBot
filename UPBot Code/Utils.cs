@@ -159,10 +159,26 @@ public static class Utils {
   /// <param name="error">The error to display</param>
   /// <returns></returns>
   internal static DiscordEmbed GenerateErrorAnswer(string guild, string cmd, Exception exception) {
+    string stack = exception.StackTrace;
+    // Find all `.cs:` strings
+    int pos = stack.IndexOf(".cs:");
+    while (pos != -1) {
+      // Find the " in "
+      int inPos = stack.LastIndexOf(" in ", pos);
+      if (inPos == -1) break;
+      int bsPos = stack.LastIndexOf("\\", pos);
+      int slPos = stack.LastIndexOf("/", pos);
+      if (bsPos == -1 && slPos == -1) break;
+      int sepPos = bsPos < slPos ? slPos : bsPos;
+      stack = stack[..(inPos + 4)] + stack[(sepPos + 1)..];
+
+      pos = stack.IndexOf(".cs:"); // This will be the previous cs, find the next if any
+      pos = stack.IndexOf(".cs:", pos + 1);
+    }
     DiscordEmbedBuilder e = new() {
       Color = Red,
       Title = "Error in " + cmd,
-      Description = exception.Message + "\n" + exception.StackTrace
+      Description = exception.Message + "\n" + stack
     };
     Console.ForegroundColor = ConsoleColor.Red;
     Log($"Error in " + cmd + ": " + exception.Message, guild);
