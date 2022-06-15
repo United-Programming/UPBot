@@ -10,18 +10,21 @@ public class TagBase : Entity {
   [Comment] public string Author;
   [Comment] public long ColorOfTheme;
   [Comment] public DateTime timeOfCreation;
+  [Comment] public string thumbnailLink;
 
   public TagBase() { }
 
-  public TagBase(ulong guild, string topic, string info, string author, int colorOfTheme, DateTime time) {
-    Guild = guild;
-    Topic = topic;
-    Alias1 = null;
-    Alias2 = null;
-    Alias3 = null;
-    Information = info;
-    Author = author;
-    ColorOfTheme = colorOfTheme;
-    timeOfCreation = time;
-  }
+  public TagBase(ulong guild, string topic, string info, string author, int colorOfTheme, DateTime time, string thumbnailLink)
+    {
+        Guild = guild;
+        Topic = topic;
+        Alias1 = null;
+        Alias2 = null;
+        Alias3 = null;
+        Information = info;
+        Author = author;
+        ColorOfTheme = colorOfTheme;
+        timeOfCreation = time;
+        this.thumbnailLink = thumbnailLink;
+    }
 }
