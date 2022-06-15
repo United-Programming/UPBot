@@ -6,41 +6,46 @@ using DSharpPlus.Interactivity.Extensions;
 
 /// <summary>
 /// Command that allows helpers, admins, etc. Add more information in "Help Language" script.
-/// Author: J0nathan550
-/// In commands I comment the condition where bot are checking if user is helper. Please uncomment lines 19,61,127,162,203,264,323,359,394. To bring back this condition
-/// New features: Picking color of text, Author of tag, Date of creation, List sorting. <- (buggy)
+/// Author: J0nathan550, CPU
 /// </summary>
 
 public class SlashTags : ApplicationCommandModule {
   [SlashCommand("tag", "Show the contents of a specific tag (shows all the tags in case no tag is specified)")]
-  public async Task TagCommand(InteractionContext ctx, [Option("tagname", "Tag to be shown")] string? tagname = null) {
+  public async Task TagCommand(InteractionContext ctx, [Option("tagname", "Tag to be shown")] string tagname = null) {
     Utils.LogUserCommand(ctx);
     if (tagname != null) {
       try {
-
         TagBase tag = FindTag(ctx.Guild.Id, tagname.Trim(), true);
-        DiscordEmbedBuilder embed = new();
+        //DiscordEmbedBuilder embed = new();
+        var builder = new DiscordEmbedBuilder();
         if (tag.ColorOfTheme == discordColors.Length) {
           int randomnumber = rand.Next(0, discordColors.Length);
-          embed.Color = discordColors[randomnumber];
+          builder.Color = discordColors[randomnumber];
         }
         else {
-          embed.Color = discordColors[tag.ColorOfTheme];
+          builder.Color = discordColors[tag.ColorOfTheme];
         }
-        embed.Timestamp = tag.timeOfCreation;
-
+        builder.Timestamp = tag.timeOfCreation;
+        if(tag.thumbnailLink != null) { 
+            //builder.Thumbnail.Url = tag.thumbnailLink;
+            builder.Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+            {
+                Url = $"{tag.thumbnailLink}"
+            };
+        }
+        else { }
         if (tag != null) {
-          embed.Title = tag.Topic;
+          builder.Title = tag.Topic;
           string descr = "";
           if (tag.Alias3 != null) descr += $"Aliases: _**{CleanName(tag.Alias1)}**_, _**{CleanName(tag.Alias2)}**_, _**{CleanName(tag.Alias3)}**_\n";
           else if (tag.Alias2 != null) descr += $"Aliases: _**{CleanName(tag.Alias1)}**_, _**{CleanName(tag.Alias2)}**_\n";
           else if (tag.Alias1 != null) descr += $"Alias: _**{CleanName(tag.Alias1)}**_\n";
           descr += $"Author: **{tag.Author}**\n";
           descr += tag.Information;
-          await ctx.CreateResponseAsync(embed.WithDescription(descr));
+          await ctx.CreateResponseAsync(builder.WithDescription(descr));
         }
         else {
-          await ctx.CreateResponseAsync(embed.WithDescription($"{tagname} tag does not exist."), true);
+          await ctx.CreateResponseAsync(builder.WithDescription($"{tagname} tag does not exist."), true);
         }
       } catch (Exception ex) {
         await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "Tag", ex));
@@ -51,7 +56,7 @@ public class SlashTags : ApplicationCommandModule {
         DiscordEmbedBuilder embed = new();
         string result = "";
         if (Configs.Tags[ctx.Guild.Id].Count == 0) {
-          result = "No tags are defined.  ";
+          result = "No tags are defined. ";
         }
         else {
           int count = 0;
@@ -244,13 +249,13 @@ public class SlashTagsEdit : ApplicationCommandModule {
       if (answer.Result == null) {
         embed.Title = "Time expired!";
         embed.Color = DiscordColor.Red;
-        embed.Description = $"You took too much time to type the tag. :KO:";
+        embed.Description = $"You took too much time to type the tag.";
         embed.Timestamp = DateTime.Now;
         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
         return;
       }
 
-      TagBase tagBase = new(ctx.Guild.Id, tagname, answer.Result.Content, "Unknown", 35, DateTime.Now); // creating line inside of database
+      TagBase tagBase = new(ctx.Guild.Id, tagname, answer.Result.Content, "Unknown", 22, DateTime.Now, null); // creating line inside of database
       Database.Add(tagBase); // adding information to base
       Configs.Tags[ctx.Guild.Id].Add(tagBase);
 
@@ -297,7 +302,6 @@ public class SlashTagsEdit : ApplicationCommandModule {
   [SlashCommand("listtags", "Shows all tags")]
   public async Task TagListCommand(InteractionContext ctx) {
     Utils.LogUserCommand(ctx);
-
     try {
       DiscordEmbedBuilder embed = new();
       string result = "";
@@ -305,17 +309,13 @@ public class SlashTagsEdit : ApplicationCommandModule {
         result = "No tags are defined.";
       }
       else {
-        int count = 0;
         foreach (TagBase tag in Configs.Tags[ctx.Guild.Id]) {
-          count++;
           result += $"**{tag.Topic}**";
           if (tag.Alias3 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_, _**{tag.Alias3}**_)";
           else if (tag.Alias2 != null) result += $" (_**{tag.Alias1}**_, _**{tag.Alias2}**_)";
           else if (tag.Alias1 != null) result += $" (_**{tag.Alias1}**_)";
-          if (count < Configs.Tags[ctx.Guild.Id].Count - 1) result += ", \n";
-          else result += "."; //FIXME (CASE,CASE. *CASE); <- result in bot when you listing all tags.
+          result += $",\n";
         }
-        count = 0;
       }
       embed.Title = "List of tags";
       embed.Color = DiscordColor.Blurple;
@@ -462,7 +462,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     }
   }
 
-  [SlashCommand("addauthortotag", "Add author to the tag")]
+  [SlashCommand("addauthor", "Add author to the tag")]
   public async Task TagAddAuthor(InteractionContext ctx, [Option("tagname", "Tag to change the author")] string tagName, [Option("authorname", "Pick author of tag")] string authorName) {
     Utils.LogUserCommand(ctx);
     try {
@@ -480,7 +480,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
       toEdit.Author = authorName.Trim();
       Database.Add(toEdit); // adding information to base
 
-      embed.Title = "Changes accepted";
+      embed.Title = "Changes accepted!";
       embed.Color = DiscordColor.Green;
       embed.Description = $"New author of tag: {tagName.ToUpperInvariant()}, is \n\n{authorName}\n";
       embed.Timestamp = DateTime.Now;
@@ -492,7 +492,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
     }
   }
 
-  [SlashCommand("addcolortotag", "Add color scheme to tag")]
+  [SlashCommand("addcolor", "Add color scheme to tag")]
   public async Task TagColorPicking(InteractionContext ctx, [Option("tagname", "Tag to set the color")] string tagName, [Option("colorName", "just a comment")] TagColorValue? colorName = null) {
     Utils.LogUserCommand(ctx);
     try {
@@ -511,7 +511,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
         toEdit.ColorOfTheme = colorNumber;
         Database.Add(toEdit); // adding information to base
 
-        embed.Title = "Changes accepted";
+        embed.Title = "Changes accepted!";
         embed.Color = DiscordColor.Green;
         embed.Description = $"New color for tag: {tagName.ToUpperInvariant()}, is \n{colorName} {SlashTags.discordColors[colorNumber]} - id {colorNumber}.";
         if (colorNumber == SlashTags.discordColors.Length)
@@ -531,6 +531,85 @@ public class SlashTagsEdit : ApplicationCommandModule {
       }
     } catch (Exception ex) {
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagColor", ex));
+    }
+  }
+  [SlashCommand("addthumbnail", "Add thumbnail image to tag")]
+  public async Task TagThumbnailPicking(InteractionContext ctx, [Option("tagname", "Tag that will have thumbnail")] string tagName, [Option("Thumbnail","Link of image")] string thumbnailLink)
+  {
+    Utils.LogUserCommand(ctx);
+    try
+    {
+      DiscordEmbedBuilder embed = new();
+      TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, tagName, false);
+      if (toEdit == null) {
+        embed.Title = "Tag does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{tagName}` does not exist!";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+        toEdit.thumbnailLink = thumbnailLink;
+        Database.Add(toEdit); // adding information to base
+
+        var builder = new DiscordEmbedBuilder {
+         Title = "Changes accepted!",
+         Color = DiscordColor.Green,
+         Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail {
+          Url = $"{thumbnailLink}"
+         },
+        Description = "Tails on the coin!\n" +
+        $"New Thumbnail link for tag: {tagName}, is \n{thumbnailLink}.",
+        Timestamp = DateTime.Now
+       };
+        await ctx.CreateResponseAsync(builder);
+    }
+    catch (Exception ex)
+    {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagThumbnail", ex));
+    }
+  }
+  
+  [SlashCommand("removethumbnail", "Remove thumbnail image from tag")]
+  public async Task TagThumbnailRemoving(InteractionContext ctx, [Option("tagname", "Tag with thumbnail")] string tagName)
+  {
+    Utils.LogUserCommand(ctx);
+    try
+    {
+      DiscordEmbedBuilder embed = new();
+      TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, tagName, false);
+      if (toEdit == null) {
+        embed.Title = "Tag does not exist!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"The tag `{tagName}` does not exist!";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+      if (toEdit.thumbnailLink == null || toEdit.thumbnailLink == "")
+      {
+        embed.Title = "Tag does not have any Thumbnail!";
+        embed.Color = DiscordColor.Red;
+        embed.Description = $"Tag does not have any Thumbnail!";
+        embed.Timestamp = DateTime.Now;
+        await ctx.CreateResponseAsync(embed, true);
+        return;
+      }
+      toEdit.thumbnailLink = null;
+      Database.Add(toEdit); // adding information to base
+      
+      var builder = new DiscordEmbedBuilder()
+      {
+          Title = "Thumbnail Removed!",
+          Color = DiscordColor.Green,
+          Description = $"Removed Thumbnail from: **'{tagName}'**!",
+          Timestamp = DateTime.Now,
+      };
+      await ctx.CreateResponseAsync(builder);
+    }
+    catch (Exception ex)
+    {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagThumbnail", ex));
     }
   }
 
