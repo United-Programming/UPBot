@@ -517,7 +517,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
         if (colorNumber == SlashTags.discordColors.Length)
           embed.Description = $"New color for tag: {tagName.ToUpperInvariant()}, is \n_random color_ (id {colorNumber}).";
         else
-        embed.Timestamp = DateTime.Now;
+          embed.Timestamp = DateTime.Now;
 
         await ctx.CreateResponseAsync(embed);
       }
@@ -533,12 +533,10 @@ public class SlashTagsEdit : ApplicationCommandModule {
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagColor", ex));
     }
   }
-  [SlashCommand("addthumbnail", "Add thumbnail image to tag")]
-  public async Task TagThumbnailPicking(InteractionContext ctx, [Option("tagname", "Tag that will have thumbnail")] string tagName, [Option("Thumbnail","Link of image")] string thumbnailLink)
-  {
+  [SlashCommand("addthumbnail", "Add a thumbnail image to the tag")]
+  public async Task TagThumbnailPicking(InteractionContext ctx, [Option("tagname", "Tag to add the thumbnail")] string tagName, [Option("Thumbnail", "Link to image")] string thumbnailLink) {
     Utils.LogUserCommand(ctx);
-    try
-    {
+    try {
       DiscordEmbedBuilder embed = new();
       TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, tagName, false);
       if (toEdit == null) {
@@ -549,33 +547,29 @@ public class SlashTagsEdit : ApplicationCommandModule {
         await ctx.CreateResponseAsync(embed, true);
         return;
       }
-        toEdit.thumbnailLink = thumbnailLink;
-        Database.Add(toEdit); // adding information to base
+      toEdit.thumbnailLink = thumbnailLink;
+      Database.Add(toEdit); // adding information to base
 
-        var builder = new DiscordEmbedBuilder {
-         Title = "Changes accepted!",
-         Color = DiscordColor.Green,
-         Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail {
+      var builder = new DiscordEmbedBuilder {
+        Title = "Changes accepted!",
+        Color = DiscordColor.Green,
+        Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail {
           Url = $"{thumbnailLink}"
-         },
+        },
         Description = "Tails on the coin!\n" +
-        $"New Thumbnail link for tag: {tagName}, is \n{thumbnailLink}.",
+      $"New Thumbnail link for tag: {tagName}, is \n{thumbnailLink}.",
         Timestamp = DateTime.Now
-       };
-        await ctx.CreateResponseAsync(builder);
-    }
-    catch (Exception ex)
-    {
+      };
+      await ctx.CreateResponseAsync(builder);
+    } catch (Exception ex) {
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagThumbnail", ex));
     }
   }
-  
-  [SlashCommand("removethumbnail", "Remove thumbnail image from tag")]
-  public async Task TagThumbnailRemoving(InteractionContext ctx, [Option("tagname", "Tag with thumbnail")] string tagName)
-  {
+
+  [SlashCommand("removethumbnail", "Remove the thumbnail image from the tag")]
+  public async Task TagThumbnailRemoving(InteractionContext ctx, [Option("tagname", "Tag with thumbnail")] string tagName) {
     Utils.LogUserCommand(ctx);
-    try
-    {
+    try {
       DiscordEmbedBuilder embed = new();
       TagBase toEdit = SlashTags.FindTag(ctx.Guild.Id, tagName, false);
       if (toEdit == null) {
@@ -586,8 +580,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
         await ctx.CreateResponseAsync(embed, true);
         return;
       }
-      if (toEdit.thumbnailLink == null || toEdit.thumbnailLink == "")
-      {
+      if (toEdit.thumbnailLink == null || toEdit.thumbnailLink == "") {
         embed.Title = "Tag does not have any Thumbnail!";
         embed.Color = DiscordColor.Red;
         embed.Description = $"Tag does not have any Thumbnail!";
@@ -597,18 +590,15 @@ public class SlashTagsEdit : ApplicationCommandModule {
       }
       toEdit.thumbnailLink = null;
       Database.Add(toEdit); // adding information to base
-      
-      var builder = new DiscordEmbedBuilder()
-      {
-          Title = "Thumbnail Removed!",
-          Color = DiscordColor.Green,
-          Description = $"Removed Thumbnail from: **'{tagName}'**!",
-          Timestamp = DateTime.Now,
+
+      var builder = new DiscordEmbedBuilder() {
+        Title = "Thumbnail Removed!",
+        Color = DiscordColor.Green,
+        Description = $"Removed Thumbnail from: **'{tagName}'**!",
+        Timestamp = DateTime.Now,
       };
       await ctx.CreateResponseAsync(builder);
-    }
-    catch (Exception ex)
-    {
+    } catch (Exception ex) {
       await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "TagThumbnail", ex));
     }
   }
