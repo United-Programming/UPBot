@@ -81,7 +81,7 @@ public class SlashRefactor : ApplicationCommandModule {
         return;
       }
 
-      lang = GetCodeBlock(msg.Content, lang, out string code);
+      lang = GetCodeBlock(msg.Content, lang, true, out string code);
 
       EmojiEnum langEmoji = EmojiEnum.None;
       string lmd = "";
@@ -137,7 +137,7 @@ public class SlashRefactor : ApplicationCommandModule {
     }
   }
 
-  private Langs GetCodeBlock(string content, Langs lang, out string code) {
+  private Langs GetCodeBlock(string content, Langs lang, bool removeEmtpyLines, out string code) {
     // Find if we have a code block, and (in case) also a closing codeblock
     string writtenLang = null;
     code = content;
@@ -158,7 +158,9 @@ public class SlashRefactor : ApplicationCommandModule {
       cbPos = code.IndexOf("```");
       if (cbPos != -1) code = code[..(cbPos - 1)].Trim(' ', '\t', '\r', '\n');
     }
-    code = emptyLines.Replace(code, "\n");
+    if (removeEmtpyLines) {
+      code = emptyLines.Replace(code, "\n");
+    }
     if (writtenLang != null) { // Do another best match with the given language
       Langs bl = Langs.NONE;
       switch (writtenLang.ToLowerInvariant()) {
@@ -211,7 +213,7 @@ public class SlashRefactor : ApplicationCommandModule {
       }
 
 
-      lang = GetCodeBlock(msg.Content, lang, out string code);
+      lang = GetCodeBlock(msg.Content, lang, true, out string code);
 
       EmojiEnum langEmoji = EmojiEnum.None;
       string lmd = "";
@@ -526,4 +528,91 @@ public class SlashRefactor : ApplicationCommandModule {
     public int wPy; // Weight for Python
     public int wUn; // Weight for Unity
   }
+
+
+  [SlashCommand("addlinenumbers", "Grabs a some and adds line numbers before")]
+  public async Task AddLineNumbers(InteractionContext ctx, [Option("Member", "The user that posted the code")] DiscordUser user = null) {
+    // Checks the language of some code posted
+    Utils.LogUserCommand(ctx);
+
+    try {
+      // Get last post that looks like code
+      DiscordMessage msg = null;
+      Langs lang = Langs.NONE;
+      ulong usrId = user == null ? 0 : user.Id;
+      IReadOnlyList<DiscordMessage> msgs = await ctx.Channel.GetMessagesAsync(50);
+      for (int i = 0; i < msgs.Count; i++) {
+        DiscordMessage m = msgs[i];
+        if (usrId != 0 && m.Author.Id != usrId) continue;
+        lang = GetBestMatch(m.Content, out _, out _, out _, out _, out _, out _);
+        if (lang != Langs.NONE) {
+          msg = m;
+          break;
+        }
+      }
+      if (msg == null) {
+        await ctx.CreateResponseAsync("Cannot find something that looks like code.");
+        return;
+      }
+
+      lang = GetCodeBlock(msg.Content, lang, false, out string srccode);
+      string lmd = "";
+      switch (lang) {
+        case Langs.cs: lmd = "cs"; break;
+        case Langs.Unity: lmd = "cs"; break;
+        case Langs.js: lmd = "js"; break;
+        case Langs.cpp: lmd = "cpp"; break;
+        case Langs.java: lmd = "java"; break;
+        case Langs.python: lmd = "python"; break;
+      }
+
+      string[] codelines = srccode.Split('\n');
+      string code = "```" + lmd + "\n";
+
+      for (int i = 0; i < codelines.Length; i++) {
+        string ln = (i + 1).ToString();
+        if (i + 1 < 10) ln = " " + ln;
+        if (i + 1 < 100) ln = " " + ln;
+        code += ln + " " + codelines[i] + "\n";
+      }
+      code += "```";
+
+      if (code.Length < 1990) { // Single message
+        await ctx.CreateResponseAsync(code);
+        DiscordMessage replacement = await ctx.GetOriginalResponseAsync();
+        try {
+          await replacement.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.AutoRefactored));
+        } catch (Exception e) {
+          Utils.Log("Cannot add an emoji: " + e.Message, ctx.Guild.Name);
+        }
+      }
+      else { // Split in multiple messages
+        bool first = true;
+        while (code.Length > 1995) {
+          int newlinePos = code.LastIndexOf('\n', 1995);
+          string codepart = code[..newlinePos].Trim(' ', '\t', '\r', '\n') + "\n```";
+          code = "```" + lmd + "\n" + code[(newlinePos + 1)..].Trim('\r', '\n');
+          if (first) {
+            first = false;
+            await ctx.CreateResponseAsync(codepart);
+          }
+          else {
+            await ctx.Channel.SendMessageAsync(codepart);
+          }
+        }
+        // Post the last part as is
+        DiscordMessage replacement = await ctx.Channel.SendMessageAsync(code);
+        try {
+          await replacement.CreateReactionAsync(Utils.GetEmoji(EmojiEnum.AutoRefactored));
+        } catch (Exception e) {
+          Utils.Log("Cannot add an emoji: " + e.Message, ctx.Guild.Name);
+        }
+      }
+
+    } catch (Exception ex) {
+      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "AddLineNumbers", ex));
+    }
+  }
+
+
 }
