@@ -556,8 +556,7 @@ public class SlashTagsEdit : ApplicationCommandModule {
         Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail {
           Url = $"{thumbnailLink}"
         },
-        Description = "Tails on the coin!\n" +
-      $"New Thumbnail link for tag: {tagName}, is \n{thumbnailLink}.",
+        Description = $"New Thumbnail link for tag: {tagName}, is \n{thumbnailLink}.",
         Timestamp = DateTime.Now
       };
       await ctx.CreateResponseAsync(builder);
