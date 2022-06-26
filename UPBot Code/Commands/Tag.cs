@@ -40,7 +40,8 @@ public class SlashTags : ApplicationCommandModule {
           if (tag.Alias3 != null) descr += $"Aliases: _**{CleanName(tag.Alias1)}**_, _**{CleanName(tag.Alias2)}**_, _**{CleanName(tag.Alias3)}**_\n";
           else if (tag.Alias2 != null) descr += $"Aliases: _**{CleanName(tag.Alias1)}**_, _**{CleanName(tag.Alias2)}**_\n";
           else if (tag.Alias1 != null) descr += $"Alias: _**{CleanName(tag.Alias1)}**_\n";
-          descr += $"Author: **{tag.Author}**\n";
+          if (!string.IsNullOrWhiteSpace(tag.Author))
+            descr += $"Author: **{tag.Author}**\n\n";
           descr += tag.Information;
           await ctx.CreateResponseAsync(builder.WithDescription(descr));
         }
