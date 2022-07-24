@@ -6,6 +6,7 @@ using DSharpPlus;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code.DiscordRPC;
 
 namespace UPBot {
   class Program {
@@ -59,6 +60,7 @@ namespace UPBot {
 
         Utils.Log("Utils.InitClient", null);
         Utils.InitClient(client);
+
 
         Database.InitDb(new List<Type>{
           typeof(SpamProtection), typeof(Timezone), typeof(AdminRole), typeof(TrackChannel), typeof(TagBase), typeof(SpamLink)
@@ -238,6 +240,7 @@ namespace UPBot {
       client.MessageUpdated += async (s, e) => { await CheckSpam.CheckMessageUpdate(s, e); };
       Console.ForegroundColor = ConsoleColor.White;
 
+
       Console.ForegroundColor = ConsoleColor.Yellow;
       Utils.Log("Tracking", null);
       Console.ForegroundColor = ConsoleColor.White;
@@ -246,6 +249,11 @@ namespace UPBot {
       Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("--->>> Bot ready <<<---", null);
       Console.ForegroundColor = ConsoleColor.White;
+
+      Utils.Log("DiscordRichPresence", null);
+      DiscordStatus discordStatus = new DiscordStatus();
+      await discordStatus.DiscordUpdateStatusFunction(client);
+
     }
   }
 }
