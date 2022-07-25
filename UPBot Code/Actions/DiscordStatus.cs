@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -9,33 +10,44 @@ using DSharpPlus.Entities;
 /// author: J0nathan550
 /// </summary>
 
-namespace UPBot.UPBot_Code.DiscordRPC
-{
-    public class DiscordStatus
-    {
-        private List<string> activityStatusString = new List<string>();
-        private List<int> activityTypeInt = new List<int>();
-        public async Task DiscordUpdateStatusFunction(DiscordClient client)
-        {
-            activityStatusString.Add("at you!"); activityTypeInt.Add(1);
-            activityStatusString.Add("for all users!"); activityTypeInt.Add(1);
-            activityStatusString.Add("coding algorithms!"); activityTypeInt.Add(0);
-            activityStatusString.Add("solving problems"); activityTypeInt.Add(4);
-            activityStatusString.Add("programming tutorials"); activityTypeInt.Add(3);
-            activityStatusString.Add("sounds in my head"); activityTypeInt.Add(2);
-
-            Random random = new Random();
-            int num = random.Next(0, activityStatusString.Count);
-
-            if (activityTypeInt[num] == 0) await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.Playing));
-            else if (activityTypeInt[num] == 1) await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.Watching));
-            else if (activityTypeInt[num] == 2) await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.ListeningTo));
-            else if (activityTypeInt[num] == 3) await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.Streaming));
-            else if (activityTypeInt[num] == 4) await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.Competing));
-            else await client.UpdateStatusAsync(new DiscordActivity(activityStatusString[num], ActivityType.Playing));
-
-            await Task.Delay(TimeSpan.FromMinutes(5));
-            await DiscordUpdateStatusFunction(client);
-        }
+namespace UPBot.DiscordRPC {
+  public class DiscordStatus {
+    struct ActivityStatus {
+      public string status;
+      public ActivityType type;
     }
+
+    async static void DiscordUpdateStatusFunction(DiscordClient client, CancellationToken token) {
+      List<ActivityStatus> activityStatusString = new() {
+        new() { type = ActivityType.Playing, status = "Visual Studio to code algorithms!" },
+        new() { type = ActivityType.Playing, status = "a random game" },
+        new() { type = ActivityType.Streaming, status = "the whole life" },
+        new() { type = ActivityType.Streaming, status = "a bunch of solution" },
+        new() { type = ActivityType.Streaming, status = "programming tutorials" },
+        new() { type = ActivityType.ListeningTo, status = "Ode to Joy" },
+        new() { type = ActivityType.ListeningTo, status = "your complaints" },
+        new() { type = ActivityType.ListeningTo, status = "sounds in my head" },
+        new() { type = ActivityType.Watching, status = "you!" },
+        new() { type = ActivityType.Watching, status = "all users" },
+        new() { type = ActivityType.Watching, status = "for nitro fakes" },
+        new() { type = ActivityType.Watching, status = "to reformat code" },
+        new() { type = ActivityType.Competing, status = "with other bots" }
+      };
+
+      Random random = new();
+      while (!token.IsCancellationRequested) {
+        int activity = random.Next(0, activityStatusString.Count);
+        ActivityStatus activityStatus = activityStatusString[activity];
+
+        await client.UpdateStatusAsync(new DiscordActivity(activityStatus.status, activityStatus.type));
+
+        await Task.Delay(TimeSpan.FromSeconds(60 + random.Next(0, 180)), token);
+      }
+    }
+
+    internal static void Start(DiscordClient client) {
+      Task statusUpdateTask = new(() => DiscordUpdateStatusFunction(client, new CancellationToken()));
+      statusUpdateTask.Start();
+    }
+  }
 }
