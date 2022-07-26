@@ -13,6 +13,7 @@ namespace UPBot {
 
     static void Main(string[] args) {
       if (args.Length != 2) {
+        Console.Title = $"UPBot {Utils.GetVersion()}";
         Console.ForegroundColor = ConsoleColor.Red;
         Utils.Log("You have to specify the bot token as first parameter and the logs path as second parameter!", null);
         return;
@@ -239,15 +240,14 @@ namespace UPBot {
       client.MessageCreated += async (s, e) => { await CheckSpam.CheckMessageCreate(s, e); };
       client.MessageUpdated += async (s, e) => { await CheckSpam.CheckMessageUpdate(s, e); };
       Console.ForegroundColor = ConsoleColor.White;
-
-      Utils.Log("DiscordRichPresence", null);
-      DiscordStatus.Start(client);
-
-
+      
       Console.ForegroundColor = ConsoleColor.Yellow;
       Utils.Log("Tracking", null);
       Console.ForegroundColor = ConsoleColor.White;
 
+      Utils.Log("DiscordRichPresence", null);
+      DiscordStatus.Start(client);
+      
       client.GuildCreated += Configs.NewGuildAdded;
       Console.ForegroundColor = ConsoleColor.Green;
       Utils.Log("--->>> Bot ready <<<---", null);
