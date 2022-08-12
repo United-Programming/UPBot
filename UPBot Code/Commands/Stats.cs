@@ -107,7 +107,7 @@ public class SlashStats : ApplicationCommandModule {
     double days = (DateTime.Now - g.CreationTimestamp.UtcDateTime).TotalDays;
     e.AddField("Server created", (int)days + " days ago", true);
     double dailyms = m2 / days;
-    e.AddField("Daily mebers", dailyms.ToString("N1") + " members per day", true);
+    e.AddField("Daily members", dailyms.ToString("N1") + " members per day", true);
 
     e.WithTitle("Stats for " + g.Name);
     e.WithThumbnail(g.IconUrl);
