@@ -616,7 +616,7 @@ namespace UPBot {
       builder.AddComponents(actions);
 
       actions = new List<DiscordButtonComponent> {
-      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectbl", "Manage Balck List", false, er),
+      new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectbl", "Manage Black List", false, er),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "idfeatrespamprotectwl", "Manage White List", false, er)
     };
       builder.AddComponents(actions);
