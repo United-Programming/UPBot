@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 using System.Threading.Tasks;
 using System;
 using System.Text.RegularExpressions;
@@ -171,7 +171,9 @@ namespace UPBot {
             if (link.IndexOf(s) != -1) {
               Utils.Log("Removed spam link message from " + author.Username + ", matched a custom spam link.\noriginal link: " + msg, guild.Name);
               DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + ", matched a custom spam link.\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
+              DiscordMember authorMember = (DiscordMember)author;
               await message.DeleteAsync("Spam link from " + author.Username);
+              await authorMember.TimeoutAsync(DateTimeOffset.Now.AddDays(1), $"You was sending scam links in {guild.Name}, if you think bot was wrong, and mute you for no reason, please contact staff.");
               Utils.DeleteDelayed(10000, warning).Wait();
               return;
             }
@@ -211,5 +213,4 @@ namespace UPBot {
       }
     }
   }
-
 }
