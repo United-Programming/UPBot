@@ -173,7 +173,7 @@ namespace UPBot {
               DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + ", matched a custom spam link.\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
               DiscordMember authorMember = (DiscordMember)author;
               await message.DeleteAsync("Spam link from " + author.Username);
-              await authorMember.TimeoutAsync(DateTimeOffset.Now.AddDays(1), $"You was sending scam links in {guild.Name}, if you think bot was wrong, and mute you for no reason, please contact staff.");
+              await authorMember.TimeoutAsync(DateTimeOffset.Now.AddDays(0.5), $"You are timed-out because sending scam links in {guild.Name}, if you think the bot was wrong, and you are muted for no reason, please contact the staff.");
               Utils.DeleteDelayed(10000, warning).Wait();
               return;
             }

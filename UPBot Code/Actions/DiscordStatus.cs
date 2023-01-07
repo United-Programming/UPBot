@@ -21,17 +21,24 @@ namespace UPBot.DiscordRPC {
       List<ActivityStatus> activityStatusString = new() {
         new() { type = ActivityType.Playing, status = "Visual Studio to code algorithms!" },
         new() { type = ActivityType.Playing, status = "a random game" },
+        new() { type = ActivityType.Playing, status = "happily with my toys" },
         new() { type = ActivityType.Streaming, status = "the whole life" },
         new() { type = ActivityType.Streaming, status = "a bunch of solution" },
         new() { type = ActivityType.Streaming, status = "programming tutorials" },
+        new() { type = ActivityType.Streaming, status = "some lights in the channels" },
         new() { type = ActivityType.ListeningTo, status = "Ode to Joy" },
         new() { type = ActivityType.ListeningTo, status = "your complaints" },
         new() { type = ActivityType.ListeningTo, status = "sounds in my head" },
+        new() { type = ActivityType.ListeningTo, status = "the falling rain" },
         new() { type = ActivityType.Watching, status = "you!" },
         new() { type = ActivityType.Watching, status = "all users" },
         new() { type = ActivityType.Watching, status = "for nitro fakes" },
         new() { type = ActivityType.Watching, status = "to reformat code" },
-        new() { type = ActivityType.Competing, status = "with other bots" }
+        new() { type = ActivityType.Watching, status = "water boil" },
+        new() { type = ActivityType.Watching, status = "grass grow" },
+        new() { type = ActivityType.Competing, status = "with other bots" },
+        new() { type = ActivityType.Competing, status = "performance review" },
+        new() { type = ActivityType.Competing, status = "performance optimization" }
       };
 
       Random random = new();
