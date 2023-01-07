@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 /// "General-purpose" function, which can be needed anywhere.
 /// </summary>
 public static class Utils {
-  public const int vmajor = 0, vminor = 3, vbuild = 3;
+  public const int vmajor = 0, vminor = 3, vbuild = 4;
   public const char vrev = ' ';
   public static string LogsFolder = "./";
   public readonly static System.Diagnostics.StackTrace sttr = new();
