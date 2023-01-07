@@ -49,7 +49,7 @@ namespace UPBot {
         var client = new DiscordClient(new DiscordConfiguration() {
           Token = token, // token has to be passed as parameter
           TokenType = TokenType.Bot, // We are a bot
-          Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers
+          Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents
         });
 
         Utils.Log("Use interactivity", null);
