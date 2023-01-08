@@ -275,465 +275,205 @@ public class SlashGame : ApplicationCommandModule {
     }
   }
 
-  private enum TicTacToe_GameStates {
-    Idle,
-    Playing
+
+  private string PrintBoard(int[] grid) {
+    string board = "";
+    for (int y = 0; y < 3; y++) {
+      for (int x = 0; x < 3; x++) {
+        int pos = x + 3 * y;
+        if (grid[pos] == 1) board += ":o:";
+        else if (grid[pos] == 2) board += ":x:";
+        else board += ":black_large_square:";
+        board += "¹²³⁴⁵⁶⁷⁸⁹"[pos];
+      }
+      board += "\n";
+    }
+    return board;
   }
-  public enum TicTacToe_Decision {
-    [ChoiceName("With Player")] None = -1,
-    [ChoiceName("With Bot")] WithBot = 0
-  }
-  private TicTacToe_GameStates gameStates = TicTacToe_GameStates.Idle;
-  private bool xSide = true;
-  private bool withBot = false;
-  private int[] ticTacToeGrid = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // x  x  x
-                                                               // x  x  x
-                                                               // x  x  x 
+
+
   [SlashCommand("tictactoe", "Play Tic-Tac-Toe game with someone or aganinst the bot.")]
-  public async Task TicTacToeGame(InteractionContext ctx, [Option("options", "Choose how you want to play. With bot, or With Player.")] TicTacToe_Decision? decision = null) {
-    // fix two issues with options where you can't interact with them.
-    DiscordEmbedBuilder message = new();
-    if (decision == TicTacToe_Decision.WithBot) {
-      gameStates = TicTacToe_GameStates.Playing;
-      message.Title = "Tic-Tac-Toe Game";
-      message.Description = "**Playing with the bot!**\nType a number between 1 and 9 to make a move.\n" +
-          "\n" +
-          ":black_large_square::black_large_square::black_large_square:\r\n:black_large_square::black_large_square::black_large_square:\r\n:black_large_square::black_large_square::black_large_square:"; ;
-      message.Timestamp = DateTime.Now;
-      message.Color = DiscordColor.Red;
-      await ctx.CreateResponseAsync(message.Build());
-      withBot = true;
-    }
-    if (gameStates != TicTacToe_GameStates.Playing) {
-      gameStates = TicTacToe_GameStates.Playing;
-      message.Title = "Tic-Tac-Toe Game";
-      message.Description = "Type a number between 1 and 9 to make a move.\n" +
-          "\n" +
-          ":black_large_square::black_large_square::black_large_square:\r\n:black_large_square::black_large_square::black_large_square:\r\n:black_large_square::black_large_square::black_large_square:";
-      message.Timestamp = DateTime.Now;
-      message.Color = DiscordColor.Red;
-      await ctx.CreateResponseAsync(message.Build());
-    }
+  public async Task TicTacToeGame(InteractionContext ctx, [Option("opponent", "Select a Discord user to play with (keep empty to play with the bot)")] DiscordUser opponent = null) {
+    Utils.LogUserCommand(ctx);
+    int[] grid = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    DiscordMember player = ctx.Member;
+    bool oMoves = true;
+
     var interact = ctx.Client.GetInteractivity();
-    var answer = await interact.WaitForMessageAsync((dm) => {
-      return (withBot ? dm.Channel == ctx.Channel : dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-    }, TimeSpan.FromMinutes(5));
 
-    if (answer.Result == null) {
-      message.Title = "Time expired!";
-      message.Color = DiscordColor.Red;
-      message.Description = $"You took too much time to type your move. Game is ended!";
-      message.Timestamp = DateTime.Now;
-      gameStates = TicTacToe_GameStates.Idle;
-      await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message)); // // ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
-      return;
-    }
-    if (!withBot) {
-      if (answer.Result.Content == "1" && xSide && ticTacToeGrid[0] == 0) {
-        ticTacToeGrid[0] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "2" && xSide && ticTacToeGrid[1] == 0) {
-        ticTacToeGrid[1] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "3" && xSide && ticTacToeGrid[2] == 0) {
-        ticTacToeGrid[2] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "4" && xSide && ticTacToeGrid[3] == 0) {
-        ticTacToeGrid[3] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "5" && xSide && ticTacToeGrid[4] == 0) {
-        ticTacToeGrid[4] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "6" && xSide && ticTacToeGrid[5] == 0) {
-        ticTacToeGrid[5] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "7" && xSide && ticTacToeGrid[6] == 0) {
-        ticTacToeGrid[6] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "8" && xSide && ticTacToeGrid[7] == 0) {
-        ticTacToeGrid[7] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "9" && xSide && ticTacToeGrid[8] == 0) {
-        ticTacToeGrid[8] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "1" && !xSide && ticTacToeGrid[0] == 0) {
-        ticTacToeGrid[0] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "2" && !xSide && ticTacToeGrid[1] == 0) {
-        ticTacToeGrid[1] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "3" && !xSide && ticTacToeGrid[2] == 0) {
-        ticTacToeGrid[2] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "4" && !xSide && ticTacToeGrid[3] == 0) {
-        ticTacToeGrid[3] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "5" && !xSide && ticTacToeGrid[4] == 0) {
-        ticTacToeGrid[4] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "6" && !xSide && ticTacToeGrid[5] == 0) {
-        ticTacToeGrid[5] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "7" && !xSide && ticTacToeGrid[6] == 0) {
-        ticTacToeGrid[6] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "8" && !xSide && ticTacToeGrid[7] == 0) {
-        ticTacToeGrid[7] = 2;
-        xSide = true;
-      }
-      else if (answer.Result.Content == "9" && !xSide && ticTacToeGrid[8] == 0) {
-        ticTacToeGrid[8] = 2;
-        xSide = true;
-      }
-    }
-    else {
-      if (answer.Result.Content == "1" && xSide && ticTacToeGrid[0] == 0) {
-        ticTacToeGrid[0] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "2" && xSide && ticTacToeGrid[1] == 0) {
-        ticTacToeGrid[1] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "3" && xSide && ticTacToeGrid[2] == 0) {
-        ticTacToeGrid[2] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "4" && xSide && ticTacToeGrid[3] == 0) {
-        ticTacToeGrid[3] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "5" && xSide && ticTacToeGrid[4] == 0) {
-        ticTacToeGrid[4] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "6" && xSide && ticTacToeGrid[5] == 0) {
-        ticTacToeGrid[5] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "7" && xSide && ticTacToeGrid[6] == 0) {
-        ticTacToeGrid[6] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "8" && xSide && ticTacToeGrid[7] == 0) {
-        ticTacToeGrid[7] = 1;
-        xSide = false;
-      }
-      else if (answer.Result.Content == "9" && xSide && ticTacToeGrid[8] == 0) {
-        ticTacToeGrid[8] = 1;
-        xSide = false;
-      }
-      BotPick();
-    }
+    // Game loop
+    try {
+      bool firstMessage = true;
+      while (true) {
+        // Print the board
 
-    message.Title = "Tic-Tac-Toe Game";
-    string ticTacToeMessage = "";
-    for (int i = 0; i < ticTacToeGrid.Length; i++) {
-      if (ticTacToeGrid[i] == 0) {
-        if (i == 2 || i == 5 || i == 8) {
-          ticTacToeMessage += ":black_large_square:\r\n";
-          continue;
+        DiscordEmbedBuilder message = new();
+        if (opponent == null) {
+          message.Title = "Tic-Tac-Toe Game";
+          if (oMoves) message.Description = $"**Playing with the bot!**\n{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n{PrintBoard(grid)}";
+          // no need to print the board for the bot
+          message.Timestamp = DateTime.Now;
+          message.Color = DiscordColor.Red;
         }
-        ticTacToeMessage += ":black_large_square:";
-      }
-      else if (ticTacToeGrid[i] == 1) {
-        if (i == 2 || i == 5 || i == 8) {
-          ticTacToeMessage += ":x:\r\n";
-          continue;
+        else {
+          if (oMoves) message.Description = $"**Playing with {opponent.Mention}**\n{opponent.Username}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
+          else message.Description = $"**Playing with {opponent.Mention}**\n{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
+          message.Title = "Tic-Tac-Toe Game";
+          message.Timestamp = DateTime.Now;
+          message.Color = DiscordColor.Red;
         }
-        ticTacToeMessage += ":x:";
-      }
-      else if (ticTacToeGrid[i] == 2) {
-        if (i == 2 || i == 5 || i == 8) {
-          ticTacToeMessage += ":o:\r\n";
-          continue;
+        if (firstMessage) {
+          await ctx.CreateResponseAsync(message.Build());
+          firstMessage = false;
         }
-        ticTacToeMessage += ":o:";
-      }
-    }
-    message.Description = message.Title = "Tic-Tac-Toe Game";
-    message.Description = "Type a number between 1 and 9 to make a move.\n" +
-        "\n" +
-        $"{ticTacToeMessage}"; ;
-    message.Timestamp = DateTime.Now;
-    message.Color = DiscordColor.Red;
-    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-    await CheckWin(ticTacToeGrid, ctx);
-  }
+        else {
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+        }
 
-  private void BotPick() {
-    // Check if the center is used, if not pick it.
-    if (ticTacToeGrid[4] == 0) {
-      ticTacToeGrid[4] = 2;
-      xSide = true;
-      return;
-    }
+        if (oMoves || opponent != null) { // Get the answer from the current user
+          var answer = await interact.WaitForMessageAsync((dm) => {
+            return (opponent == null || !oMoves ?
+              dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id : dm.Channel == ctx.Channel && dm.Author.Id == opponent.Id
+            );
+          }, TimeSpan.FromMinutes(5));
 
-    // Check if there are at least 2 positions in sequence, in case block it
-    for (int c = 0; c < 3; c++) {
-      int r = 3 * c;
-      if (ticTacToeGrid[0 + r] == 1 && ticTacToeGrid[1 + r] == 1 && ticTacToeGrid[2 + r] == 0) {
-        ticTacToeGrid[2 + r] = 2;
-        xSide = true;
-        return;
-      }
-      if (ticTacToeGrid[0 + r] == 1 && ticTacToeGrid[1 + r] == 0 && ticTacToeGrid[2 + r] == 1) {
-        ticTacToeGrid[1 + r] = 2;
-        xSide = true;
-        return;
-      }
-      if (ticTacToeGrid[0 + r] == 0 && ticTacToeGrid[1 + r] == 1 && ticTacToeGrid[2 + r] == 1) {
-        ticTacToeGrid[0 + r] = 2;
-        xSide = true;
-        return;
-      }
+          if (answer.Result == null) {
+            message.Title = "Time expired!";
+            message.Color = DiscordColor.Red;
+            message.Description = $"You took too much time to type your move. Game is ended!";
+            message.Timestamp = DateTime.Now;
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+            return;
+          }
 
-      if (ticTacToeGrid[c] == 0 && ticTacToeGrid[c + 3] == 1 && ticTacToeGrid[c + 6] == 1) {
-        ticTacToeGrid[c] = 2;
-        xSide = true;
-        return;
-      }
-      if (ticTacToeGrid[c] == 1 && ticTacToeGrid[c + 3] == 0 && ticTacToeGrid[c + 6] == 1) {
-        ticTacToeGrid[c + 3] = 2;
-        xSide = true;
-        return;
-      }
-      if (ticTacToeGrid[c] == 1 && ticTacToeGrid[c + 3] == 1 && ticTacToeGrid[c + 6] == 0) {
-        ticTacToeGrid[c + 6] = 2;
-        xSide = true;
-        return;
-      }
-    }
-    if (ticTacToeGrid[0] == 1 && ticTacToeGrid[4] == 1 && ticTacToeGrid[8] == 0) {
-      ticTacToeGrid[8] = 2;
-      xSide = true;
-      return;
-    }
-    if (ticTacToeGrid[0] == 1 && ticTacToeGrid[4] == 0 && ticTacToeGrid[8] == 1) {
-      ticTacToeGrid[4] = 2;
-      xSide = true;
-      return;
-    }
-    if (ticTacToeGrid[0] == 0 && ticTacToeGrid[4] == 1 && ticTacToeGrid[8] == 1) {
-      ticTacToeGrid[0] = 2;
-      xSide = true;
-      return;
-    }
-    if (ticTacToeGrid[2] == 1 && ticTacToeGrid[4] == 1 && ticTacToeGrid[6] == 0) {
-      ticTacToeGrid[6] = 2;
-      xSide = true;
-      return;
-    }
-    if (ticTacToeGrid[2] == 1 && ticTacToeGrid[4] == 0 && ticTacToeGrid[6] == 1) {
-      ticTacToeGrid[4] = 2;
-      xSide = true;
-      return;
-    }
-    if (ticTacToeGrid[2] == 0 && ticTacToeGrid[4] == 1 && ticTacToeGrid[6] == 1) {
-      ticTacToeGrid[2] = 2;
-      xSide = true;
-      return;
-    }
-    // Pick a random position
-    int times = 0;
-    Random rand = new();
-    while (times < 1000) { // Just to avoid problems
-      times++;
-      int bot_pick = rand.Next(0, 9);
-      for (int i = 0; i < ticTacToeGrid.Length; i++) {
-        if (ticTacToeGrid[bot_pick] == 0) {
-          ticTacToeGrid[bot_pick] = 2;
-          xSide = true;
+          if (int.TryParse(answer.Result.Content, out var cell)) {
+            if (cell < 1 || cell > 9) continue;
+            cell--;
+            if (grid[cell] != 0) continue;
+
+            grid[cell] = oMoves ? 1 : 2;
+          }
+          else continue;
+
+        }
+        else { // Bot move
+          BotPick(grid);
+        }
+
+        // Check victory
+        bool oWins = false;
+        bool xWins = false;
+        for (int i = 0; i < 3 && !oWins && !xWins; i++) {
+          if (grid[i * 3 + 0] == 1 && grid[i * 3 + 1] == 1 && grid[i * 3 + 2] == 1) { oWins = true; break; }
+          if (grid[i * 3 + 0] == 2 && grid[i * 3 + 1] == 2 && grid[i * 3 + 2] == 2) { oWins = true; break; }
+        }
+        for (int i = 0; i < 3 && !oWins && !xWins; i++) {
+          if (grid[0 * 3 + i] == 1 && grid[1 * 3 + i] == 1 && grid[2 * 3 + i] == 1) { oWins = true; break; }
+          if (grid[0 * 3 + i] == 2 && grid[1 * 3 + i] == 2 && grid[2 * 3 + i] == 2) { oWins = true; break; }
+        }
+        if (grid[0] == 1 && grid[4] == 1 && grid[8] == 1) { oWins = true; break; }
+        if (grid[2] == 1 && grid[4] == 1 && grid[6] == 1) { oWins = true; break; }
+        if (grid[0] == 2 && grid[4] == 2 && grid[8] == 2) { oWins = true; break; }
+        if (grid[2] == 2 && grid[4] == 2 && grid[6] == 2) { oWins = true; break; }
+
+
+        if (oWins) {
+          message.Title = $"Tic-Tac-Toe Game: :o: ({(opponent == null ? player.Username : opponent.Username)}) Wins!";
+          message.Description = "**Game is ended!**";
+          message.Color = DiscordColor.Red;
+          message.Timestamp = DateTime.Now;
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
           return;
         }
+        if (xWins) {
+          if (opponent == null) message.Title = $"Tic-Tac-Toe Game: :x: (Bot) Wins!";
+          else message.Title = $"Tic-Tac-Toe Game: :x: ({player.Username}) Wins!";
+          message.Description = "**Game is ended!**";
+          message.Color = DiscordColor.Red;
+          message.Timestamp = DateTime.Now;
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          return;
+        }
+
+        // Draw?
+        bool draw = true;
+        for (int i = 0; i < 9; i++) {
+          if (grid[i] == 0) {
+            draw = false;
+            break;
+          }
+        }
+        if (draw) {
+          message.Title = "Tic-Tac-Toe Game: Draw!";
+          message.Description = "**Game is ended!**";
+          message.Color = DiscordColor.Red;
+          message.Timestamp = DateTime.Now;
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          return;
+        }
+
+
+        // Make the other one move
+        oMoves = !oMoves;
       }
+    } catch (Exception) {
     }
   }
 
-  private async Task CheckWin(int[] grid, InteractionContext ctx) {
-    DiscordEmbedBuilder message = new DiscordEmbedBuilder();
-    for (int i = 0; i < grid.Length; i++) {
-      if (gameStates == TicTacToe_GameStates.Idle) {
-        return;
-      }
-      if (ticTacToeGrid[0] != 0 && ticTacToeGrid[1] != 0 && ticTacToeGrid[2] != 0 && ticTacToeGrid[3] != 0 && ticTacToeGrid[4] != 0 && ticTacToeGrid[5] != 0 && ticTacToeGrid[6] != 0 && ticTacToeGrid[7] != 0 && ticTacToeGrid[8] != 0) {
-        message.Title = "Tic-Tac-Toe Game: Draw!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 1 && grid[1] == 1 && grid[2] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[3] == 1 && grid[4] == 1 && grid[5] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[6] == 1 && grid[7] == 1 && grid[8] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 1 && grid[3] == 1 && grid[6] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[1] == 1 && grid[4] == 1 && grid[7] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[2] == 1 && grid[5] == 1 && grid[8] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 1 && grid[4] == 1 && grid[8] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[2] == 1 && grid[4] == 1 && grid[6] == 1) {
-        message.Title = "Tic-Tac-Toe Game: :x: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 2 && grid[1] == 2 && grid[2] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[3] == 2 && grid[4] == 2 && grid[5] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[6] == 2 && grid[7] == 2 && grid[8] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 2 && grid[3] == 2 && grid[6] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[1] == 2 && grid[4] == 2 && grid[7] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[2] == 2 && grid[5] == 2 && grid[8] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[0] == 2 && grid[4] == 2 && grid[8] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      else if (grid[3] == 2 && grid[4] == 2 && grid[6] == 2) {
-        message.Title = "Tic-Tac-Toe Game: :o: Wins!";
-        message.Description = "**Game is ended!**";
-        message.Color = DiscordColor.Red;
-        message.Timestamp = DateTime.Now;
-        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
-        CleanStats();
-        return;
-      }
-      await TicTacToeGame(ctx);
+  private void BotPick(int[] grid) {
+    int pos = -1;
+
+    // Check if the center is used, if not pick it.
+    if (grid[4] == 0) {
+      grid[4] = 2;
+      return;
     }
-  }
-  private void CleanStats() {
-    xSide = true;
-    for (int i = 0; i < ticTacToeGrid.Length; i++) {
-      ticTacToeGrid[i] = 0;
+
+
+
+
+    // Check if there are at least 2 positions in sequence, in case block it or win it
+    for (int c = 0; c < 3 && pos == -1; c++) {
+      int r = 3 * c;
+      if (grid[0 + r] == 0 && grid[1 + r] == 2 && grid[2 + r] == 2) pos = r;
+      if (grid[0 + r] == 2 && grid[1 + r] == 0 && grid[2 + r] == 2) pos = r + 1;
+      if (grid[0 + r] == 2 && grid[1 + r] == 2 && grid[2 + r] == 0) pos = r + 2;
+
+      if (grid[0 + r] == 0 && grid[1 + r] == 1 && grid[2 + r] == 1) pos = r;
+      if (grid[0 + r] == 1 && grid[1 + r] == 0 && grid[2 + r] == 1) pos = r + 1;
+      if (grid[0 + r] == 1 && grid[1 + r] == 1 && grid[2 + r] == 0) pos = r + 2;
+
+      if (grid[c] == 0 && grid[c + 3] == 2 && grid[c + 6] == 2) pos = c;
+      if (grid[c] == 2 && grid[c + 3] == 0 && grid[c + 6] == 2) pos = c + 3;
+      if (grid[c] == 2 && grid[c + 3] == 2 && grid[c + 6] == 0) pos = c + 6;
+
+      if (grid[c] == 0 && grid[c + 3] == 1 && grid[c + 6] == 1) pos = c;
+      if (grid[c] == 1 && grid[c + 3] == 0 && grid[c + 6] == 1) pos = c + 3;
+      if (grid[c] == 1 && grid[c + 3] == 1 && grid[c + 6] == 0) pos = c + 6;
     }
-    gameStates = TicTacToe_GameStates.Idle;
-    withBot = false;
+    if (pos == -1 && grid[0] == 2 && grid[4] == 2 && grid[8] == 0) pos = 8;
+    if (pos == -1 && grid[0] == 2 && grid[4] == 0 && grid[8] == 2) pos = 4;
+    if (pos == -1 && grid[0] == 0 && grid[4] == 2 && grid[8] == 2) pos = 0;
+    if (pos == -1 && grid[2] == 2 && grid[4] == 2 && grid[6] == 0) pos = 6;
+    if (pos == -1 && grid[2] == 2 && grid[4] == 0 && grid[6] == 2) pos = 4;
+    if (pos == -1 && grid[2] == 0 && grid[4] == 2 && grid[6] == 2) pos = 2;
+
+    if (pos == -1 && grid[0] == 1 && grid[4] == 1 && grid[8] == 0) pos = 8;
+    if (pos == -1 && grid[0] == 1 && grid[4] == 0 && grid[8] == 1) pos = 4;
+    if (pos == -1 && grid[0] == 0 && grid[4] == 1 && grid[8] == 1) pos = 0;
+    if (pos == -1 && grid[2] == 1 && grid[4] == 1 && grid[6] == 0) pos = 6;
+    if (pos == -1 && grid[2] == 1 && grid[4] == 0 && grid[6] == 1) pos = 4;
+    if (pos == -1 && grid[2] == 0 && grid[4] == 1 && grid[6] == 1) pos = 2;
+
+    if (pos == -1) { // Pick a random position
+      int times = 0;
+      Random rand = new();
+      while (times < 1000) { // Just to avoid problems
+        times++;
+        pos = rand.Next(0, 9);
+        if (grid[pos] == 0) break;
+      }
+    }
+    grid[pos] = 2;
   }
 }

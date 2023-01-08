@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils {
   public const int vmajor = 0, vminor = 3, vbuild = 4;
-  public const char vrev = ' ';
+  public const char vrev = 'b';
   public static string LogsFolder = "./";
   public readonly static System.Diagnostics.StackTrace sttr = new();
 
@@ -37,7 +37,7 @@ public static class Utils {
   readonly private static Dictionary<string, LogInfo> logs = new();
 
   public static string GetVersion() {
-    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2023/01/07";
+    return vmajor + "." + vminor + "." + vbuild + vrev + " - 2023/01/08";
   }
 
   public static DiscordClient GetClient() {
