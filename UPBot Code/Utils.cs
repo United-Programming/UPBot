@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 /// </summary>
 public static class Utils {
   public const int vmajor = 0, vminor = 3, vbuild = 4;
-  public const char vrev = 'b';
+  public const char vrev = 'c';
   public static string LogsFolder = "./";
   public readonly static System.Diagnostics.StackTrace sttr = new();
 

@@ -38,6 +38,8 @@ namespace UPBot {
         return;
       }
 
+      SlashGame.CleanupTicTacToe(); // Remove all games ruiing when starting the setup
+
       if (command == null || command == SetupCommandItem.Show) await HandleSetupInteraction(ctx, gid);
       else if (command == SetupCommandItem.List) await ctx.CreateResponseAsync(GenerateSetupList(g, gid));
       else if (command == SetupCommandItem.Save) {

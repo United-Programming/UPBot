@@ -291,6 +291,10 @@ public class SlashGame : ApplicationCommandModule {
     return board;
   }
 
+  static List<ulong> tttPlayers = new();
+  public static void CleanupTicTacToe() {
+    tttPlayers.Clear();
+  }
 
   [SlashCommand("tictactoe", "Play Tic-Tac-Toe game with someone or aganinst the bot.")]
   public async Task TicTacToeGame(InteractionContext ctx, [Option("opponent", "Select a Discord user to play with (keep empty to play with the bot)")] DiscordUser opponent = null) {
@@ -303,31 +307,71 @@ public class SlashGame : ApplicationCommandModule {
 
     // Game loop
     try {
-      bool firstMessage = true;
+      bool firstDone = false;
+      DiscordEmbedBuilder message = new();
+      if (opponent == null || opponent.Id == Utils.GetClient().CurrentUser.Id || opponent.Id == ctx.Member.Id) {
+        if (tttPlayers.Contains(ctx.Member.Id)) {
+          message.Title = $"You are already playing Tic-Tac-Toe!\n{player.DisplayName}";
+          message.Color = DiscordColor.Red;
+          await ctx.CreateResponseAsync(message.Build());
+          return;
+        }
+        tttPlayers.Add(ctx.Member.Id);
+      }
+      else {
+        if (tttPlayers.Contains(ctx.Member.Id)) {
+          message.Title = $"You are already playing Tic-Tac-Toe!\n{player.DisplayName}";
+          message.Color = DiscordColor.Red;
+          await ctx.CreateResponseAsync(message.Build());
+          return;
+        }
+        if (tttPlayers.Contains(opponent.Id)) {
+          message.Title = $"{opponent.Username} is already playing Tic-Tac-Toe!";
+          message.Color = DiscordColor.Red;
+          await ctx.CreateResponseAsync(message.Build());
+          return;
+        }
+        tttPlayers.Add(opponent.Id);
+        tttPlayers.Add(ctx.Member.Id);
+
+        message.Description = $"**Playing with {opponent.Mention}**";
+        message.Title = $"Tic-Tac-Toe Game {player.DisplayName}/{opponent.Username}";
+        message.Timestamp = DateTime.Now;
+        message.Color = DiscordColor.Red;
+        await ctx.CreateResponseAsync(message.Build());
+        firstDone = true;
+      }
+
+
+      DiscordMessage board = null;
       while (true) {
+
         // Print the board
 
-        DiscordEmbedBuilder message = new();
-        if (opponent == null) {
-          message.Title = "Tic-Tac-Toe Game";
-          if (oMoves) message.Description = $"**Playing with the bot!**\n{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n{PrintBoard(grid)}";
+        message = new();
+        if (opponent == null || opponent.Id == Utils.GetClient().CurrentUser.Id || opponent.Id == ctx.Member.Id) {
+          message.Title = $"Tic-Tac-Toe Game {player.DisplayName}/Bot";
+          if (oMoves) message.Description = $"{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n{PrintBoard(grid)}";
           // no need to print the board for the bot
           message.Timestamp = DateTime.Now;
           message.Color = DiscordColor.Red;
         }
         else {
-          if (oMoves) message.Description = $"**Playing with {opponent.Mention}**\n{opponent.Username}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
-          else message.Description = $"**Playing with {opponent.Mention}**\n{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
-          message.Title = "Tic-Tac-Toe Game";
+          if (oMoves) message.Description = $"{opponent.Username}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
+          else message.Description = $"{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
+          message.Title = $"Tic-Tac-Toe Game {player.DisplayName}/{opponent.Username}";
           message.Timestamp = DateTime.Now;
           message.Color = DiscordColor.Red;
         }
-        if (firstMessage) {
-          await ctx.CreateResponseAsync(message.Build());
-          firstMessage = false;
-        }
-        else {
-          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+        if (oMoves || (opponent != null && opponent.Id != Utils.GetClient().CurrentUser.Id && opponent.Id != ctx.Member.Id)) {
+          if (board != null) await board.DeleteAsync();
+
+          if (firstDone)
+            board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          else {
+            await ctx.CreateResponseAsync(message.Build());
+            firstDone = true;
+          }
         }
 
         if (oMoves || opponent != null) { // Get the answer from the current user
@@ -335,14 +379,20 @@ public class SlashGame : ApplicationCommandModule {
             return (opponent == null || !oMoves ?
               dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id : dm.Channel == ctx.Channel && dm.Author.Id == opponent.Id
             );
-          }, TimeSpan.FromMinutes(5));
+          }, TimeSpan.FromMinutes(1));
 
           if (answer.Result == null) {
-            message.Title = "Time expired!";
-            message.Color = DiscordColor.Red;
-            message.Description = $"You took too much time to type your move. Game is ended!";
-            message.Timestamp = DateTime.Now;
-            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+            message = new() {
+              Title = "Time expired!",
+              Color = DiscordColor.Red,
+              Description = $"You took too much time to type your move. Game is ended!",
+              Timestamp = DateTime.Now
+            };
+            if (board != null) await board.DeleteAsync();
+            board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+
+            if (opponent!=null) tttPlayers.Remove(opponent.Id);
+            tttPlayers.Remove(ctx.Member.Id);
             return;
           }
 
@@ -364,34 +414,61 @@ public class SlashGame : ApplicationCommandModule {
         bool oWins = false;
         bool xWins = false;
         for (int i = 0; i < 3 && !oWins && !xWins; i++) {
-          if (grid[i * 3 + 0] == 1 && grid[i * 3 + 1] == 1 && grid[i * 3 + 2] == 1) { oWins = true; break; }
-          if (grid[i * 3 + 0] == 2 && grid[i * 3 + 1] == 2 && grid[i * 3 + 2] == 2) { oWins = true; break; }
+          if (grid[i * 3 + 0] == 1 && grid[i * 3 + 1] == 1 && grid[i * 3 + 2] == 1) {
+            oWins = true;
+            break;
+          }
+          if (grid[i * 3 + 0] == 2 && grid[i * 3 + 1] == 2 && grid[i * 3 + 2] == 2) {
+            xWins = true;
+            break;
+          }
         }
         for (int i = 0; i < 3 && !oWins && !xWins; i++) {
-          if (grid[0 * 3 + i] == 1 && grid[1 * 3 + i] == 1 && grid[2 * 3 + i] == 1) { oWins = true; break; }
-          if (grid[0 * 3 + i] == 2 && grid[1 * 3 + i] == 2 && grid[2 * 3 + i] == 2) { oWins = true; break; }
+          if (grid[0 * 3 + i] == 1 && grid[1 * 3 + i] == 1 && grid[2 * 3 + i] == 1) {
+            oWins = true;
+            break;
+          }
+          if (grid[0 * 3 + i] == 2 && grid[1 * 3 + i] == 2 && grid[2 * 3 + i] == 2) {
+            xWins = true;
+            break;
+          }
         }
-        if (grid[0] == 1 && grid[4] == 1 && grid[8] == 1) { oWins = true; break; }
-        if (grid[2] == 1 && grid[4] == 1 && grid[6] == 1) { oWins = true; break; }
-        if (grid[0] == 2 && grid[4] == 2 && grid[8] == 2) { oWins = true; break; }
-        if (grid[2] == 2 && grid[4] == 2 && grid[6] == 2) { oWins = true; break; }
-
+        if (grid[0] == 1 && grid[4] == 1 && grid[8] == 1) {
+          oWins = true;
+        }
+        if (grid[2] == 1 && grid[4] == 1 && grid[6] == 1) {
+          oWins = true;
+        }
+        if (grid[0] == 2 && grid[4] == 2 && grid[8] == 2) {
+          xWins = true;
+        }
+        if (grid[2] == 2 && grid[4] == 2 && grid[6] == 2) {
+          xWins = true;
+        }
 
         if (oWins) {
-          message.Title = $"Tic-Tac-Toe Game: :o: ({(opponent == null ? player.Username : opponent.Username)}) Wins!";
-          message.Description = "**Game is ended!**";
-          message.Color = DiscordColor.Red;
-          message.Timestamp = DateTime.Now;
-          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          message = new() {
+            Title = $"Tic-Tac-Toe Game: :o: ({(opponent == null ? player.Username : opponent.Username)}) Wins!",
+            Description = $"**Game is ended!**\n\n{PrintBoard(grid)}",
+            Color = DiscordColor.Red,
+            Timestamp = DateTime.Now
+          };
+          if (board != null) await board.DeleteAsync();
+          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          if (opponent != null) tttPlayers.Remove(opponent.Id);
+          tttPlayers.Remove(ctx.Member.Id);
           return;
         }
         if (xWins) {
-          if (opponent == null) message.Title = $"Tic-Tac-Toe Game: :x: (Bot) Wins!";
-          else message.Title = $"Tic-Tac-Toe Game: :x: ({player.Username}) Wins!";
-          message.Description = "**Game is ended!**";
+          message = new();
+          message.Title = ((opponent == null) ? $"Tic-Tac-Toe Game: :x: (Bot) Wins!" : $"Tic-Tac-Toe Game: :x: ({player.Username}) Wins!");
+          message.Description = $"**Game is ended!**\n\n{PrintBoard(grid)}";
           message.Color = DiscordColor.Red;
           message.Timestamp = DateTime.Now;
-          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          if (board != null) await board.DeleteAsync();
+          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          if (opponent != null) tttPlayers.Remove(opponent.Id);
+          tttPlayers.Remove(ctx.Member.Id);
           return;
         }
 
@@ -404,11 +481,16 @@ public class SlashGame : ApplicationCommandModule {
           }
         }
         if (draw) {
-          message.Title = "Tic-Tac-Toe Game: Draw!";
-          message.Description = "**Game is ended!**";
-          message.Color = DiscordColor.Red;
-          message.Timestamp = DateTime.Now;
-          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          message = new() {
+            Title = "Tic-Tac-Toe Game: Draw!",
+            Description = $"**Game is ended!**\n\n{PrintBoard(grid)}",
+            Color = DiscordColor.Red,
+            Timestamp = DateTime.Now
+          };
+          if (board != null) await board.DeleteAsync();
+          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          if (opponent != null) tttPlayers.Remove(opponent.Id);
+          tttPlayers.Remove(ctx.Member.Id);
           return;
         }
 
@@ -416,7 +498,8 @@ public class SlashGame : ApplicationCommandModule {
         // Make the other one move
         oMoves = !oMoves;
       }
-    } catch (Exception) {
+    } catch (Exception ex) {
+      Utils.Log(ex.Message, null);
     }
   }
 
@@ -468,7 +551,7 @@ public class SlashGame : ApplicationCommandModule {
     if (pos == -1) { // Pick a random position
       int times = 0;
       Random rand = new();
-      while (times < 1000) { // Just to avoid problems
+      while (times < 100) { // Just to avoid problems
         times++;
         pos = rand.Next(0, 9);
         if (grid[pos] == 0) break;
