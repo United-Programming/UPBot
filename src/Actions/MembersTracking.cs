@@ -3,6 +3,8 @@ using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UPBot.UPBot_Code;
+using UPBot.UPBot_Code.DataClasses;
 
 namespace UPBot {
   public class MembersTracking {
@@ -12,7 +14,7 @@ namespace UPBot {
       try {
         TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
         if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
-        if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+        tracking ??= new Dictionary<ulong, DateTime>();
 
         int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
         if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
@@ -46,7 +48,7 @@ namespace UPBot {
       try {
         TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
         if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
-        if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+        tracking ??= new Dictionary<ulong, DateTime>();
 
         tracking[args.Member.Id] = DateTime.Now;
         _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
@@ -62,7 +64,7 @@ namespace UPBot {
       try {
         TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
         if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackRoles) return;
-        if (tracking == null) tracking = new Dictionary<ulong, DateTime>();
+        tracking ??= new Dictionary<ulong, DateTime>();
 
         IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
         IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
@@ -79,11 +81,10 @@ namespace UPBot {
           }
           if (addedRole) rolesAdded.Add(r1);
         }
-        string msgC;
-        string msgL;
+
         if (rolesBefore.Count > 0 && rolesAdded.Count > 0) {
-          msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
-          msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+          var msgC = "User " + args.Member.Mention + " has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
+          var msgL = "User \"" + args.Member.DisplayName + "\" has the new role" + (rolesAdded.Count > 1 ? "s:" : ":");
           foreach (DiscordRole r in rolesAdded) {
             msgC += r.Mention;
             msgL += r.Name;

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
 using System.Collections.Generic;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// Provide some server stats
@@ -96,11 +97,11 @@ public class SlashStats : ApplicationCommandModule {
     int? m1 = g.ApproximateMemberCount;
     int m2 = g.MemberCount;
     int? m3 = g.MaxMembers;
-    string members = (m1 == null) ? m2.ToString() : (m1 + "/" + m2 + "/" + m3 + "max");
+    string members = m1 == null ? m2.ToString() : m1 + "/" + m2 + "/" + m3 + "max";
     e.AddField("Members", members + (g.IsLarge ? " (large)" : ""), true);
     int? p1 = g.ApproximatePresenceCount;
     int? p2 = g.MaxPresences;
-    if (p1 != null) e.AddField("Presence", p1.ToString() + (p2 != null ? "/" + p2 : ""), true);
+    if (p1 != null) e.AddField("Presence", p1 + (p2 != null ? "/" + p2 : ""), true);
     int? s1 = g.PremiumSubscriptionCount;
     if (s1 != null) e.AddField("Boosters", s1.ToString(), true);
 
@@ -120,17 +121,16 @@ public class SlashStats : ApplicationCommandModule {
       else numtc++;
     }
 
-    if (g.IsNSFW) e.AddField("NSFW", "NSFW server\nFilter level: " + g.ExplicitContentFilter.ToString() + "\nNSFW restriction type: " + g.NsfwLevel.ToString(), true);
+    if (g.IsNSFW) e.AddField("NSFW", "NSFW server\nFilter level: " + g.ExplicitContentFilter + "\nNSFW restriction type: " + g.NsfwLevel, true);
 
     e.AddField("Roles:", g.Roles.Count + " roles", true);
 
     e.AddField("Cannels", numtc + " text, " + numvc + " voice" + (numnc > 0 ? ", " + numnc + " nsfw" : "") +
       (g.SystemChannel == null ? "" : "\nSystem channel: " + g.SystemChannel.Mention) +
-      (g.RulesChannel == null ? "" : "\nRules channel: " + g.RulesChannel.Mention), false);
+      (g.RulesChannel == null ? "" : "\nRules channel: " + g.RulesChannel.Mention));
 
-    string emojis;
     if (g.Emojis.Count > 0) {
-      emojis = g.Emojis.Count + " custom emojis: ";
+      var emojis = g.Emojis.Count + " custom emojis: ";
       foreach (var emj in g.Emojis.Values) emojis += Utils.GetEmojiSnowflakeID(emj) + " ";
       e.AddField("Emojis:", emojis, true);
     }
@@ -152,7 +152,7 @@ public class SlashStats : ApplicationCommandModule {
     }
     List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
-    list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+    list.Sort((a, b) => b.Value.CompareTo(a.Value));
 
     string res = "\n_Used emojis_: used " + list.Count + " different emojis(as reactions):\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {
@@ -182,7 +182,7 @@ public class SlashStats : ApplicationCommandModule {
     }
     List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
-    list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+    list.Sort((a, b) => b.Value.CompareTo(a.Value));
 
     List<KeyValuePair<string, int>> listask = new();
     foreach (var k in askers.Keys) {
@@ -190,7 +190,7 @@ public class SlashStats : ApplicationCommandModule {
       if (u == null) continue;
       listask.Add(new KeyValuePair<string, int>(u.Username, askers[k]));
     }
-    listask.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+    listask.Sort((a, b) => b.Value.CompareTo(a.Value));
 
     string res = "\n_Mentioned users_: " + list.Count + " users have been mentioned:\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {
@@ -227,7 +227,7 @@ public class SlashStats : ApplicationCommandModule {
     }
     List<KeyValuePair<string, int>> list = new();
     foreach (var k in count.Keys) list.Add(new KeyValuePair<string, int>(k, count[k]));
-    list.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+    list.Sort((a, b) => b.Value.CompareTo(a.Value));
 
     List<KeyValuePair<string, int>> listask = new();
     foreach (var k in askers.Keys) {
@@ -235,7 +235,7 @@ public class SlashStats : ApplicationCommandModule {
       if (u == null) continue;
       listask.Add(new KeyValuePair<string, int>(u.Username, askers[k]));
     }
-    listask.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+    listask.Sort((a, b) => b.Value.CompareTo(a.Value));
 
     string res = "\n_Mentioned roles_: " + list.Count + " roles have been mentioned:\n  ";
     for (int i = 0; i < 25 && i < list.Count; i++) {

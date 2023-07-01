@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command will delete the last x messages

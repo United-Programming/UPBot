@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System.Text.RegularExpressions;
 using DSharpPlus;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// Command used to refactor as codeblock some code pasted by a user
@@ -38,15 +39,16 @@ namespace UPBot {
           DiscordMessage m = msgs[i];
           if (usrId != 0 && m.Author.Id != usrId) continue;
           Langs lang = GetBestMatch(m.Content, out int weightCs, out int weightCp, out int weightJv, out int weightJs, out int weightPy, out int weightUn);
-          string guessed = "no one";
-          switch (lang) {
-            case Langs.cs: guessed = "<:csharp:831465428214743060> C#"; break;
-            case Langs.js: guessed = "<:Javascript:876103767068647435> Javascript"; break;
-            case Langs.cpp: guessed = "<:cpp:831465408874676273> C++"; break;
-            case Langs.java: guessed = "<:java:875852276017815634> Java"; break;
-            case Langs.python: guessed = "<:python:831465381016895500> Python"; break;
-            case Langs.Unity: guessed = "<:Unity:968043486379143168> Unity C#"; break;
-          }
+          string guessed = lang switch
+          {
+            Langs.cs => "<:csharp:831465428214743060> C#",
+            Langs.js => "<:Javascript:876103767068647435> Javascript",
+            Langs.cpp => "<:cpp:831465408874676273> C++",
+            Langs.java => "<:java:875852276017815634> Java",
+            Langs.python => "<:python:831465381016895500> Python",
+            Langs.Unity => "<:Unity:968043486379143168> Unity C#",
+            _ => "no one"
+          };
           string usrname = user == null ? "last code" : user.Username + "'s code";
           await ctx.CreateResponseAsync($"Best guess for the language in {usrname} is: {guessed}\nC# = {weightCs}  C++ = {weightCp}  Java = {weightJv}  Javascript = {weightJs}  Python = {weightPy}  Unity C# = {weightUn}");
         }
@@ -149,7 +151,7 @@ namespace UPBot {
         if (nl != '\r' && nl != '\r') { // We have a possible language
           int nlPos1 = code.IndexOf('\n');
           int nlPos2 = code.IndexOf('\r');
-          int pos = (nlPos1 != -1) ? nlPos1 : -1;
+          int pos = nlPos1 != -1 ? nlPos1 : -1;
           if (nlPos2 != -1 && (nlPos2 < pos || pos == -1)) pos = nlPos2;
           if (pos != -1) {
             writtenLang = code[..pos].Trim(' ', '\t', '\r', '\n');
@@ -162,27 +164,30 @@ namespace UPBot {
       if (removeEmtpyLines) {
         code = emptyLines.Replace(code, "\n");
       }
-      if (writtenLang != null) { // Do another best match with the given language
-        Langs bl = Langs.NONE;
-        switch (writtenLang.ToLowerInvariant()) {
-          case "ph": bl = Langs.python; break;
-          case "phy": bl = Langs.python; break;
-          case "phyton": bl = Langs.python; break;
-          case "pt": bl = Langs.python; break;
-          case "c": bl = Langs.cpp; break;
-          case "c++": bl = Langs.cpp; break;
-          case "cp": bl = Langs.cpp; break;
-          case "cpp": bl = Langs.cpp; break;
-          case "cs": bl = Langs.cs; break;
-          case "csharp": bl = Langs.cs; break;
-          case "c#": bl = Langs.cs; break;
-          case "jv": bl = Langs.java; break;
-          case "java": bl = Langs.java; break;
-          case "js": bl = Langs.js; break;
-          case "json": bl = Langs.js; break;
-          case "jscript": bl = Langs.js; break;
-          case "javascript": bl = Langs.js; break;
-        }
+      if (writtenLang != null)
+      {
+        // Do another best match with the given language
+        Langs bl = writtenLang.ToLowerInvariant() switch
+        {
+          "ph" => Langs.python,
+          "phy" => Langs.python,
+          "phyton" => Langs.python,
+          "pt" => Langs.python,
+          "c" => Langs.cpp,
+          "c++" => Langs.cpp,
+          "cp" => Langs.cpp,
+          "cpp" => Langs.cpp,
+          "cs" => Langs.cs,
+          "csharp" => Langs.cs,
+          "c#" => Langs.cs,
+          "jv" => Langs.java,
+          "java" => Langs.java,
+          "js" => Langs.js,
+          "json" => Langs.js,
+          "jscript" => Langs.js,
+          "javascript" => Langs.js,
+          _ => Langs.NONE
+        };
         return GetBestMatchWithHint(code, bl);
       }
       return lang;
@@ -440,85 +445,85 @@ namespace UPBot {
     readonly Regex emptyLines = new("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(10));
 
     readonly LangKWord[] keywords = {
-    new LangKWord{regexp = new("getline", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("cin", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("cout", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("endl", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("size_t", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("if\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("for\\s*\\([^;]+;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("for\\s*\\([^:;]+:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("foreach\\s*\\([^;]+in", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                      wCs = 3, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("for_each\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 0, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("while\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("\\.Equals\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 3, wCp = 1, wJv = 3, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("switch\\s*\\([a-z\\s]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                      wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("break;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("[a-z\\)];", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("string\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
-    new LangKWord{regexp = new("int\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
-    new LangKWord{regexp = new("long\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
-    new LangKWord{regexp = new("float\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                             wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 1 },
-    new LangKWord{regexp = new("bool\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 3, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 1 },
-    new LangKWord{regexp = new("boolean\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 0, wCp = 1, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("Vector2\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 3, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Vector3\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 3, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("GameObject\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                        wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("MonoBehaviour", RegexOptions.None, TimeSpan.FromSeconds(10)),                                    wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("ScriptableObject", RegexOptions.None, TimeSpan.FromSeconds(10)),                                 wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Transform\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Rigidbody\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Rigidbody2D\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Quaternion\\.", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Start\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                         wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Awake\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                         wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Update\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("Debug\\.Log\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("OnTriggerEnter\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("OnTriggerEnter2D\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("OnCollisionEnter\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("OnCollisionEnter2D\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                            wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
-    new LangKWord{regexp = new("\\.position", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 2, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("\\.rotation", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("\\.Count", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("\\.Length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("\\.length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 2, wJv = 0, wJs = 3, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("[a-z0-9]\\([^\n]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("\\{.*\\}", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("\\[.*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("#include\\s+[\"<]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("#define\\s+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("[^#]include\\s+[\"<]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("using((?!::).)*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("using unityengine;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 1, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 20 },
-    new LangKWord{regexp = new("using[^;]+::[^;]+;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("std::", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                      wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("[!=]==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("auto", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("public\\s+[a-z0-9<>]+\\s[a-z0-9]+\\s*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),     wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("private\\s+[a-z0-9<>]+\\s[a-z0-9]+\\s*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),    wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
-    new LangKWord{regexp = new("public\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("public:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("private:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("private\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                 wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("\\};", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 2, wJv = 2, wJs = 1, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("let\\s+[a-z0-9_]+\\s*=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                     wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("import\\s[a-z][a-z0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                    wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
-    new LangKWord{regexp = new("'''[\\sa-z0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
-    new LangKWord{regexp = new("for\\s[a-z][a-z0-9]*\\sin.+:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),               wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
-    new LangKWord{regexp = new("print\\(\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                 wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
-    new LangKWord{regexp = new("Console\\.Write", RegexOptions.None, TimeSpan.FromSeconds(10)),                                  wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("console\\.log", RegexOptions.None, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("else:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                      wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 8, wUn = 0 },
-    new LangKWord{regexp = new("\\[(\\s*[0-9]+\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),        wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5, wUn = 0 },
-    new LangKWord{regexp = new("\\[(\\s*\"[^\"]*\"\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),    wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5, wUn = 0 },
-    new LangKWord{regexp = new("while[\\sa-z0-9\\(\\)]+:\\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 5, wUn = 0 },
-    new LangKWord{regexp = new("\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6, wUn = 0 },
-    new LangKWord{regexp = new("\\{.+\"{0,1}[a-z0-9_]+\"{0,1}\\s*:\\s*((\".*\")|[0-9\\.]+)\\s*[,\\}]", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(10)),   wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("System\\.out\\.println", RegexOptions.None, TimeSpan.FromSeconds(10)),                           wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("String\\[\\]", RegexOptions.None, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("\\?\\.", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-    new LangKWord{regexp = new("\\-\\>", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("getline", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("cin", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("cout", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("endl", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("size_t", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("if\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("for\\s*\\([^;]+;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("for\\s*\\([^:;]+:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("foreach\\s*\\([^;]+in", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                      wCs = 3, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("for_each\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 0, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("while\\s*\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("\\.Equals\\(", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 3, wCp = 1, wJv = 3, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("switch\\s*\\([a-z\\s]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                      wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("break;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("[a-z\\)];", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("string\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
+    new() {regexp = new Regex("int\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                               wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
+    new() {regexp = new Regex("long\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 1 },
+    new() {regexp = new Regex("float\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                             wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 1 },
+    new() {regexp = new Regex("bool\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 3, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 1 },
+    new() {regexp = new Regex("boolean\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 0, wCp = 1, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("Vector2\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 3, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Vector3\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 3, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("GameObject\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                        wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("MonoBehaviour", RegexOptions.None, TimeSpan.FromSeconds(10)),                                    wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("ScriptableObject", RegexOptions.None, TimeSpan.FromSeconds(10)),                                 wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Transform\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Rigidbody\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Rigidbody2D\\s+[a-z]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Quaternion\\.", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Start\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                         wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Awake\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                         wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Update\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 3, wCp = 3, wJv = 1, wJs = 1, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("Debug\\.Log\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                   wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("OnTriggerEnter\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                                wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("OnTriggerEnter2D\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("OnCollisionEnter\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                              wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("OnCollisionEnter2D\\(", RegexOptions.None, TimeSpan.FromSeconds(10)),                            wCs = 4, wCp = 3, wJv = 0, wJs = 0, wPy = 0, wUn = 10 },
+    new() {regexp = new Regex("\\.position", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 2, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("\\.rotation", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("\\.Count", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("\\.Length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 2, wCp = 2, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("\\.length", RegexOptions.None, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 2, wJv = 0, wJs = 3, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("[a-z0-9]\\([^\n]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("\\{.*\\}", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 2, wCp = 2, wJv = 2, wJs = 2, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("\\[.*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 1, wCp = 1, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("#include\\s+[\"<]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("#define\\s+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("[^#]include\\s+[\"<]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                       wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("using((?!::).)*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                           wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("using unityengine;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 1, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 20 },
+    new() {regexp = new Regex("using[^;]+::[^;]+;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                         wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("std::", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                      wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("[!=]==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("auto", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("public\\s+[a-z0-9<>]+\\s[a-z0-9]+\\s*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),     wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("private\\s+[a-z0-9<>]+\\s[a-z0-9]+\\s*;", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),    wCs = 9, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 2 },
+    new() {regexp = new Regex("public\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                  wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("public:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("private:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                   wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("private\\s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                 wCs = 1, wCp = 1, wJv = 1, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("\\};", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 2, wJv = 2, wJs = 1, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("let\\s+[a-z0-9_]+\\s*=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                     wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("import\\s[a-z][a-z0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                    wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
+    new() {regexp = new Regex("'''[\\sa-z0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                            wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
+    new() {regexp = new Regex("for\\s[a-z][a-z0-9]*\\sin.+:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),               wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
+    new() {regexp = new Regex("print\\(\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                 wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 4, wUn = 0 },
+    new() {regexp = new Regex("Console\\.Write", RegexOptions.None, TimeSpan.FromSeconds(10)),                                  wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("console\\.log", RegexOptions.None, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("else:", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                      wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 8, wUn = 0 },
+    new() {regexp = new Regex("\\[(\\s*[0-9]+\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),        wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5, wUn = 0 },
+    new() {regexp = new Regex("\\[(\\s*\"[^\"]*\"\\s*\\,{0,1})+\\s*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),    wCs = 0, wCp = 0, wJv = 0, wJs = 4, wPy = 5, wUn = 0 },
+    new() {regexp = new Regex("while[\\sa-z0-9\\(\\)]+:\\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 5, wUn = 0 },
+    new() {regexp = new Regex("\\s*#\\s*[a-z0-9]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                          wCs = 0, wCp = 0, wJv = 0, wJs = 0, wPy = 6, wUn = 0 },
+    new() {regexp = new Regex("\\{.+\"{0,1}[a-z0-9_]+\"{0,1}\\s*:\\s*((\".*\")|[0-9\\.]+)\\s*[,\\}]", RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(10)),   wCs = 0, wCp = 0, wJv = 0, wJs = 9, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("System\\.out\\.println", RegexOptions.None, TimeSpan.FromSeconds(10)),                           wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("String\\[\\]", RegexOptions.None, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("\\?\\.", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
+    new() {regexp = new Regex("\\-\\>", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
   };
 
     public class LangKWord {
@@ -558,15 +563,16 @@ namespace UPBot {
         }
 
         lang = GetCodeBlock(msg.Content, lang, false, out string srccode);
-        string lmd = "";
-        switch (lang) {
-          case Langs.cs: lmd = "cs"; break;
-          case Langs.Unity: lmd = "cs"; break;
-          case Langs.js: lmd = "js"; break;
-          case Langs.cpp: lmd = "cpp"; break;
-          case Langs.java: lmd = "java"; break;
-          case Langs.python: lmd = "python"; break;
-        }
+        string lmd = lang switch
+        {
+          Langs.cs => "cs",
+          Langs.Unity => "cs",
+          Langs.js => "js",
+          Langs.cpp => "cpp",
+          Langs.java => "java",
+          Langs.python => "python",
+          _ => ""
+        };
 
         string[] codelines = srccode.Split('\n');
         string code = "```" + lmd + "\n";

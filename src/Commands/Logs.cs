@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command implements a Logs command.
@@ -25,10 +26,10 @@ public class SlashLogs : ApplicationCommandModule {
     }
 
     List<string> lines = new();
-    using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+    await using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
       using var sr = new StreamReader(fs);
       while (!sr.EndOfStream) {
-        lines.Add(sr.ReadLine());
+        lines.Add(await sr.ReadLineAsync());
       }
     }
 
@@ -56,11 +57,11 @@ public class SlashLogs : ApplicationCommandModule {
       return;
     }
     string logsFolder = Utils.GetLastLogsFolder(ctx.Guild.Name, logs);
-    string outfile = logsFolder[0..^1] + ".zip";
+    string outfile = logsFolder[..^1] + ".zip";
     ZipFile.CreateFromDirectory(logsFolder, outfile);
 
 
-    using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
+    await using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
       await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Zipped log in attachment").AddFile(fs));
     await Utils.DeleteFileDelayed(30, outfile);
     await Utils.DeleteFolderDelayed(30, logsFolder);
@@ -73,10 +74,10 @@ public class SlashLogs : ApplicationCommandModule {
 
     string logsFolder = Utils.GetAllLogsFolder(ctx.Guild.Name);
 
-    string outfile = logsFolder[0..^1] + ".zip";
+    string outfile = logsFolder[..^1] + ".zip";
     ZipFile.CreateFromDirectory(logsFolder, outfile);
 
-    using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
+    await using (FileStream fs = new(outfile, FileMode.Open, FileAccess.Read))
       await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Zipped logs in attachment").AddFile(fs));
     await Utils.DeleteFileDelayed(30, outfile);
     await Utils.DeleteFolderDelayed(30, logsFolder);

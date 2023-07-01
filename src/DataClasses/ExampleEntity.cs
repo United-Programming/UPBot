@@ -1,6 +1,4 @@
-﻿using System;
-
-public class ExampleEntity : Entity {
+﻿public class ExampleEntity : Entity {
   [Key]
   public int id;
   public string name;

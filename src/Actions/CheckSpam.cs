@@ -4,14 +4,16 @@ using System;
 using System.Text.RegularExpressions;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
+using UPBot.UPBot_Code;
+
 /// <summary>
 /// Command used to check for false nitro links and spam links
 /// author: CPU
 /// </summary>
 namespace UPBot {
   public class CheckSpam {
-    readonly static Regex linkRE = new(@"http[s]?://([^/]+)/");
-    readonly static Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
+    static readonly Regex linkRE = new(@"http[s]?://([^/]+)/");
+    static readonly Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
     public static DiscordUser SpamCheckTimeout = null;
     readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
 

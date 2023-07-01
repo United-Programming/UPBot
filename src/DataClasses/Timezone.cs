@@ -1,7 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
-
-public class Timezone : Entity {
+﻿public class Timezone : Entity {
   [Key]
   public ulong User; // Timezones are not related to guilds
   public float UtcOffset;

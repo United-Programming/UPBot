@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
+using UPBot.UPBot_Code;
 
 namespace UPBot {
   /// <summary>
@@ -86,11 +87,10 @@ namespace UPBot {
               if (count < Configs.Tags[ctx.Guild.Id].Count - 1) result += ", \n";
               else result += ".";
             }
-            count = 0;
           }
           embed.Title = "List of tags";
           embed.Color = DiscordColor.Blurple;
-          embed.Description = result[0..^2];
+          embed.Description = result[..^2];
           embed.Timestamp = DateTime.Now;
           await ctx.CreateResponseAsync(embed);
         } catch (Exception ex) {
@@ -154,7 +154,7 @@ namespace UPBot {
     }
 
     readonly Random rand = new();
-    readonly public static DiscordColor[] discordColors = {
+    public static readonly DiscordColor[] discordColors = {
       DiscordColor.Aquamarine,
       DiscordColor.Azure,
       DiscordColor.Blurple,
@@ -243,7 +243,7 @@ namespace UPBot {
               tagname.Equals(topics.Alias3, StringComparison.InvariantCultureIgnoreCase)) {
             embed.Title = "The Tag exists already!";
             embed.Color = DiscordColor.Red;
-            embed.Description = ($"You are trying to add Tag {tagname} that already exists!\nIf you want to edit the Tag use: `tagedit <topic>` - to edit");
+            embed.Description = $"You are trying to add Tag {tagname} that already exists!\nIf you want to edit the Tag use: `tagedit <topic>` - to edit";
             embed.Timestamp = DateTime.Now;
             await ctx.CreateResponseAsync(embed, true);
             return;
@@ -257,9 +257,7 @@ namespace UPBot {
         await ctx.CreateResponseAsync(embed);
 
         var interact = ctx.Client.GetInteractivity();
-        var answer = await interact.WaitForMessageAsync((dm) => {
-          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-        }, TimeSpan.FromMinutes(5));
+        var answer = await interact.WaitForMessageAsync(dm => dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id, TimeSpan.FromMinutes(5));
 
         if (answer.Result == null) {
           embed.Title = "Time expired!";
@@ -275,7 +273,7 @@ namespace UPBot {
 
         embed.Title = "Tag added";
         embed.Color = DiscordColor.Green;
-        embed.Description = ($"The topic: {tagname}, has been created");
+        embed.Description = $"The topic: {tagname}, has been created";
         embed.Timestamp = DateTime.Now;
         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
       } catch (Exception ex) {
@@ -305,7 +303,7 @@ namespace UPBot {
 
         embed.Title = "Topic deleted";
         embed.Color = DiscordColor.DarkRed;
-        embed.Description = ($"Tag `{tagname}` has been deleted by {ctx.Member.DisplayName}");
+        embed.Description = $"Tag `{tagname}` has been deleted by {ctx.Member.DisplayName}";
         embed.Timestamp = DateTime.Now;
         await ctx.CreateResponseAsync(embed, true);
       } catch (Exception ex) {
@@ -333,7 +331,7 @@ namespace UPBot {
         }
         embed.Title = "List of tags";
         embed.Color = DiscordColor.Blurple;
-        embed.Description = result[0..^2];
+        embed.Description = result[..^2];
         embed.Timestamp = DateTime.Now;
         await ctx.CreateResponseAsync(embed);
       } catch (Exception ex) {
@@ -414,19 +412,17 @@ namespace UPBot {
 
         embed.Title = $"Editing {tagname}";
         embed.Color = DiscordColor.Purple;
-        embed.Description = ($"You are editing the {tagname.ToUpperInvariant()}.\nBetter to copy previous text, and edit inside of message.");
+        embed.Description = $"You are editing the {tagname.ToUpperInvariant()}.\nBetter to copy previous text, and edit inside of message.";
         embed.Timestamp = DateTime.Now;
         await ctx.CreateResponseAsync(embed);
 
         var interact = ctx.Client.GetInteractivity();
-        var answer = await interact.WaitForMessageAsync((dm) => {
-          return (dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id);
-        }, TimeSpan.FromMinutes(5));
+        var answer = await interact.WaitForMessageAsync(dm => dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id, TimeSpan.FromMinutes(5));
 
         if (answer.Result == null || string.IsNullOrWhiteSpace(answer.Result.Content)) {
           embed.Title = "Time expired!";
           embed.Color = DiscordColor.Red;
-          embed.Description = ($"You took too much time to answer. :KO:");
+          embed.Description = $"You took too much time to answer. :KO:";
           embed.Timestamp = DateTime.Now;
           await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
           return;
@@ -624,7 +620,7 @@ namespace UPBot {
           await ctx.CreateResponseAsync(embed, true);
           return;
         }
-        if (toEdit.thumbnailLink == null || toEdit.thumbnailLink == "") {
+        if (string.IsNullOrEmpty(toEdit.thumbnailLink)) {
           embed.Title = "Tag does not have any Thumbnail!";
           embed.Color = DiscordColor.Red;
           embed.Description = $"Tag does not have any Thumbnail!";
@@ -693,7 +689,7 @@ namespace UPBot {
           await ctx.CreateResponseAsync(embed, true);
           return;
         }
-        if (toEdit.thumbnailLink == null || toEdit.thumbnailLink == "") {
+        if (string.IsNullOrEmpty(toEdit.thumbnailLink)) {
           embed.Title = "Tag does not have any Thumbnail!";
           embed.Color = DiscordColor.Red;
           embed.Description = $"Tag does not have any Thumbnail!";

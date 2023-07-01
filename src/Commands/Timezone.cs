@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using TimeZoneConverter;
+using UPBot.UPBot_Code;
+
 /// <summary>
 /// This command implements a table for the timezones of the users
 /// Users can define their own timezone and can see the local time of other users that defined the timezone
@@ -203,7 +205,7 @@ namespace UPBot {
           }
         }
       }
-      res.Sort((a, b) => { return b.Score.CompareTo(a.Score); });
+      res.Sort((a, b) => b.Score.CompareTo(a.Score));
 
       if (res.Count == 0) return null;
 

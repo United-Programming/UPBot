@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code;
 
 
 /// <summary>
@@ -123,22 +124,22 @@ public class SlashGame : ApplicationCommandModule {
   enum RPSRes { First, Second, Draw }
   readonly RPSRes[][] rpslsRes = {
     //                                  Rock          Paper         Scissors         Lizard         Spock 
-    /* Rock     */ new RPSRes[] {RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second },
-    /* Paper    */ new RPSRes[] {RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First  },
-    /* Scissors */ new RPSRes[] {RPSRes.Second, RPSRes.First,   RPSRes.Draw,   RPSRes.First,  RPSRes.Second },
-    /* Lizard   */ new RPSRes[] {RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First  },
-    /* Spock    */ new RPSRes[] {RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw   }
+    /* Rock     */ new[] {RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second },
+    /* Paper    */ new[] {RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First  },
+    /* Scissors */ new[] {RPSRes.Second, RPSRes.First,   RPSRes.Draw,   RPSRes.First,  RPSRes.Second },
+    /* Lizard   */ new[] {RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First  },
+    /* Spock    */ new[] {RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw   }
   };
   readonly string[][] rpslsMsgs = {
     //                            Rock                    Paper                     Scissors                        Lizard                          Spock 
-    /* Rock     */ new string[] {"Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"},
-    /* Paper    */ new string[] {"Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock" },
-    /* Scissors */ new string[] {"Rock crushes scissors", "Scissors cuts Paper",    "Draw",                         "Scissors decapitates Lizard",  "Spock smashes Scissors" },
-    /* Lizard   */ new string[] {"Rock crushes Lizard",   "Lizard eats Paper",      "Scissors decapitates Lizard",  "Draw",                         "Lizard poisons Spock"  },
-    /* Spock    */ new string[] {"Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw" }
+    /* Rock     */ new[] {"Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"},
+    /* Paper    */ new[] {"Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock" },
+    /* Scissors */ new[] {"Rock crushes scissors", "Scissors cuts Paper",    "Draw",                         "Scissors decapitates Lizard",  "Spock smashes Scissors" },
+    /* Lizard   */ new[] {"Rock crushes Lizard",   "Lizard eats Paper",      "Scissors decapitates Lizard",  "Draw",                         "Lizard poisons Spock"  },
+    /* Spock    */ new[] {"Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw" }
   };
 
-  static private string GetChoice(RPSLSTypes? move) {
+  private static string GetChoice(RPSLSTypes? move) {
     return move switch {
       RPSLSTypes.Rock => "🪨 Rock",
       RPSLSTypes.Paper => "📄 Paper",
@@ -189,11 +190,15 @@ public class SlashGame : ApplicationCommandModule {
     var result = await interact.WaitForButtonAsync(msg, TimeSpan.FromMinutes(2));
     var interRes = result.Result;
     if (interRes != null) {
-      if (result.Result.Id == "bRock") yourmove = RPSLSTypes.Rock;
-      else if (result.Result.Id == "bPaper") yourmove = RPSLSTypes.Paper;
-      else if (result.Result.Id == "bScissors") yourmove = RPSLSTypes.Scissors;
-      else if (result.Result.Id == "bLizard") yourmove = RPSLSTypes.Lizard;
-      else if (result.Result.Id == "bSpock") yourmove = RPSLSTypes.Spock;
+      yourmove = result.Result.Id switch
+      {
+        "bRock" => RPSLSTypes.Rock,
+        "bPaper" => RPSLSTypes.Paper,
+        "bScissors" => RPSLSTypes.Scissors,
+        "bLizard" => RPSLSTypes.Lizard,
+        "bSpock" => RPSLSTypes.Spock,
+        _ => yourmove
+      };
       string resmsg = rpslsMsgs[(int)yourmove][(int)botChoice];
       switch (rpslsRes[(int)yourmove][(int)botChoice]) {
         case RPSRes.First:
@@ -281,9 +286,12 @@ public class SlashGame : ApplicationCommandModule {
     for (int y = 0; y < 3; y++) {
       for (int x = 0; x < 3; x++) {
         int pos = x + 3 * y;
-        if (grid[pos] == 1) board += ":o:";
-        else if (grid[pos] == 2) board += ":x:";
-        else board += ":black_large_square:";
+        board += grid[pos] switch
+        {
+          1 => ":o:",
+          2 => ":x:",
+          _ => ":black_large_square:"
+        };
         board += "¹²³⁴⁵⁶⁷⁸⁹"[pos];
       }
       board += "\n";
@@ -299,7 +307,7 @@ public class SlashGame : ApplicationCommandModule {
   [SlashCommand("tictactoe", "Play Tic-Tac-Toe game with someone or aganinst the bot.")]
   public async Task TicTacToeGame(InteractionContext ctx, [Option("opponent", "Select a Discord user to play with (keep empty to play with the bot)")] DiscordUser opponent = null) {
     Utils.LogUserCommand(ctx);
-    int[] grid = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int[] grid = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     DiscordMember player = ctx.Member;
     bool oMoves = true;
 
@@ -348,7 +356,7 @@ public class SlashGame : ApplicationCommandModule {
 
         // Print the board
 
-        message = new();
+        message = new DiscordEmbedBuilder();
         if (opponent == null || opponent.Id == Utils.GetClient().CurrentUser.Id || opponent.Id == ctx.Member.Id) {
           message.Title = $"Tic-Tac-Toe Game {player.DisplayName}/Bot";
           if (oMoves) message.Description = $"{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n{PrintBoard(grid)}";
@@ -375,21 +383,19 @@ public class SlashGame : ApplicationCommandModule {
         }
 
         if (oMoves || opponent != null) { // Get the answer from the current user
-          var answer = await interact.WaitForMessageAsync((dm) => {
-            return (opponent == null || !oMoves ?
-              dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id : dm.Channel == ctx.Channel && dm.Author.Id == opponent.Id
-            );
-          }, TimeSpan.FromMinutes(1));
+          var answer = await interact.WaitForMessageAsync(dm => opponent == null || !oMoves ?
+            dm.Channel == ctx.Channel && dm.Author.Id == ctx.Member.Id : dm.Channel == ctx.Channel && dm.Author.Id == opponent.Id, TimeSpan.FromMinutes(1));
 
           if (answer.Result == null) {
-            message = new() {
+            message = new DiscordEmbedBuilder
+            {
               Title = "Time expired!",
               Color = DiscordColor.Red,
               Description = $"You took too much time to type your move. Game is ended!",
               Timestamp = DateTime.Now
             };
             if (board != null) await board.DeleteAsync();
-            board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
 
             if (opponent!=null) tttPlayers.Remove(opponent.Id);
             tttPlayers.Remove(ctx.Member.Id);
@@ -447,26 +453,29 @@ public class SlashGame : ApplicationCommandModule {
         }
 
         if (oWins) {
-          message = new() {
+          message = new DiscordEmbedBuilder
+          {
             Title = $"Tic-Tac-Toe Game: :o: ({(opponent == null ? player.Username : opponent.Username)}) Wins!",
             Description = $"**Game is ended!**\n\n{PrintBoard(grid)}",
             Color = DiscordColor.Red,
             Timestamp = DateTime.Now
           };
           if (board != null) await board.DeleteAsync();
-          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
           if (opponent != null) tttPlayers.Remove(opponent.Id);
           tttPlayers.Remove(ctx.Member.Id);
           return;
         }
         if (xWins) {
-          message = new();
-          message.Title = ((opponent == null) ? $"Tic-Tac-Toe Game: :x: (Bot) Wins!" : $"Tic-Tac-Toe Game: :x: ({player.Username}) Wins!");
-          message.Description = $"**Game is ended!**\n\n{PrintBoard(grid)}";
-          message.Color = DiscordColor.Red;
-          message.Timestamp = DateTime.Now;
+          message = new DiscordEmbedBuilder
+          {
+            Title = opponent == null ? $"Tic-Tac-Toe Game: :x: (Bot) Wins!" : $"Tic-Tac-Toe Game: :x: ({player.Username}) Wins!",
+            Description = $"**Game is ended!**\n\n{PrintBoard(grid)}",
+            Color = DiscordColor.Red,
+            Timestamp = DateTime.Now
+          };
           if (board != null) await board.DeleteAsync();
-          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
           if (opponent != null) tttPlayers.Remove(opponent.Id);
           tttPlayers.Remove(ctx.Member.Id);
           return;
@@ -481,14 +490,15 @@ public class SlashGame : ApplicationCommandModule {
           }
         }
         if (draw) {
-          message = new() {
+          message = new DiscordEmbedBuilder
+          {
             Title = "Tic-Tac-Toe Game: Draw!",
             Description = $"**Game is ended!**\n\n{PrintBoard(grid)}",
             Color = DiscordColor.Red,
             Timestamp = DateTime.Now
           };
           if (board != null) await board.DeleteAsync();
-          board = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
+          await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(message));
           if (opponent != null) tttPlayers.Remove(opponent.Id);
           tttPlayers.Remove(ctx.Member.Id);
           return;

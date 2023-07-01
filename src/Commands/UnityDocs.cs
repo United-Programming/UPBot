@@ -3,6 +3,7 @@ using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command tried to find a link to Unity script documentation from a pre-defined list of terms
