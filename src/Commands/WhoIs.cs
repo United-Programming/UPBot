@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command implements a WhoIs command.
@@ -17,14 +18,9 @@ public class SlashWhoIs : ApplicationCommandModule {
     Utils.LogUserCommand(ctx);
 
     try {
-      DiscordMember m = null;
+      DiscordMember m;
 
-      if (user == null) { // If we do not have a user we use the member that invoked the command
-        m = ctx.Member;
-      }
-      else {
-        m = ctx.Guild.GetMemberAsync(user.Id).Result;
-      }
+      m = user == null ? ctx.Member : ctx.Guild.GetMemberAsync(user.Id).Result; // If we do not have a user we use the member that invoked the command
       bool you = m == ctx.Member;
 
       DateTimeOffset jdate = m.JoinedAt.UtcDateTime;
@@ -66,9 +62,9 @@ public class SlashWhoIs : ApplicationCommandModule {
         num++;
       }
       if (num == 1)
-        embed.AddField("Role", roles, false);
+        embed.AddField("Role", roles);
       else if (num != 0)
-        embed.AddField(num + " Roles", roles, false);
+        embed.AddField(num + " Roles", roles);
 
       string perms = ""; // Not all permissions are shown
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreateInstantInvite)) perms += ", Invite";
@@ -88,7 +84,7 @@ public class SlashWhoIs : ApplicationCommandModule {
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.ManageEmojis)) perms += ", Manage Emojis";
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.UseApplicationCommands)) perms += ", Use Bot";
       if (m.Permissions.HasFlag(DSharpPlus.Permissions.CreatePublicThreads)) perms += ", Use Threads";
-      if (perms.Length > 0) embed.AddField("Permissions", perms[2..], false);
+      if (perms.Length > 0) embed.AddField("Permissions", perms[2..]);
 
       await ctx.CreateResponseAsync(embed.Build());
     } catch (Exception ex) {

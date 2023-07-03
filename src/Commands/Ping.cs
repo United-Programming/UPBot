@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command implements a basic ping command.
@@ -66,7 +67,7 @@ public class SlashPing : ApplicationCommandModule {
         annoyedLevel = lastRequest.AddRequest();
       }
       if (annoyedLevel == -1) {
-        Task t = ctx.CreateResponseAsync("...");
+        await ctx.CreateResponseAsync("...");
         DiscordMessage empty = ctx.GetOriginalResponseAsync().Result;
         await empty.DeleteAsync(); // No answer
         return;
@@ -107,7 +108,7 @@ public class SlashPing : ApplicationCommandModule {
     internal int AddRequest() {
       // remove all items older than 10 minutes
       for (int i = 0; i < requestTimes.Length; i++) {
-        if ((DateTime.Now - requestTimes[i]) > tenMins) 
+        if (DateTime.Now - requestTimes[i] > tenMins) 
           requestTimes[i] = DateTime.MinValue;
       }
       // Move to have the first not null in first place
@@ -147,66 +148,102 @@ public class SlashPing : ApplicationCommandModule {
       switch (num) {
         case 1: break;
         case 2:
-          if (averageBetweenRequests < 3) index = 2; // Testing?
-          else if (averageBetweenRequests < 10) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 3 => 2,
+            < 10 => 1,
+            _ => index
+          };
           break;
         case 3:
-          if (averageBetweenRequests < 5) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 10) index = 2; // Testing?
-          else if (averageBetweenRequests < 20) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 5 => 3,
+            < 10 => 2,
+            < 20 => 1,
+            _ => index
+          };
           break;
         case 4:
-          if (averageBetweenRequests < 5) index = 4; // Menacing
-          else if (averageBetweenRequests < 10) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 20) index = 2; // Testing?
-          else if (averageBetweenRequests < 30) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 5 => 4,
+            < 10 => 3,
+            < 20 => 2,
+            < 30 => 1,
+            _ => index
+          };
           break;
         case 5:
-          if (averageBetweenRequests < 5) index = 5; // Punishment
-          else if (averageBetweenRequests < 20) index = 4; // Menacing
-          else if (averageBetweenRequests < 30) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 40) index = 2; // Testing?
-          else if (averageBetweenRequests < 50) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 5 => 5,
+            < 20 => 4,
+            < 30 => 3,
+            < 40 => 2,
+            < 50 => 1,
+            _ => index
+          };
           break;
         case 6:
-          if (averageBetweenRequests < 5) index = -1; // no answer
-          else if (averageBetweenRequests < 20) index = 5; // Punishment
-          else if (averageBetweenRequests < 30) index = 4; // Menacing
-          else if (averageBetweenRequests < 40) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 50) index = 2; // Testing?
-          else if (averageBetweenRequests < 60) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 5 => -1,
+            < 20 => 5,
+            < 30 => 4,
+            < 40 => 3,
+            < 50 => 2,
+            < 60 => 1,
+            _ => index
+          };
           break;
         case 7:
-          if (averageBetweenRequests < 5) index = -1; // no answer
-          else if (averageBetweenRequests < 10) index = 5; // Punishment
-          else if (averageBetweenRequests < 20) index = 4; // Menacing
-          else if (averageBetweenRequests < 30) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 40) index = 2; // Testing?
-          else if (averageBetweenRequests < 50) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 5 => -1,
+            < 10 => 5,
+            < 20 => 4,
+            < 30 => 3,
+            < 40 => 2,
+            < 50 => 1,
+            _ => index
+          };
           break;
         case 8:
-          if (averageBetweenRequests < 10) index = -1; // no answer
-          else if (averageBetweenRequests < 20) index = 5; // Punishment
-          else if (averageBetweenRequests < 30) index = 4; // Menacing
-          else if (averageBetweenRequests < 40) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 50) index = 2; // Testing?
-          else if (averageBetweenRequests < 60) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 10 => -1,
+            < 20 => 5,
+            < 30 => 4,
+            < 40 => 3,
+            < 50 => 2,
+            < 60 => 1,
+            _ => index
+          };
           break;
         case 9:
-          if (averageBetweenRequests < 10) index = -1; // no answer
-          else if (averageBetweenRequests < 15) index = 5; // Punishment
-          else if (averageBetweenRequests < 20) index = 4; // Menacing
-          else if (averageBetweenRequests < 25) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 30) index = 2; // Testing?
-          else if (averageBetweenRequests < 35) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 10 => -1,
+            < 15 => 5,
+            < 20 => 4,
+            < 25 => 3,
+            < 30 => 2,
+            < 35 => 1,
+            _ => index
+          };
           break;
         default:
-          if (averageBetweenRequests < 10) index = -1; // no answer
-          else if (averageBetweenRequests < 20) index = 5; // Punishment
-          else if (averageBetweenRequests < 30) index = 4; // Menacing
-          else if (averageBetweenRequests < 38) index = 3; // Light annoyed
-          else if (averageBetweenRequests < 46) index = 2; // Testing?
-          else if (averageBetweenRequests < 54) index = 1; // Again?
+          index = averageBetweenRequests switch
+          {
+            < 10 => -1,
+            < 20 => 5,
+            < 30 => 4,
+            < 38 => 3,
+            < 46 => 2,
+            < 54 => 1,
+            _ => index
+          };
           break;
       }
 

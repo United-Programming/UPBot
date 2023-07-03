@@ -1,8 +1,10 @@
 ﻿using System;
-using System.IO;
-using System.Data.SQLite;
-using System.Reflection;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.IO;
+using System.Reflection;
+
+namespace UPBot.UPBot_Code;
 
 public class Database {
   static SQLiteConnection connection = null;
@@ -139,26 +141,26 @@ public class Database {
 
         if (blob) sql += field.Name + " BLOB";
         else switch (field.FieldType.Name.ToLowerInvariant()) {
-            case "int8": sql += field.Name + " SMALLINT"; break;
-            case "uint8": sql += field.Name + " SMALLINT"; break;
-            case "byte": sql += field.Name + " SMALLINT"; break;
-            case "int32": sql += field.Name + " INT"; break;
-            case "int64": sql += field.Name + " BIGINT"; break;
-            case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
-            case "string": {
-                if (comment) sql += field.Name + " TEXT";
-                else sql += field.Name + " VARCHAR(256)";
-                break;
-              }
-            case "bool": sql += field.Name + " TINYINT"; break;
-            case "boolean": sql += field.Name + " TINYINT"; break;
-            case "datetime": sql += field.Name + " NUMERIC"; break;
-            case "single": sql += field.Name + " REAL"; break;
-            case "double": sql += field.Name + " REAL"; break;
-            case "byte[]": sql += field.Name + " BLOB"; break;
-            default:
-              throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+          case "int8": sql += field.Name + " SMALLINT"; break;
+          case "uint8": sql += field.Name + " SMALLINT"; break;
+          case "byte": sql += field.Name + " SMALLINT"; break;
+          case "int32": sql += field.Name + " INT"; break;
+          case "int64": sql += field.Name + " BIGINT"; break;
+          case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
+          case "string": {
+            if (comment) sql += field.Name + " TEXT";
+            else sql += field.Name + " VARCHAR(256)";
+            break;
           }
+          case "bool": sql += field.Name + " TINYINT"; break;
+          case "boolean": sql += field.Name + " TINYINT"; break;
+          case "datetime": sql += field.Name + " NUMERIC"; break;
+          case "single": sql += field.Name + " REAL"; break;
+          case "double": sql += field.Name + " REAL"; break;
+          case "byte[]": sql += field.Name + " BLOB"; break;
+          default:
+            throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+        }
         if (notnull) sql += " NOT NULL";
         sql += ", ";
       }
@@ -194,26 +196,26 @@ public class Database {
 
         if (blob) sql += field.Name + " BLOB";
         else switch (field.FieldType.Name.ToLowerInvariant()) {
-            case "int8": sql += field.Name + " SMALLINT"; break;
-            case "uint8": sql += field.Name + " SMALLINT"; break;
-            case "byte": sql += field.Name + " SMALLINT"; break;
-            case "int32": sql += field.Name + " INT"; break;
-            case "int64": sql += field.Name + " BIGINT"; break;
-            case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
-            case "string": {
-                if (comment) sql += field.Name + " TEXT";
-                else sql += field.Name + " VARCHAR(256)";
-                break;
-              }
-            case "bool": sql += field.Name + " TINYINT"; break;
-            case "boolean": sql += field.Name + " TINYINT"; break;
-            case "datetime": sql += field.Name + " NUMERIC"; break;
-            case "single": sql += field.Name + " REAL"; break;
-            case "double": sql += field.Name + " REAL"; break;
-            case "byte[]": sql += field.Name + " BLOB"; break;
-            default:
-              throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+          case "int8": sql += field.Name + " SMALLINT"; break;
+          case "uint8": sql += field.Name + " SMALLINT"; break;
+          case "byte": sql += field.Name + " SMALLINT"; break;
+          case "int32": sql += field.Name + " INT"; break;
+          case "int64": sql += field.Name + " BIGINT"; break;
+          case "uint64": sql += field.Name + " UNSIGNED BIG INT"; break;
+          case "string": {
+            if (comment) sql += field.Name + " TEXT";
+            else sql += field.Name + " VARCHAR(256)";
+            break;
           }
+          case "bool": sql += field.Name + " TINYINT"; break;
+          case "boolean": sql += field.Name + " TINYINT"; break;
+          case "datetime": sql += field.Name + " NUMERIC"; break;
+          case "single": sql += field.Name + " REAL"; break;
+          case "double": sql += field.Name + " REAL"; break;
+          case "byte[]": sql += field.Name + " BLOB"; break;
+          default:
+            throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+        }
         if (notnull) sql += " NOT NULL";
         sql += ";";
         command.CommandText = sql;
@@ -221,7 +223,6 @@ public class Database {
 
         // We need to fill the default value
 
-        sql = null;
         switch (field.FieldType.Name.ToLowerInvariant()) {
           case "int8":
           case "uint8":
@@ -234,11 +235,11 @@ public class Database {
           case "datetime":
           case "single":
           case "double":
-            sql = "UPDATE " + t.ToString() + " SET " + field.Name + "= 0;"; break;
+            sql = "UPDATE " + t + " SET " + field.Name + "= 0;"; break;
 
           case "string":
           case "byte[]":
-            sql = "UPDATE " + t.ToString() + " SET " + field.Name + "= NULL;"; break;
+            sql = "UPDATE " + t + " SET " + field.Name + "= NULL;"; break;
 
           default:
             throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
@@ -268,26 +269,26 @@ public class Database {
       }
       if (blob) ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.ByteArray, index = -1 };
       else switch (field.FieldType.Name.ToLowerInvariant()) {
-          case "int8": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
-          case "uint8": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
-          case "byte": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
-          case "int32": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Int, index = -1 }; break;
-          case "int64": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Long, index = -1 }; break;
-          case "uint64": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.ULong, index = -1 }; break;
-          case "string": {
-              if (blob) ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Blob, index = -1 };
-              else ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.String, index = -1 };
-              break;
-            }
-          case "bool": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Bool, index = -1 }; break;
-          case "boolean": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Bool, index = -1 }; break;
-          case "datetime": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Date, index = -1 }; break;
-          case "single": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Float, index = -1 }; break;
-          case "double": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Double, index = -1 }; break;
-          case "byte[]": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.ByteArray, index = -1 }; break;
-          default:
-            throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+        case "int8": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
+        case "uint8": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
+        case "byte": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Byte, index = -1 }; break;
+        case "int32": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Int, index = -1 }; break;
+        case "int64": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Long, index = -1 }; break;
+        case "uint64": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.ULong, index = -1 }; break;
+        case "string": {
+          if (blob) ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Blob, index = -1 };
+          else ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.String, index = -1 };
+          break;
         }
+        case "bool": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Bool, index = -1 }; break;
+        case "boolean": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Bool, index = -1 }; break;
+        case "datetime": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Date, index = -1 }; break;
+        case "single": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Float, index = -1 }; break;
+        case "double": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.Double, index = -1 }; break;
+        case "byte[]": ed.fields[field.Name] = new ColDef { name = field.Name, ft = FieldType.ByteArray, index = -1 }; break;
+        default:
+          throw new Exception("Unmanaged type: " + field.FieldType.Name + " for class " + t.Name);
+      }
     }
     if (keygens.Count == 0) throw new Exception("Missing key for class " + t);
     ed.keys = keygens.ToArray();
@@ -301,15 +302,15 @@ public class Database {
       keynum++;
     }
 
-    ed.count = "SELECT Count(*) FROM " + t.ToString() + " WHERE " + theKey;
-    ed.select = "SELECT * FROM " + t.ToString();
+    ed.count = "SELECT Count(*) FROM " + t + " WHERE " + theKey;
+    ed.select = "SELECT * FROM " + t;
     ed.delete = "DELETE FROM " + t.Name + " WHERE " + theKey;
-    ed.selectOne = "SELECT * FROM " + t.ToString() + " WHERE " + theKey;
+    ed.selectOne = "SELECT * FROM " + t + " WHERE " + theKey;
 
     // Insert, Update
-    string insert = "INSERT INTO " + t.ToString() + " (";
+    string insert = "INSERT INTO " + t + " (";
     string insertpost = ") VALUES (";
-    string update = "UPDATE " + t.ToString() + " SET ";
+    string update = "UPDATE " + t + " SET ";
     bool donefirst = false;
     foreach (FieldInfo field in t.GetFields()) {
       bool ignore = false;
@@ -437,7 +438,6 @@ public class Database {
       Type t = typeof(T);
       if (reader.Read()) {
         T val = (T)Activator.CreateInstance(t);
-        num = 0;
         foreach (FieldInfo field in t.GetFields()) {
           ColDef cd = ed.fields[field.Name];
           num = cd.index;
@@ -477,7 +477,7 @@ public class Database {
       List<T> res = new List<T>();
       while (reader.Read()) {
         T val = (T)Activator.CreateInstance(t);
-        int num = 0;
+        int num;
         foreach (FieldInfo field in t.GetFields()) {
           ColDef cd = ed.fields[field.Name];
           num = cd.index;
@@ -511,16 +511,16 @@ public class Database {
 
 
   /*
-  GetValue
-  GetAllValues
+GetValue
+GetAllValues
 
 
-   */
+ */
 
   class EntityDef {
     public Type type;
     public FieldInfo[] keys;
-    public Dictionary<string, ColDef> fields = new Dictionary<string, ColDef>();
+    public Dictionary<string, ColDef> fields = new();
     public string count;
     public string select;
     public string insert;
@@ -551,4 +551,3 @@ public class Database {
     ByteArray,
   }
 }
-

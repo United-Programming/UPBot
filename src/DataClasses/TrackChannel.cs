@@ -1,5 +1,7 @@
 ﻿using DSharpPlus.Entities;
 
+namespace UPBot.UPBot_Code.DataClasses;
+
 public class TrackChannel : Entity {
   [Key] public ulong Guild;
   public ulong ChannelId;

@@ -1,11 +1,13 @@
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+
+namespace UPBot.UPBot_Code;
 
 /// <summary>
 /// Utility functions that don't belong to a specific class or a specific command
@@ -15,7 +17,7 @@ public static class Utils {
   public const int vmajor = 0, vminor = 3, vbuild = 4;
   public const char vrev = 'c';
   public static string LogsFolder = "./";
-  public readonly static System.Diagnostics.StackTrace sttr = new();
+  public static readonly System.Diagnostics.StackTrace sttr = new();
 
   /// <summary>
   /// Common colors
@@ -34,7 +36,7 @@ public static class Utils {
     public string path;
   }
 
-  readonly private static Dictionary<string, LogInfo> logs = new();
+  private static readonly Dictionary<string, LogInfo> logs = new();
 
   public static string GetVersion() {
     return vmajor + "." + vminor + "." + vbuild + vrev + " - 2023/01/08";
@@ -74,14 +76,13 @@ public static class Utils {
   public static void InitLogs(string guild) {
     string logPath = Path.Combine(LogsFolder, "BotLogs " + guild + " " + DateTime.Now.ToString("yyyyMMdd") + ".logs");
     LogInfo l;
-    if (logs.ContainsKey(guild)) l = logs[guild];
+    if (logs.TryGetValue(guild, out var log)) l = log;
     else {
       l = new LogInfo();
       logs[guild] = l;
     }
     l.path = logPath;
-    if (File.Exists(logPath)) logs[guild].sw = new StreamWriter(logPath, append: true);
-    else logs[guild].sw = File.CreateText(logPath);
+    logs[guild].sw = File.Exists(logPath) ? new StreamWriter(logPath, append: true) : File.CreateText(logPath);
   }
 
   public static string GetLogsPath(string guild) {
@@ -120,8 +121,8 @@ public static class Utils {
       }
     }
     LogInfo li = null;
-    if (logs.ContainsKey(guild)) {
-      li = logs[guild];
+    if (logs.TryGetValue(guild, out var log)) {
+      li = log;
       li.sw.Close();
       li.sw = null;
     }
@@ -266,7 +267,7 @@ public static class Utils {
   public static string GetEmojiSnowflakeID(EmojiEnum emoji) {
     int index = (int)emoji;
     if (index < 0 || index >= emojiNames.Length) {
-      return "<" + thinkingAsError.GetDiscordName() + thinkingAsError.Id.ToString() + ">";
+      return "<" + thinkingAsError.GetDiscordName() + thinkingAsError.Id + ">";
     }
 
     if (!string.IsNullOrEmpty(emojiSnowflakes[index])) return emojiSnowflakes[index];
@@ -276,7 +277,7 @@ public static class Utils {
       Console.ForegroundColor = ConsoleColor.White;
       return thinkingAsError;
     }
-    emojiSnowflakes[index] = "<" + res.GetDiscordName() + res.Id.ToString() + ">";
+    emojiSnowflakes[index] = "<" + res.GetDiscordName() + res.Id + ">";
     return emojiSnowflakes[index];
   }
 
@@ -287,7 +288,7 @@ public static class Utils {
   /// <returns>A string representation of the emoji that can be used in a message</returns>
   public static string GetEmojiSnowflakeID(DiscordEmoji emoji) {
     if (emoji == null) return "";
-    return "<" + emoji.GetDiscordName() + emoji.Id.ToString() + ">";
+    return "<" + emoji.GetDiscordName() + emoji.Id + ">";
   }
 
   internal static void LogUserCommand(InteractionContext ctx) {
@@ -305,7 +306,7 @@ public static class Utils {
   /// <param name="msg"></param>
   /// <returns></returns>
   internal static void Log(string msg, string guild) {
-    if (guild == null) guild = "GLOBAL";
+    guild ??= "GLOBAL";
     Console.WriteLine($"{guild}: {msg}");
     try {
       if (!logs.ContainsKey(guild)) InitLogs(guild);
@@ -373,7 +374,7 @@ public static class Utils {
     } catch (Exception) { }
   }
 
-  internal async static void DefaultNotAllowed(InteractionContext ctx) {
+  internal static async void DefaultNotAllowed(InteractionContext ctx) {
     await ctx.CreateResponseAsync($"The command {ctx.CommandName} is not allowed.");
     await DeleteDelayed(15, ctx.GetOriginalResponseAsync().Result);
   }

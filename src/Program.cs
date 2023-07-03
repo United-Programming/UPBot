@@ -7,6 +7,8 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using UPBot.DiscordRPC;
+using UPBot.UPBot_Code;
+using UPBot.UPBot_Code.DataClasses;
 
 namespace UPBot {
   class Program {
@@ -36,7 +38,7 @@ namespace UPBot {
       }
     }
 
-    readonly private static CancellationTokenSource exitToken = new();
+    private static readonly CancellationTokenSource exitToken = new();
 
     static async Task MainAsync(string token) {
       try {
@@ -113,12 +115,12 @@ namespace UPBot {
           if (t++ > 10) {
             Console.ForegroundColor = ConsoleColor.Red;
             Utils.Log("CRITICAL ERROR: We are not connecting! (no guilds)", null);
-            Console.WriteLine("CRITICAL ERROR: No guilds avilable");
+            Console.WriteLine("CRITICAL ERROR: No guilds available");
             return;
           }
         }
 
-        // 30 secs max for guilds coubnt
+        // 30 secs max for guilds count
         t = 0;
         while (Utils.GetClient().Guilds.Count == 0) {
           await Task.Delay(1000);

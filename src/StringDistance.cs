@@ -1,16 +1,18 @@
 ﻿using System;
 
+namespace UPBot.UPBot_Code;
+
 public static class StringDistance {
   /* The Winkler modification will not be applied unless the 
-   * percent match was at or above the mWeightThreshold percent 
-   * without the modification. 
-   * Winkler's paper used a default value of 0.7
-   */
+ * percent match was at or above the mWeightThreshold percent 
+ * without the modification. 
+ * Winkler's paper used a default value of 0.7
+ */
   private static readonly double mWeightThreshold = 0.55;
 
   /* Size of the prefix to be concidered by the Winkler modification. 
-   * Winkler's paper used a default value of 4
-   */
+ * Winkler's paper used a default value of 4
+ */
   private static readonly int mNumChars = 5;
 
 
@@ -73,8 +75,8 @@ public static class StringDistance {
     // System.Diagnostics.Debug.WriteLine("numCommon=" + numCommon + " numTransposed=" + numTransposed);
     double lNumCommonD = lNumCommon;
     double lWeight = (lNumCommonD / lLen1
-                     + lNumCommonD / lLen2
-                     + (lNumCommon - lNumTransposed) / lNumCommonD) / 3.0;
+                      + lNumCommonD / lLen2
+                      + (lNumCommon - lNumTransposed) / lNumCommonD) / 3.0;
 
     if (lWeight <= mWeightThreshold) return lWeight;
     int lMax = Math.Min(mNumChars, Math.Min(aString1.Length, aString2.Length));
@@ -125,12 +127,13 @@ public static class StringDistance {
 
     int[,] matrix = new int[bounds.Height, bounds.Width];
 
-    for (int height = 0; height < bounds.Height; height++) { matrix[height, 0] = height; };
-    for (int width = 0; width < bounds.Width; width++) { matrix[0, width] = width; };
+    for (int height = 0; height < bounds.Height; height++) { matrix[height, 0] = height; }
+
+    for (int width = 0; width < bounds.Width; width++) { matrix[0, width] = width; }
 
     for (int height = 1; height < bounds.Height; height++) {
       for (int width = 1; width < bounds.Width; width++) {
-        int cost = (s[height - 1] == t[width - 1]) ? 0 : 1;
+        int cost = s[height - 1] == t[width - 1] ? 0 : 1;
         int insertion = matrix[height, width - 1] + 1;
         int deletion = matrix[height - 1, width] + 1;
         int substitution = matrix[height - 1, width - 1] + cost;
@@ -155,7 +158,7 @@ public static class StringDistance {
     double jw = JWDistance(a, b);
     float dl = DLDistance(a, b) / len;
     float xtra = (10 + Math.Abs(a.Length - b.Length)) / (float)Math.Sqrt(len);
-    float cont = (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) ? .1f : 1;
+    float cont = a.IndexOf(b) != -1 || b.IndexOf(a) != -1 ? .1f : 1;
 
     return (int)(1000 * jw * dl * xtra * cont);
   }
@@ -173,18 +176,18 @@ public static class StringDistance {
 
     // one part is the same or contained or close enough to another part
     foreach (string p1 in pa)
-      foreach (string p2 in pb) {
-        if (p1 == p2) dist *= .1f;
-        else if (p2.Length > 2 && p1.Length > p2.Length && p1.IndexOf(p2) != -1) dist *= .5f;
-        else if (p1.Length > 2 && p2.Length > p1.Length && p2.IndexOf(p1) != -1) dist *= .5f;
-        else {
-          float minLen = Math.Min(p1.Length, p2.Length);
-          float dld = DLDistance(p1, p2) / minLen;
-          if (dld < .05f) dld = .05f;
-          if (dld > 2) dld = 2;
-          dist *= dld;
-        }
+    foreach (string p2 in pb) {
+      if (p1 == p2) dist *= .1f;
+      else if (p2.Length > 2 && p1.Length > p2.Length && p1.IndexOf(p2) != -1) dist *= .5f;
+      else if (p1.Length > 2 && p2.Length > p1.Length && p2.IndexOf(p1) != -1) dist *= .5f;
+      else {
+        float minLen = Math.Min(p1.Length, p2.Length);
+        float dld = DLDistance(p1, p2) / minLen;
+        if (dld < .05f) dld = .05f;
+        if (dld > 2) dld = 2;
+        dist *= dld;
       }
+    }
     if (dist < 0) dist = 0;
     else {
       float minLen = Math.Min(a.Length, b.Length);
