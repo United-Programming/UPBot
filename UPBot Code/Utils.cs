@@ -43,7 +43,7 @@ public static class Utils
 
     public static string GetVersion()
     {
-        return vmajor + "." + vminor + "." + vbuild + vrev + " - 2023/01/08";
+        return vmajor + "." + vminor + "." + vbuild + vrev + " - 2023/08/28";
     }
 
     public static DiscordClient GetClient()
