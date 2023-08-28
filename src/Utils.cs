@@ -17,7 +17,7 @@ public static class Utils
 {
     public const string WEATHER_API_KEY = "7979326c13a1461591381800232307s";
     public const int vmajor = 0, vminor = 3, vbuild = 5;
-    public const char vrev = 'c';
+    public const char vrev = 'a';
     public static string LogsFolder = "./";
     public static readonly System.Diagnostics.StackTrace sttr = new();
 
