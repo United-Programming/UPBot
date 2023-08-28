@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command implements a Version command.
@@ -8,17 +9,17 @@ using DSharpPlus.SlashCommands;
 /// </summary>
 /// 
 
-public class SlashVersion : ApplicationCommandModule {
+public class SlashVersion : ApplicationCommandModule
+{
 
-  [SlashCommand("version", "Get my version information")]
-  public async Task VInfoCommand(InteractionContext ctx) {
-    string authors = "**CPU**, **J0nathan**, **Eremiell**, **Duck**, **SlicEnDicE**, **Apoorv**, **Revolution**";
+    [SlashCommand("version", "Get my version information")]
+    public async Task VInfoCommand(InteractionContext ctx)
+    {
+        string authors = "**CPU**, **J0nathan**, **Eremiell**, **Duck**, **SlicEnDicE**, **Apoorv**, **Revolution**";
 
-    await ctx.CreateResponseAsync(Utils.BuildEmbed("United Programming Bot", 
-      $"**Version**: {Utils.GetVersion()}\n\nContributors: {authors}\n\nCode available on https://github.com/United-Programming/UPBot/\n\nJoin United Programming discord: https://discord.gg/unitedprogramming", 
-      Utils.Yellow).Build());
-  }
+        await ctx.CreateResponseAsync(Utils.BuildEmbed("United Programming Bot",
+          $"**Version**: {Utils.GetVersion()}\n\nContributors: {authors}\n\nCode available on https://github.com/United-Programming/UPBot/\n\nJoin United Programming discord: https://discord.gg/unitedprogramming",
+          Utils.Yellow).Build());
+    }
 
 }
-
-

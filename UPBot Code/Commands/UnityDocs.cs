@@ -3,85 +3,103 @@ using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using UPBot.UPBot_Code;
 
 /// <summary>
 /// This command tried to find a link to Unity script documentation from a pre-defined list of terms
 /// author: CPU
 /// </summary>
-public class SlashUnityDocs : ApplicationCommandModule {
-  const int numResults = 20;
+public class SlashUnityDocs : ApplicationCommandModule
+{
+    const int numResults = 20;
 
-  [SlashCommand("unitydocs", "Get links to official Unity scripts documentation")]
-  public async Task UnityDocsCommand(InteractionContext ctx, [Option("What", "A part of the name of the script to search")] string what) {
-    if (string.IsNullOrWhiteSpace(what)) return;
-    Utils.LogUserCommand(ctx);
-    try {
-      what = what.Trim().ToLowerInvariant();
-      foreach (string item in UnityDocItems) {
-        if (item.Equals(what, StringComparison.InvariantCultureIgnoreCase)) {
-          await ctx.CreateResponseAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
-          return;
-        }
-      }
-      // Try to find something similar
-      int[] mins = new int[numResults];
-      string[] bests = new string[numResults];
-      for (int i = 0; i < numResults; i++) {
-        mins[i] = int.MaxValue;
-        bests[i] = null;
-      }
-
-      foreach (string item in UnityDocItems) {
-        string key = item.ToLowerInvariant();
-        int dist = StringDistance.DistancePart(what, key);
-        for (int i = 0; i < numResults; i++) {
-          if (dist < mins[i] && !bests.Contains(item)) {
-            for (int j = numResults - 1; j > i; j--) {
-              mins[j] = mins[j - 1];
-              bests[j] = bests[j - 1];
+    [SlashCommand("unitydocs", "Get links to official Unity scripts documentation")]
+    public async Task UnityDocsCommand(InteractionContext ctx, [Option("What", "A part of the name of the script to search")] string what)
+    {
+        if (string.IsNullOrWhiteSpace(what)) return;
+        Utils.LogUserCommand(ctx);
+        try
+        {
+            what = what.Trim().ToLowerInvariant();
+            foreach (string item in UnityDocItems)
+            {
+                if (item.Equals(what, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    await ctx.CreateResponseAsync("Unity documentation for `" + what + "`: https://docs.unity3d.com/ScriptReference/" + item + ".html");
+                    return;
+                }
             }
-            mins[i] = dist;
-            bests[i] = item;
-            break;
-          }
+            // Try to find something similar
+            int[] mins = new int[numResults];
+            string[] bests = new string[numResults];
+            for (int i = 0; i < numResults; i++)
+            {
+                mins[i] = int.MaxValue;
+                bests[i] = null;
+            }
+
+            foreach (string item in UnityDocItems)
+            {
+                string key = item.ToLowerInvariant();
+                int dist = StringDistance.DistancePart(what, key);
+                for (int i = 0; i < numResults; i++)
+                {
+                    if (dist < mins[i] && !bests.Contains(item))
+                    {
+                        for (int j = numResults - 1; j > i; j--)
+                        {
+                            mins[j] = mins[j - 1];
+                            bests[j] = bests[j - 1];
+                        }
+                        mins[i] = dist;
+                        bests[i] = item;
+                        break;
+                    }
+                }
+            }
+
+            if (mins[0] > 400) { await ctx.CreateResponseAsync("I cannot find anything related to `" + what + "` in Unity documentation"); return; }
+
+            int numok = 1;
+            float diffSum = mins[0];
+            for (int i = 1; i < numResults; i++)
+            {
+                diffSum += mins[i] - mins[i - 1];
+            }
+            float average = diffSum / numResults;
+            for (int i = 1; i < numResults; i++)
+            {
+                if (mins[i] - mins[i - 1] < average) numok++;
+                else break;
+            }
+
+            if (numok == 1)
+            {
+                await ctx.CreateResponseAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
+                  " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
+            }
+            else
+            {
+                string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
+                for (int i = 0; i < numok - 1; i++) msg += "[" + bests[i] + "(" + mins[i] + ")](https://docs.unity3d.com/ScriptReference/" + bests[i] + ".html), ";
+                msg += "and [" + bests[numok - 1] + "](https://docs.unity3d.com/ScriptReference/" + bests[numok - 1] + ".html).\nTry one of them.";
+                DiscordEmbedBuilder e = new DiscordEmbedBuilder()
+                .WithTitle("Possible documents for " + what)
+                .WithDescription(msg)
+                .WithThumbnail(Utils.GetEmojiURL(EmojiEnum.Unity), 32, 32);
+                await ctx.CreateResponseAsync(e);
+            }
         }
-      }
-
-      if (mins[0] > 400) { await ctx.CreateResponseAsync("I cannot find anything related to `" + what + "` in Unity documentation"); return; }
-
-      int numok = 1;
-      float diffSum = mins[0];
-      for (int i = 1; i < numResults; i++) {
-        diffSum += mins[i] - mins[i - 1];
-      }
-      float average = diffSum / numResults;
-      for (int i = 1; i < numResults; i++) {
-        if (mins[i] - mins[i - 1] < average) numok++;
-        else break;
-      }
-
-      if (numok == 1) {
-        await ctx.CreateResponseAsync("Best thing I can find in Unity documentation for _**" + what + "**_ is `" + bests[0] + "`: " +
-          " https://docs.unity3d.com/ScriptReference/" + bests[0] + ".html");
-      } else {
-        string msg = "Best things I can find in Unity documentation for _**" + what + "**_ are \n";
-        for (int i = 0; i < numok - 1; i++) msg += "[" + bests[i] + "(" + mins[i] +  ")](https://docs.unity3d.com/ScriptReference/" + bests[i] + ".html), ";
-        msg += "and [" + bests[numok - 1] + "](https://docs.unity3d.com/ScriptReference/" + bests[numok - 1] + ".html).\nTry one of them.";
-        DiscordEmbedBuilder e = new DiscordEmbedBuilder()
-        .WithTitle("Possible documents for " + what)
-        .WithDescription(msg)
-        .WithThumbnail(Utils.GetEmojiURL(EmojiEnum.Unity), 32, 32);
-        await ctx.CreateResponseAsync(e);
-      }
-    } catch (Exception ex) {
-      await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
+        catch (Exception ex)
+        {
+            await ctx.CreateResponseAsync(Utils.GenerateErrorAnswer(ctx.Guild.Name, "UnityDocs", ex));
+        }
     }
-  }
 
 
 
 
-  readonly string[] UnityDocItems = {
+    readonly string[] UnityDocItems = {
 "AccelerationEvent",
 "AccelerationEvent-acceleration",
 "AccelerationEvent-deltaTime",
@@ -23506,6 +23524,4 @@ public class SlashUnityDocs : ApplicationCommandModule {
 "XR.XRStats.TryGetGPUTimeLastFrame",
 "YieldInstruction"
   };
-
-
 }
