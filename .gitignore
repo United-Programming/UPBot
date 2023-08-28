@@ -391,3 +391,4 @@ FodyWeavers.xsd
 
 # Log files
 *.logs
+/UPBot Code/Commands/Ping.cs
