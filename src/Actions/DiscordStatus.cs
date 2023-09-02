@@ -10,19 +10,15 @@ using DSharpPlus.Entities;
 /// author: J0nathan550
 /// </summary>
 
-namespace UPBot.DiscordRPC
-{
-    public class DiscordStatus
-    {
-        struct ActivityStatus
-        {
-            public string status;
-            public ActivityType type;
-        }
+namespace UPBot.DiscordRPC {
+  public class DiscordStatus {
+    struct ActivityStatus {
+      public string status;
+      public ActivityType type;
+    }
 
-        static async void DiscordUpdateStatusFunction(DiscordClient client, CancellationToken token)
-        {
-            List<ActivityStatus> activityStatusString = new() {
+    static async void DiscordUpdateStatusFunction(DiscordClient client, CancellationToken token) {
+      List<ActivityStatus> activityStatusString = new() {
         new ActivityStatus { type = ActivityType.Playing, status = "Visual Studio to code algorithms!" },
         new ActivityStatus { type = ActivityType.Playing, status = "a random game" },
         new ActivityStatus { type = ActivityType.Playing, status = "happily with my toys" },
@@ -45,22 +41,20 @@ namespace UPBot.DiscordRPC
         new ActivityStatus { type = ActivityType.Competing, status = "performance optimization" }
       };
 
-            Random random = new();
-            while (!token.IsCancellationRequested)
-            {
-                int activity = random.Next(0, activityStatusString.Count);
-                ActivityStatus activityStatus = activityStatusString[activity];
+      Random random = new();
+      while (!token.IsCancellationRequested) {
+        int activity = random.Next(0, activityStatusString.Count);
+        ActivityStatus activityStatus = activityStatusString[activity];
 
-                await client.UpdateStatusAsync(new DiscordActivity(activityStatus.status, activityStatus.type));
+        await client.UpdateStatusAsync(new DiscordActivity(activityStatus.status, activityStatus.type));
 
-                await Task.Delay(TimeSpan.FromSeconds(60 + random.Next(0, 180)), token);
-            }
-        }
-
-        internal static void Start(DiscordClient client)
-        {
-            Task statusUpdateTask = new(() => DiscordUpdateStatusFunction(client, new CancellationToken()));
-            statusUpdateTask.Start();
-        }
+        await Task.Delay(TimeSpan.FromSeconds(60 + random.Next(0, 180)), token);
+      }
     }
+
+    internal static void Start(DiscordClient client) {
+      Task statusUpdateTask = new(() => DiscordUpdateStatusFunction(client, new CancellationToken()));
+      statusUpdateTask.Start();
+    }
+  }
 }
