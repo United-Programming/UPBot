@@ -15,7 +15,7 @@ namespace UPBot.UPBot_Code;
 /// </summary>
 public static class Utils {
   public const int vmajor = 0, vminor = 3, vbuild = 5;
-  public const char vrev = 'c';
+  public const char vrev = 'b';
   public static string LogsFolder = "./";
   public static readonly System.Diagnostics.StackTrace sttr = new();
 
