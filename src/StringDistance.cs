@@ -179,7 +179,7 @@ public static class StringDistance
         double jw = JWDistance(a, b);
         float dl = DLDistance(a, b) / len;
         float xtra = (10 + Math.Abs(a.Length - b.Length)) / (float)Math.Sqrt(len);
-        float cont = a.IndexOf(b) != -1 || b.IndexOf(a) != -1 ? .1f : 1;
+        float cont = a.Contains(b, StringComparison.CurrentCulture) || b.Contains(a, StringComparison.CurrentCulture) ? .1f : 1;
 
         return (int)(1000 * jw * dl * xtra * cont);
     }
@@ -191,7 +191,7 @@ public static class StringDistance
         if (a == b) return 0;
 
         float dist = 1000;
-        if (a.IndexOf(b) != -1 || b.IndexOf(a) != -1) dist = 1000;
+        if (a.Contains(b, StringComparison.CurrentCulture) || b.Contains(a, StringComparison.CurrentCulture)) dist = 1000;
 
         string[] pa = a.Replace('-', '.').Split('.');
         string[] pb = b.Replace('-', '.').Split('.');
@@ -201,8 +201,8 @@ public static class StringDistance
             foreach (string p2 in pb)
             {
                 if (p1 == p2) dist *= .1f;
-                else if (p2.Length > 2 && p1.Length > p2.Length && p1.IndexOf(p2) != -1) dist *= .5f;
-                else if (p1.Length > 2 && p2.Length > p1.Length && p2.IndexOf(p1) != -1) dist *= .5f;
+                else if (p2.Length > 2 && p1.Length > p2.Length && p1.Contains(p2, StringComparison.CurrentCulture)) dist *= .5f;
+                else if (p1.Length > 2 && p2.Length > p1.Length && p2.Contains(p1, StringComparison.CurrentCulture)) dist *= .5f;
                 else
                 {
                     float minLen = Math.Min(p1.Length, p2.Length);

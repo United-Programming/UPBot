@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using DSharpPlus;
+using System.Threading.Tasks;
 using UPBot.UPBot_Code;
 
 /// <summary>
@@ -17,14 +17,14 @@ namespace UPBot
 {
     public class SlashRefactor : ApplicationCommandModule
     {
-        enum Action
+        private enum Action
         {
             Analyze,
             Replace,
             Keep
         }
 
-        enum Langs
+        private enum Langs
         {
             NONE, cs, js, cpp, java, python, Unity
         }
@@ -329,18 +329,18 @@ namespace UPBot
 
 
 
-        readonly Regex lineOpenBlock = new("^{(\\s*//.*|\\s*/\\*/.*)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex afterOpenBlock = new("^{(.+)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex cppModifiers = new("^\\s*(private|public|protected):\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex switchModifiers = new("^(case\\s+[^:]+|default):", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex singleLineBlocksIF = new("^(else\\s+if|if|else)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex singleLineBlocksFOR = new("^for\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex singleLineBlocksFOREACH = new("^foreach\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex singleLineBlocksWHILE = new("^while\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex operatorsEnd = new("(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex operatorsStart = new("^(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex doubleBrackets = new("{[^\\n]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
-        readonly Regex closeBrackets = new("[^\n{]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex lineOpenBlock = new("^{(\\s*//.*|\\s*/\\*/.*)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex afterOpenBlock = new("^{(.+)?$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex cppModifiers = new("^\\s*(private|public|protected):\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex switchModifiers = new("^(case\\s+[^:]+|default):", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex singleLineBlocksIF = new("^(else\\s+if|if|else)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex singleLineBlocksFOR = new("^for\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex singleLineBlocksFOREACH = new("^foreach\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex singleLineBlocksWHILE = new("^while\\s*\\([^\\)]+\\)[^;{\\n]*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex operatorsEnd = new("(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)\\s*$", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex operatorsStart = new("^(\\+|\\-|\\||\\&|\\^|(\\|\\|)|\\&\\&|\\>\\>|\\<\\<)", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex doubleBrackets = new("{[^\\n]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+        private readonly Regex closeBrackets = new("[^\n{]+}", RegexOptions.Multiline, TimeSpan.FromSeconds(10));
 
         private string FixIndentation(string code)
         {
@@ -348,7 +348,7 @@ namespace UPBot
             for (int i = 0; i < prelines.Length; i++)
                 prelines[i] = prelines[i].Trim(' ', '\t', '\r', '\n');
 
-            List<string> lines = new();
+            List<string> lines = [];
             foreach (var l in prelines)
             {
                 string line = l;
@@ -446,17 +446,15 @@ namespace UPBot
                 bool tempRemoveIndent = false;
                 string line = lines[i];
                 if (line == null) continue;
-                if (line.IndexOf('}') != -1 && !line.Contains('{')) indent--;
+                if (line.Contains('}') && !line.Contains('{')) indent--;
                 if (cppModifiers.IsMatch(line) || switchModifiers.IsMatch(line)) tempRemoveIndent = true;
 
                 string tabs = "";
                 for (int j = tempRemoveIndent ? 1 : 0; j < (nextLineIndent ? indent + 1 : indent); j++) tabs += "  ";
                 if (operatorsStart.IsMatch(line)) tabs += "  ";
-                if (singleLineBlocksIF.IsMatch(line) || singleLineBlocksFOR.IsMatch(line) || singleLineBlocksFOREACH.IsMatch(line) || singleLineBlocksWHILE.IsMatch(line) || operatorsEnd.IsMatch(line))
-                    nextLineIndent = true;
-                else nextLineIndent = false;
+                nextLineIndent = singleLineBlocksIF.IsMatch(line) || singleLineBlocksFOR.IsMatch(line) || singleLineBlocksFOREACH.IsMatch(line) || singleLineBlocksWHILE.IsMatch(line) || operatorsEnd.IsMatch(line);
                 res += tabs + line + "\n";
-                if (line.IndexOf('{') != -1 && !line.Contains('}')) indent++;
+                if (line.Contains('{') && !line.Contains('}')) indent++;
             }
             return res;
         }
@@ -487,7 +485,7 @@ namespace UPBot
 
         private Langs GetBestMatch(string code, out int weightCs, out int weightCp, out int weightJv, out int weightJs, out int weightPy, out int weightUn)
         {
-            if (code.Length > 4 && code[..3] == "```" && code.IndexOf('\n') != -1)
+            if (code.Length > 4 && code[..3] == "```" && code.Contains('\n'))
             {
                 code = code[(code.IndexOf('\n') + 1)..];
             }
@@ -519,9 +517,9 @@ namespace UPBot
             return res;
         }
 
-        readonly Regex emptyLines = new("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(10));
+        private readonly Regex emptyLines = new("(\\r?\\n\\s*){1,}(\\r?\\n)", RegexOptions.Singleline, TimeSpan.FromSeconds(10));
 
-        readonly LangKWord[] keywords = {
+        private readonly LangKWord[] keywords = [
     new() {regexp = new Regex("getline", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                    wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
     new() {regexp = new Regex("cin", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                        wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
     new() {regexp = new Regex("cout", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10)),                                       wCs = 0, wCp = 5, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
@@ -601,7 +599,7 @@ namespace UPBot
     new() {regexp = new Regex("String\\[\\]", RegexOptions.None, TimeSpan.FromSeconds(10)),                                     wCs = 0, wCp = 0, wJv = 9, wJs = 0, wPy = 0, wUn = 0 },
     new() {regexp = new Regex("\\?\\.", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 2, wCp = 0, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
     new() {regexp = new Regex("\\-\\>", RegexOptions.None, TimeSpan.FromSeconds(10)),                                           wCs = 0, wCp = 9, wJv = 0, wJs = 0, wPy = 0, wUn = 0 },
-  };
+  ];
 
         public class LangKWord
         {

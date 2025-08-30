@@ -11,7 +11,7 @@ using UPBot.UPBot_Code;
 /// </summary>
 public class SlashUnityDocs : ApplicationCommandModule
 {
-    const int numResults = 20;
+    private const int numResults = 20;
 
     [SlashCommand("unitydocs", "Get links to official Unity scripts documentation")]
     public async Task UnityDocsCommand(InteractionContext ctx, [Option("What", "A part of the name of the script to search")] string what)
@@ -99,7 +99,7 @@ public class SlashUnityDocs : ApplicationCommandModule
 
 
 
-    readonly string[] UnityDocItems = {
+    private readonly string[] UnityDocItems = [
 "AccelerationEvent",
 "AccelerationEvent-acceleration",
 "AccelerationEvent-deltaTime",
@@ -23523,5 +23523,5 @@ public class SlashUnityDocs : ApplicationCommandModule
 "XR.XRStats.TryGetFramePresentCount",
 "XR.XRStats.TryGetGPUTimeLastFrame",
 "YieldInstruction"
-  };
+  ];
 }
