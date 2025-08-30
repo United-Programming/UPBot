@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using DSharpPlus.SlashCommands;
+﻿using DSharpPlus.SlashCommands;
+using System.Threading.Tasks;
 using UPBot.UPBot_Code;
 
 /// <summary>
@@ -13,7 +13,7 @@ public class SlashVersion : ApplicationCommandModule
 {
 
     [SlashCommand("version", "Get my version information")]
-    public async Task VInfoCommand(InteractionContext ctx)
+    public static async Task VInfoCommand(InteractionContext ctx)
     {
         string authors = "**CPU**, **J0nathan**, **Eremiell**, **Duck**, **SlicEnDicE**, **Apoorv**, **Revolution**";
 

@@ -16,7 +16,7 @@ public class SlashLogs : ApplicationCommandModule
 {
 
     [SlashCommand("show", "Allows to see and download guild logs")]
-    public async Task LogsCommand(InteractionContext ctx, [Option("NumerOflines", "How many lines of logs to get")][Minimum(5)][Maximum(25)] long numLines)
+    public static async Task LogsCommand(InteractionContext ctx, [Option("NumerOflines", "How many lines of logs to get")][Minimum(5)][Maximum(25)] long numLines)
     {
         if (ctx.Guild == null) return;
         Utils.LogUserCommand(ctx);
@@ -28,7 +28,7 @@ public class SlashLogs : ApplicationCommandModule
             return;
         }
 
-        List<string> lines = new();
+        List<string> lines = [];
         await using (var fs = new FileStream(logs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         {
             using var sr = new StreamReader(fs);
@@ -53,7 +53,7 @@ public class SlashLogs : ApplicationCommandModule
 
 
     [SlashCommand("save", "Creates a zip file of the last logs of the server")]
-    public async Task LogsSaveCommand(InteractionContext ctx)
+    public static async Task LogsSaveCommand(InteractionContext ctx)
     {
         if (ctx.Guild == null) return;
         Utils.LogUserCommand(ctx);
@@ -76,7 +76,7 @@ public class SlashLogs : ApplicationCommandModule
     }
 
     [SlashCommand("saveall", "Creates a zip file of the all the server logs")]
-    public async Task LogsSaveAllCommand(InteractionContext ctx)
+    public static async Task LogsSaveAllCommand(InteractionContext ctx)
     {
         if (ctx.Guild == null) return;
         Utils.LogUserCommand(ctx);
@@ -93,7 +93,7 @@ public class SlashLogs : ApplicationCommandModule
     }
 
     [SlashCommand("delete", "Removes the server logs")]
-    public async Task LogsDeleteCommand(InteractionContext ctx, [Option("GuildName", "The name of the guild, case sensitive, to confirm the delete")] string guildname)
+    public static async Task LogsDeleteCommand(InteractionContext ctx, [Option("GuildName", "The name of the guild, case sensitive, to confirm the delete")] string guildname)
     {
         if (ctx.Guild == null) return;
         Utils.LogUserCommand(ctx);

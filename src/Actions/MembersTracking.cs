@@ -4,13 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UPBot.UPBot_Code;
-using UPBot.UPBot_Code.DataClasses;
 
 namespace UPBot
 {
     public class MembersTracking
     {
-        static Dictionary<ulong, DateTime> tracking = null; // Use one from COnfig, add nonserializable datetime if we need one
+        private static Dictionary<ulong, DateTime> tracking = null; // Use one from COnfig, add nonserializable datetime if we need one
 
         public static async Task DiscordMemberRemoved(DiscordClient _, DSharpPlus.EventArgs.GuildMemberRemoveEventArgs args)
         {
@@ -18,7 +17,7 @@ namespace UPBot
             {
                 TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
                 if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackLeave) return;
-                tracking ??= new Dictionary<ulong, DateTime>();
+                tracking ??= [];
 
                 int daysJ = (int)(DateTime.Now - args.Member.JoinedAt.DateTime).TotalDays;
                 if (daysJ > 10000) daysJ = -1; // User is probably destroyed. So the value will be not valid
@@ -32,11 +31,9 @@ namespace UPBot
                 }
                 else
                 {
-                    string msgC;
-                    if (daysJ >= 0)
-                        msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)";
-                    else
-                        msgC = Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
+                    string msgC = daysJ >= 0
+                        ? Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " after " + daysJ + " days (" + args.Guild.MemberCount + " members total)"
+                        : Utils.GetEmojiSnowflakeID(EmojiEnum.KO) + "  User " + args.Member.Mention + " (" + args.Member.DisplayName + ") left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
                     string msgL = "- User " + args.Member.DisplayName + " left on " + DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss") + " (" + args.Guild.MemberCount + " members total)";
                     await trackChannel.channel.SendMessageAsync(msgC);
                     Utils.Log(msgL, args.Guild.Name);
@@ -58,7 +55,7 @@ namespace UPBot
             {
                 TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
                 if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackJoin) return;
-                tracking ??= new Dictionary<ulong, DateTime>();
+                tracking ??= [];
 
                 tracking[args.Member.Id] = DateTime.Now;
                 _ = SomethingAsync(trackChannel.channel, args.Member.Id, args.Member.DisplayName, args.Member.Mention, args.Guild.MemberCount);
@@ -78,11 +75,11 @@ namespace UPBot
             {
                 TrackChannel trackChannel = Configs.TrackChannels[args.Guild.Id];
                 if (trackChannel == null || trackChannel.channel == null || !trackChannel.trackRoles) return;
-                tracking ??= new Dictionary<ulong, DateTime>();
+                tracking ??= [];
 
                 IReadOnlyList<DiscordRole> rolesBefore = args.RolesBefore;
                 IReadOnlyList<DiscordRole> rolesAfter = args.RolesAfter;
-                List<DiscordRole> rolesAdded = new();
+                List<DiscordRole> rolesAdded = [];
                 // Changed role? We can track only additions. Removals are not really sent
 
                 foreach (DiscordRole r1 in rolesAfter)
@@ -122,7 +119,7 @@ namespace UPBot
         }
 
 
-        static async Task SomethingAsync(DiscordChannel trackChannel, ulong id, string name, string mention, int numMembers)
+        private static async Task SomethingAsync(DiscordChannel trackChannel, ulong id, string name, string mention, int numMembers)
         {
             await Task.Delay(25000);
             if (tracking.ContainsKey(id))

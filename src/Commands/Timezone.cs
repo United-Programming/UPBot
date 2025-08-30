@@ -1,8 +1,8 @@
-﻿using System;
+﻿using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using TimeZoneConverter;
 using UPBot.UPBot_Code;
 
@@ -140,11 +140,10 @@ namespace UPBot
             {
                 string res = "```\n";
                 var list = Database.GetAll<Timezone>();
-                Dictionary<string, int> count = new();
+                Dictionary<string, int> count = [];
                 foreach (Timezone t in list)
                 {
-                    if (!count.ContainsKey(t.TimeZoneName)) count[t.TimeZoneName] = 1;
-                    else count[t.TimeZoneName]++;
+                    count[t.TimeZoneName] = !count.TryGetValue(t.TimeZoneName, out int value) ? 1 : ++value;
                 }
                 string bads = "";
                 int numbads = 0;
@@ -181,11 +180,11 @@ namespace UPBot
 
 
 
-        class RankedTimezone { public string IanaName; public int Score; }
-        static Dictionary<string, string> fullTZList;
+        private class RankedTimezone { public string IanaName; public int Score; }
+        private static Dictionary<string, string> fullTZList;
 
 
-        static string GetTZName(TimeZoneInfo tzinfo)
+        private static string GetTZName(TimeZoneInfo tzinfo)
         {
             string tzid = tzinfo.Id;
             if (TZConvert.TryWindowsToIana(tzinfo.Id, out string tzname)) tzid = tzname;
@@ -195,7 +194,7 @@ namespace UPBot
             return tzn;
         }
 
-        int GetTZScore(string src, string dst)
+        private int GetTZScore(string src, string dst)
         {
             if (src.Equals(dst, StringComparison.InvariantCultureIgnoreCase)) return 100;
             if (dst.Contains(src, StringComparison.InvariantCultureIgnoreCase)) return (int)(100f * src.Length / dst.Length);
@@ -234,9 +233,9 @@ namespace UPBot
             return (int)(score * 1f / srcpts.Length);
         }
 
-        List<RankedTimezone> CheckProx(string inp)
+        private List<RankedTimezone> CheckProx(string inp)
         {
-            List<RankedTimezone> res = new();
+            List<RankedTimezone> res = [];
             foreach (string key in fullTZList.Keys)
             {
                 int score = GetTZScore(inp, key);
@@ -266,9 +265,9 @@ namespace UPBot
         }
 
 
-        static void InitTimeZones()
+        private static void InitTimeZones()
         {
-            fullTZList = new Dictionary<string, string>();
+            fullTZList = [];
             var work = new Dictionary<string, string>();
             foreach (var t in TZConvert.KnownIanaTimeZoneNames)
                 work[t] = t;
@@ -297,7 +296,7 @@ namespace UPBot
             }
         }
 
-        List<RankedTimezone> GetTimezone(string input, out TimeZoneInfo res)
+        private List<RankedTimezone> GetTimezone(string input, out TimeZoneInfo res)
         {
             if (fullTZList == null) InitTimeZones();
             if (TZConvert.TryGetTimeZoneInfo(input, out TimeZoneInfo tz))

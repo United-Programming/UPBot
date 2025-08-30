@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UPBot.UPBot_Code;
 
 
@@ -16,7 +16,7 @@ using UPBot.UPBot_Code;
 [SlashCommandGroup("game", "Commands to play games with the bot")]
 public class SlashGame : ApplicationCommandModule
 {
-    readonly Random random = new();
+    private readonly Random random = new();
 
     [SlashCommand("rockpaperscissors", "Play Rock, Paper, Scissors")]
     public async Task RPSCommand(InteractionContext ctx, [Option("yourmove", "Rock, Paper, or Scissors")] RPSTypes? yourmove = null)
@@ -77,11 +77,11 @@ public class SlashGame : ApplicationCommandModule
         await ctx.CreateResponseAsync("Pick your move");
 
         var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, or ✂️");
-        List<DiscordButtonComponent> actions = new() {
+        List<DiscordButtonComponent> actions = [
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors")
-    };
+    ];
         builder.AddComponents(actions);
 
         DiscordMessage msg = builder.SendAsync(ctx.Channel).Result;
@@ -150,23 +150,23 @@ public class SlashGame : ApplicationCommandModule
         [ChoiceName("🦎 Lizard")] Lizard = 3,
         [ChoiceName("🖖 Spock")] Spock = 4
     }
-    enum RPSRes { First, Second, Draw }
-    readonly RPSRes[][] rpslsRes = {
+    private enum RPSRes { First, Second, Draw }
+    private readonly RPSRes[][] rpslsRes = [
     //                                  Rock          Paper         Scissors         Lizard         Spock 
-    /* Rock     */ new[] {RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second },
-    /* Paper    */ new[] {RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First  },
-    /* Scissors */ new[] {RPSRes.Second, RPSRes.First,   RPSRes.Draw,   RPSRes.First,  RPSRes.Second },
-    /* Lizard   */ new[] {RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First  },
-    /* Spock    */ new[] {RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw   }
-  };
-    readonly string[][] rpslsMsgs = {
+    /* Rock     */ [RPSRes.Draw,   RPSRes.Second,  RPSRes.First,  RPSRes.First,  RPSRes.Second],
+    /* Paper    */ [RPSRes.First,  RPSRes.Draw,    RPSRes.Second, RPSRes.Second, RPSRes.First],
+    /* Scissors */ [RPSRes.Second, RPSRes.First,   RPSRes.Draw,   RPSRes.First,  RPSRes.Second],
+    /* Lizard   */ [RPSRes.Second, RPSRes.First,   RPSRes.Second, RPSRes.Draw,   RPSRes.First],
+    /* Spock    */ [RPSRes.First,  RPSRes.Second,  RPSRes.First,  RPSRes.Second, RPSRes.Draw]
+  ];
+    private readonly string[][] rpslsMsgs = [
     //                            Rock                    Paper                     Scissors                        Lizard                          Spock 
-    /* Rock     */ new[] {"Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"},
-    /* Paper    */ new[] {"Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock" },
-    /* Scissors */ new[] {"Rock crushes scissors", "Scissors cuts Paper",    "Draw",                         "Scissors decapitates Lizard",  "Spock smashes Scissors" },
-    /* Lizard   */ new[] {"Rock crushes Lizard",   "Lizard eats Paper",      "Scissors decapitates Lizard",  "Draw",                         "Lizard poisons Spock"  },
-    /* Spock    */ new[] {"Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw" }
-  };
+    /* Rock     */ ["Draw",                  "Paper covers Rock",      "rock crushes scissors",        "Rock crushes Lizard",          "Spock vaporizes Rock"],
+    /* Paper    */ ["Paper covers Rock",     "Draw",                   "Scissors cuts Paper",          "Lizard eats Paper",            "Paper disproves Spock"],
+    /* Scissors */ ["Rock crushes scissors", "Scissors cuts Paper",    "Draw",                         "Scissors decapitates Lizard",  "Spock smashes Scissors"],
+    /* Lizard   */ ["Rock crushes Lizard",   "Lizard eats Paper",      "Scissors decapitates Lizard",  "Draw",                         "Lizard poisons Spock"],
+    /* Spock    */ ["Spock vaporizes Rock",  "Paper disproves Spock",  "Spock smashes Scissors",       "Lizard poisons Spock",         "Draw"]
+  ];
 
     private static string GetChoice(RPSLSTypes? move)
     {
@@ -210,13 +210,13 @@ public class SlashGame : ApplicationCommandModule
 
 
         var builder = new DiscordMessageBuilder().WithContent("Select 🪨, 📄, ✂️, 🦎, or 🖖");
-        List<DiscordButtonComponent> actions = new() {
+        List<DiscordButtonComponent> actions = [
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bRock", "🪨 Rock"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bPaper", "📄 Paper"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bScissors", "✂️ Scissors"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bLizard", "🦎 Lizard"),
       new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "bSpock", "🖖 Spock")
-    };
+    ];
         builder.AddComponents(actions);
 
         DiscordMessage msg = builder.SendAsync(ctx.Channel).Result;
@@ -329,7 +329,7 @@ public class SlashGame : ApplicationCommandModule
     }
 
 
-    private string PrintBoard(int[] grid)
+    private static string PrintBoard(int[] grid)
     {
         string board = "";
         for (int y = 0; y < 3; y++)
@@ -350,7 +350,7 @@ public class SlashGame : ApplicationCommandModule
         return board;
     }
 
-    static List<ulong> tttPlayers = new();
+    private static readonly List<ulong> tttPlayers = [];
     public static void CleanupTicTacToe()
     {
         tttPlayers.Clear();
@@ -360,7 +360,7 @@ public class SlashGame : ApplicationCommandModule
     public async Task TicTacToeGame(InteractionContext ctx, [Option("opponent", "Select a Discord user to play with (keep empty to play with the bot)")] DiscordUser opponent = null)
     {
         Utils.LogUserCommand(ctx);
-        int[] grid = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        int[] grid = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         DiscordMember player = ctx.Member;
         bool oMoves = true;
 
@@ -427,8 +427,9 @@ public class SlashGame : ApplicationCommandModule
                 }
                 else
                 {
-                    if (oMoves) message.Description = $"{opponent.Username}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
-                    else message.Description = $"{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
+                    message.Description = oMoves
+                        ? $"{opponent.Username}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid)
+                        : $"{player.DisplayName}: Type a number between 1 and 9 to make a move.\n\n" + PrintBoard(grid);
                     message.Title = $"Tic-Tac-Toe Game {player.DisplayName}/{opponent.Username}";
                     message.Timestamp = DateTime.Now;
                     message.Color = DiscordColor.Red;
@@ -598,7 +599,7 @@ public class SlashGame : ApplicationCommandModule
         }
     }
 
-    private void BotPick(int[] grid)
+    private static void BotPick(int[] grid)
     {
         int pos = -1;
 
@@ -608,9 +609,6 @@ public class SlashGame : ApplicationCommandModule
             grid[4] = 2;
             return;
         }
-
-
-
 
         // Check if there are at least 2 positions in sequence, in case block it or win it
         for (int c = 0; c < 3 && pos == -1; c++)

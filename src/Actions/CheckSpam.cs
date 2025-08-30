@@ -1,9 +1,9 @@
+using DSharpPlus;
 using DSharpPlus.Entities;
-using System.Threading.Tasks;
+using DSharpPlus.EventArgs;
 using System;
 using System.Text.RegularExpressions;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
+using System.Threading.Tasks;
 using UPBot.UPBot_Code;
 
 /// <summary>
@@ -14,10 +14,10 @@ namespace UPBot
 {
     public class CheckSpam
     {
-        static readonly Regex linkRE = new(@"http[s]?://([^/]+)/");
-        static readonly Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
-        public static DiscordUser SpamCheckTimeout = null;
-        readonly string[] testLinks = { "discord.com", "discordapp.com", "discord.gg",
+        private static readonly Regex linkRE = new(@"http[s]?://([^/]+)/");
+        private static readonly Regex wwwRE = new(@"^w[^\.]{0,3}.\.");
+        public static DiscordUser SpamCheckTimeout;
+        private readonly string[] testLinks = [ "discord.com", "discordapp.com", "discord.gg",
 
     "discrodapp.com", "discord.org", "discrodgift.com", "discordapp.gift", "humblebundle.com", "microsoft.com", "google.com",
 
@@ -39,7 +39,7 @@ namespace UPBot
     "imageshare.best", "screenshot.best", "gamingfun.me", "catsnthing.com", "mypic.icu", "catsnthings.fun", "curiouscat.club", "gyazo.nl", "gaymers.ax", "ps3cfw.com", "iplogger.org",
     "operation-riptide.click", "xpro.gift","lemonchase.club","xn--yutube-iqc.com", "yȯutube.com","tournament-predator.xyz",
     */
-    };
+    ];
 
 
         public void Test()
@@ -83,10 +83,10 @@ namespace UPBot
                 s == "toptal.com" || s == "ideone.com" || s == "jsfiddle.net" || s == "textbin.net" || s == "jsbin.com" || s == "ideone.com" || s == "pythondiscord.com") return 0;
 
             int extra = 0;
-            if (s.IndexOf("nitro") != -1 || s.IndexOf("gift") != -1 || s.IndexOf("give") != -1) extra = 100;
+            if (s.Contains("nitro", StringComparison.CurrentCulture) || s.Contains("gift", StringComparison.CurrentCulture) || s.Contains("give", StringComparison.CurrentCulture)) extra = 100;
 
             // Remove the last part of the url and any leading w??.
-            if (s.IndexOf('.') != -1) s = s[..s.LastIndexOf('.')];
+            if (s.Contains('.')) s = s[..s.LastIndexOf('.')];
 
             // Check how many substrings of discord.com we have in the string
             int valDiscord = 0;
@@ -96,16 +96,16 @@ namespace UPBot
                 {
                     for (int strt = 0; strt < 8 - len; strt++)
                     {
-                        if (s.IndexOf("discord"[strt..(strt + len)]) != -1)
+                        if (s.Contains("discord"[strt..(strt + len)], StringComparison.CurrentCulture))
                             valDiscord += len;
                     }
                 }
-                if (s.IndexOf("xyz") != -1) valDiscord += 5;
+                if (s.Contains("xyz", StringComparison.CurrentCulture)) valDiscord += 5;
                 for (int len = 4; len < 7; len++)
                 {
                     for (int strt = 0; strt < 7 - len; strt++)
                     {
-                        if (s.IndexOf("diczord"[strt..(strt + len)]) != -1)
+                        if (s.Contains("diczord"[strt..(strt + len)], StringComparison.CurrentCulture))
                             valDiscord += len;
                     }
                 }
@@ -119,7 +119,7 @@ namespace UPBot
                 {
                     for (int strt = 0; strt < 14 - len; strt++)
                     {
-                        if (s.IndexOf("steamcommunity"[strt..(strt + len)]) != -1)
+                        if (s.Contains("steamcommunity"[strt..(strt + len)], StringComparison.CurrentCulture))
                             valSteam1 += len;
                     }
                 }
@@ -127,7 +127,7 @@ namespace UPBot
                 {
                     for (int strt = 0; strt < 12 - len; strt++)
                     {
-                        if (s.IndexOf("steampowered"[strt..(strt + len)]) != -1)
+                        if (s.Contains("steampowered"[strt..(strt + len)], StringComparison.CurrentCulture))
                             valSteam2 += len;
                     }
                 }
@@ -139,7 +139,7 @@ namespace UPBot
                 {
                     for (int strt = 0; strt < 9 - len; strt++)
                     {
-                        if (s.IndexOf("epicgames"[strt..(strt + len)]) != -1)
+                        if (s.Contains("epicgames"[strt..(strt + len)], StringComparison.CurrentCulture))
                             valEpic += len;
                     }
                 }
@@ -167,7 +167,7 @@ namespace UPBot
             await CheckMessage(args.Guild, args.Author, args.Message);
         }
 
-        static async Task CheckMessage(DiscordGuild guild, DiscordUser author, DiscordMessage message)
+        private static async Task CheckMessage(DiscordGuild guild, DiscordUser author, DiscordMessage message)
         {
             if (guild == null) return;
             if (author == null || author.Id == Configs.BotId) return; // Do not consider myself
@@ -179,8 +179,7 @@ namespace UPBot
             }
             try
             {
-                if (!Configs.SpamProtections.ContainsKey(guild.Id)) return;
-                SpamProtection sp = Configs.SpamProtections[guild.Id];
+                if (!Configs.SpamProtections.TryGetValue(guild.Id, out SpamProtection sp)) return;
                 if (sp == null) return;
                 if (!sp.protectDiscord && !sp.protectSteam && !sp.protectDiscord) return;
                 bool edisc = sp.protectDiscord;
@@ -196,7 +195,7 @@ namespace UPBot
 
                     foreach (var s in Configs.SpamLinks[guild.Id])
                     {
-                        if (link.IndexOf(s) != -1)
+                        if (link.Contains(s, StringComparison.CurrentCulture))
                         {
                             Utils.Log("Removed spam link message from " + author.Username + ", matched a custom spam link.\noriginal link: " + msg, guild.Name);
                             DiscordMessage warning = await message.Channel.SendMessageAsync("Removed spam link message from " + author.Username + ", matched a custom spam link.\n" + Configs.GetAdminsMentions(guild.Id) + ", please take care.");
@@ -210,7 +209,7 @@ namespace UPBot
                     bool whitelisted = false;
                     foreach (var s in Configs.WhiteListLinks[guild.Id])
                     {
-                        if (link.IndexOf(s) != -1)
+                        if (link.Contains(s, StringComparison.CurrentCulture))
                         {
                             whitelisted = true;
                             break;
